@@ -68,7 +68,7 @@ oc exec $(oc get pods -n agent-office -o name | grep {user}-assistant | head -1)
   -n agent-office -- env | grep -iE "token|key|secret"
 ----
 +
-**Reference needed:** Verify the exact grep output against a live default-wired agent pod. Internal platform variables (for example, the Kubernetes service account token mount) may appear, but no downstream-system credential should be present: no search API key, no git token, no MCP server secret.
+// Reference needed (resolve in live session): Verify the exact grep output against a live default-wired agent pod. Internal platform variables (for example, the Kubernetes service account token mount) may appear, but no downstream-system credential should be present: no search API key, no git token, no MCP server secret.
 +
 The agent process does not hold the tool's credential. The MCP gateway holds it and injects it on each forwarded call.
 
@@ -145,11 +145,11 @@ Each line is an Envoy access-log entry for one tool call. A representative line 
 +
 The `200` confirms the gateway authorized and forwarded the call. A `403` would mean the gateway denied it: the agent can only reach tools the gateway permits.
 +
-**Reference needed:** Confirm whether a richer per-call authorization log (with tool name and caller identity) is exposed to attendees beyond the Envoy access log. The Envoy access log is the guaranteed observable.
+// Reference needed (resolve in live session): Confirm whether a richer per-call authorization log (with tool name and caller identity) is exposed to attendees beyond the Envoy access log. The Envoy access log is the guaranteed observable.
 
 . Return to link:{mattermost_url}[Mattermost^] and trigger another tool call:
 +
-[source,text]
+[source,text,subs="attributes"]
 ----
 Search the web for the Red Hat OpenShift {ocp_version} documentation landing page and give me the URL.
 ----
