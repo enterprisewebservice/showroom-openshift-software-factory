@@ -1,0 +1,68 @@
+# Lab specification — drives /showroom:create-lab (ph_payload shape).
+# Iterate here first; regenerate modules from this spec.
+ph_payload:
+  target_dir: content/modules/ROOT/pages/
+  mode: new
+  spec:
+    lab_name: "The OpenShift Software Factory — Agents as Staff"
+    audience: "Platform engineers, architects, and technical sellers"
+    experience_level: intermediate
+    main_learning_goal: >-
+      Stand up and operate a governed AI software factory on OpenShift: hire agents through
+      Developer Hub, govern every tool call, teach skills as versioned artifacts, run headless
+      agents in pipelines, and ship a real microservice to production with an agent doing the work.
+    learning_objectives:
+      - Provision a governed AI agent from a Developer Hub template and trace everything it created in git
+      - Govern agent tool access through an MCP gateway with per-call authorization and a full audit trail
+      - Deliver versioned know-how to an agent as a mindifact pack and watch behavior change
+      - Run a headless agent inside a Tekton pipeline with autonomy set by gateway profile
+      - Ship a microservice to production through the agent-driven supply chain (build, sign, scan, promote)
+      - Swap the agent's model between a frontier endpoint and a sovereign in-cluster vLLM without touching anything else
+    business_scenario: >-
+      ACME Financial wants what factory.ai sells — AI development agents that deliver real work —
+      but their platform team cannot hand credentials, audit, or the supply chain to a vendor
+      control plane. In this lab you build the equivalent capability on the OpenShift platform
+      they already govern, then put it to work shipping software.
+    duration: half-day (~4 hours hands-on)
+    module_outline: |
+      Module 1 (~30 min): Hire an agent — one sentence in the Dev Hub template; review the wiring (skills, tools, gateway, brain); agent live in ~2 minutes. [factory.ai: Droids / Factory App onboarding]
+      Module 2 (~25 min): The agent is in git — edit the agent's prompt via PR, watch OpenShift GitOps reconcile, roll it back. [factory.ai: where does the droid live?]
+      Module 3 (~30 min): Governed tools — call a tool through the MCP gateway as the agent; find the credential in the agent env (it is not there); read the audit line. [factory.ai: Connectors/MCP, with enterprise trust]
+      Module 4 (~30 min): Teach with a mindifact — install a versioned skill pack; re-run the task; the agent now follows the procedure. [factory.ai: Skills/harness, supply-chain graded]
+      Module 5 (~30 min): Headless agent in the pipeline — trigger a Tekton PipelineRun with an agent task; autonomy tier is the gateway profile bound to the run. [factory.ai: Droid Exec + autonomy levels]
+      Module 6 (~60 min, capstone): Ship to production — file an intent with the ops manager; a dev agent scaffolds the microservice from a golden-path template; the supply-chain pipeline builds, signs and scans; GitOps promotes; verify the live route and walk the audit trail end to end. [factory.ai: the Software Factory, with SLSA provenance]
+      Module 7 (~20 min): Swap the brain — change the model reference frontier ↔ sovereign vLLM; re-run Module 4's task; nothing else changed. [factory.ai: model independence, plus the part they can't do — you RUN the model]
+      Module 8 (~15 min): The gap map — honest factory.ai comparison: what this stack still lacks (Mission Control UX, AutoWiki, session forking, one-flag autonomy) and why every gap is UI/ergonomics while none are trust, governance, or deployment reach.
+    env:
+      lab_type: ocp
+      cluster_type: multinode
+      access: multi-user keycloak
+      ocp_version: "{ocp_version}"
+      attributes:
+        user: "{user}"
+        password: "{password}"
+        openshift_console_url: "{openshift_console_url}"
+        openshift_api_url: "{openshift_api_url}"
+        devhub_url: "{devhub_url}"
+        gitops_url: "{gitops_url}"
+    reference_materials:
+      - ~/vibe-projects/sandboxd/governed-agent-platform/docs/openshift-software-factory-blueprint.md
+      - https://rhpds.github.io/rhdp-skills-marketplace/reference/best-practices.html
+    writing_style: >-
+      Direct technical-seller voice: concrete, active, no rallying cries or filler. Every claim
+      demonstrable in the environment. Short paragraphs. The attendee is treated as a competent
+      platform person seeing agents-as-workloads for the first time.
+notes:
+  showroom_setup:
+    deployment: ocp
+    tabs: [terminal, openshift-console, developer-hub]
+    theme: red-hat-default
+    ftl_e2e: planned (later, /ftl:rhdp-lab-validator)
+  milestones:
+    A: content complete + deliverable instructor-led against salamander
+    B: agnosticd-v2 workload + AgnosticV catalog item (self-service on demo.redhat.com)
+  capstone_source: >-
+    Module 6 is the ops-manager production story from the Agents as Staff series: dev agent
+    generates a microservice via the golden-path template, Tekton/TSSC builds signed artifacts,
+    GitOps promotes to production. Environment reset uses the genesis teardown plus
+    cleanup-agent.sh (removes the RHDH catalog Location).

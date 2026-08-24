@@ -1,94 +1,116 @@
-= What is Showroom?
-:navtitle: What is Showroom?
+= The OpenShift Software Factory — Agents as Staff
 
-Showroom is a web-based lab instruction platform for the https://demo.redhat.com[Red Hat Demo Platform].
-It combines rendered AsciiDoc content with embedded terminals, consoles, and interactive tools -- giving workshop and demo participants everything they need in a single browser tab.
+Welcome to the OpenShift Software Factory workshop.
 
-== What Users See
+ACME Financial wants what factory.ai sells: AI development agents that plan, code, and ship real work. The platform team wants it too — right up to the fine print. A vendor control plane would hold the organization's credentials. Agent activity would be audited in someone else's system. Code would ship through a supply chain the team does not own. For a regulated financial company, that is 3 non-starters in a single purchase order.
 
-When a participant opens their Showroom URL they get a split-pane interface:
+This workshop takes the other path. You build the equivalent capability on the OpenShift platform ACME already governs, then you put it to work. You hire agents through Red Hat Developer Hub, govern every tool call at a Model Context Protocol (MCP) gateway, deliver know-how as versioned packs, run headless agents inside pipelines, and finish by shipping a microservice to production — with an agent doing the work.
 
-* **Left pane** -- step-by-step lab instructions rendered from an https://antora.org[Antora] site you author in AsciiDoc.
-* **Right pane** -- one or more tabs such as:
-** A web terminal (SSH to a bastion, containerised CLI tools, or both).
-** The OpenShift web console embedded in an iframe.
-** A VS Code editor (Code Server).
-** A VNC desktop (noVNC).
-** Any external URL you choose.
+One idea carries the whole lab: *an agent is a workload*. It is declared in git, reconciled by OpenShift GitOps, governed at the gateway, and audited like everything else on the cluster. The workplace is the value. The brain — the model — is a choice, and in Module 7 you swap it without touching anything else.
 
-The UI layout, tab names, and tab URLs are all controlled by a simple `ui-config.yml` file that lives in your content repository.
+== What you'll learn
 
-== How It Gets Deployed
+In this workshop, you will:
 
-This Ansible collection -- `agnosticd.showroom` -- is the primary way Showroom instances are deployed on the Red Hat Demo Platform.
-Depending on the environment type, you use one of two roles:
+* Provision a governed AI agent from a Red Hat Developer Hub template and trace everything it created in git
+* Govern agent tool access through an MCP gateway with per-call authorization and a full audit trail
+* Deliver versioned know-how to an agent as a mindifact pack and watch its behavior change
+* Run a headless agent inside a Tekton pipeline with autonomy set by gateway profile
+* Ship a microservice to production through the agent-driven supply chain (build, sign, scan, promote)
+* Swap the agent's model between a frontier endpoint and a sovereign in-cluster vLLM without touching anything else
 
-[cols="1,3",options="header"]
+== Workshop agenda
+
+The workshop runs as 8 modules, each anchored to something you do in the environment:
+
+[cols="2,5,1",options="header"]
 |===
-|Role |Use when...
+|Module |What you do |Time
 
-|`ocp4_workload_showroom`
-|Your lab runs on an OpenShift 4 cluster.
-The role deploys Showroom as a pod using a Helm chart, complete with content rendering, terminals, and an OpenShift `Route`.
+|1. Hire an agent
+|Type a single sentence into a Red Hat Developer Hub template. Review the wiring the platform creates — skills, tools, gateway, brain. The agent is live in about 2 minutes.
+|~30 min
 
-|`vm_workload_showroom`
-|Your lab runs on a VM (RHEL, Fedora, etc.).
-The role deploys Showroom with rootless Podman, Traefik for TLS, and systemd for lifecycle management.
-|===
+|2. The agent is in git
+|Open the agent's repository. Change its prompt through a pull request, watch OpenShift GitOps reconcile the change, then roll it back.
+|~25 min
 
-Both roles follow the same basic flow:
+|3. Governed tools
+|Call a tool through the MCP gateway as the agent. Confirm the credential is not in the agent's environment, then read the audit line for your call.
+|~30 min
 
-. Clone your Antora content repository.
-. Inject runtime variables (credentials, hostnames, GUIDs) as AsciiDoc attributes.
-. Render the content to HTML.
-. Serve the content alongside the terminal and tab services you configured.
-. Publish the final URL back to the user.
+|4. Teach with a mindifact
+|Install a versioned skill pack on the agent. Re-run a task and watch the agent follow the procedure it just learned.
+|~30 min
 
-== Key Concepts
+|5. Headless agent in the pipeline
+|Run an agent as a task inside a Tekton PipelineRun. Its autonomy tier is the gateway profile bound to that run.
+|~30 min
 
-Content repository::
-A Git repo containing your AsciiDoc lab instructions, structured as an Antora component.
-You typically fork https://github.com/rhpds/showroom_template_nookbag[showroom_template_nookbag] and add your own pages.
-See xref:content-repo.adoc[].
+|6. Ship to production (capstone)
+|File an intent with the ops manager. A dev agent scaffolds a microservice from a golden-path template; the pipeline builds, signs, and scans it; OpenShift GitOps promotes it. Verify the live route and walk the audit trail end to end.
+|~60 min
 
-AgnosticV catalog item::
-The YAML configuration in the https://github.com/rhpds/agnosticv[agnosticv] repository that ties your content repo to an environment on the Red Hat Demo Platform.
-See xref:agnosticv-config.adoc[].
+|7. Swap the brain
+|Change the agent's model reference from a frontier endpoint to a sovereign in-cluster vLLM. Re-run Module 4's task. Nothing else changed.
+|~20 min
 
-User data::
-A set of key-value pairs (hostnames, passwords, URLs) written by infrastructure roles during provisioning and automatically injected into your content as Antora attributes.
-See xref:user-data.adoc[].
-
-UI configuration::
-A `ui-config.yml` file in your content repo that defines the tabs, layout width, and dynamic URLs shown alongside your lab instructions.
-See xref:ui-config.adoc[].
-
-== Where to Start
-
-[cols="1,3",options="header"]
-|===
-|Goal |Page
-
-|Get a Showroom lab running quickly
-|xref:quick-start.adoc[]
-
-|Create or structure a content repo
-|xref:content-repo.adoc[]
-
-|Wire up an AgnosticV catalog item
-|xref:agnosticv-config.adoc[]
-
-|Understand the full architecture
-|xref:architecture.adoc[]
-
-|Contribute to Showroom itself
-|xref:contributing.adoc[]
+|8. The gap map
+|Compare the result with factory.ai, feature by feature. Identify which gaps remain — and why none of them are trust, governance, or deployment reach.
+|~15 min
 |===
 
-== Related Projects
+== Who this is for
 
-* https://github.com/agnosticd/showroom[agnosticd.showroom collection] -- this Ansible collection (you are here).
-* https://github.com/rhpds/showroom_template_nookbag[showroom_template_nookbag] -- the recommended content repo template.
-* https://github.com/rhpds/showroom-deployer[showroom-deployer] -- Helm charts that power OCP deployments.
-* https://github.com/rhpds/showroom-images[showroom-images] -- container images (content server, terminals, Antora, etc.).
-* https://github.com/rhpds/nookbag[nookbag] -- the zero-touch UI bundle.
+This workshop is designed for platform engineers, architects, and technical sellers who need to evaluate — or build — AI development agents under enterprise governance. You are treated as a competent platform person seeing agents-as-workloads for the first time: every agent concept arrives through objects you already know, such as git repositories, custom resources, pipelines, and routes.
+
+**Experience level**: Intermediate
+
+== Prerequisites
+
+Before starting this workshop, you should be able to:
+
+* Navigate the OpenShift web console and run `oc` commands in a terminal
+* Read YAML and recognize core Kubernetes objects: Deployments, custom resources, operators
+* Work a git pull request end to end: branch, commit, review, merge
+
+Helpful but not required:
+
+* Experience with OpenShift Pipelines or another CI system
+* Experience with OpenShift GitOps or another git-driven delivery workflow
+
+No prior experience with AI agents, MCP, or model serving is required. The workshop introduces each concept at the point you use it.
+
+== Workshop environment
+
+Your environment is a multi-user Red Hat OpenShift {ocp_version} cluster with the software factory already installed:
+
+* **Red Hat Developer Hub** — the software catalog and the template you hire agents from
+* **OpenShift GitOps** (based on Argo CD) — reconciles every agent and application from git
+* **OpenShift Pipelines** (based on Tekton) — the supply chain that builds, signs, and scans what agents produce
+* **MCP gateway** — the control point every agent tool call passes through
+* **Model endpoints** — a frontier model and a sovereign in-cluster vLLM, ready to swap
+
+You will have access to:
+
+* OpenShift console: {openshift_console_url}
+* Red Hat Developer Hub: {devhub_url}
+* OpenShift GitOps: {gitops_url}
+* Username: {user}
+* Password: {password}
+
+The same username and password work across all 3 consoles.
+
+NOTE: All environment details and credentials are available in the lab interface.
+
+== Estimated time
+
+Plan on approximately **3.5 hours** of hands-on work. Module timings are estimates; Module 6, the capstone, is the longest single block. Every module ends in a verifiable state, so you can break between modules without losing your place.
+
+You can work at your own pace.
+
+== Get started
+
+Move to the next page in the navigation for a short overview of how the pieces fit together, then hire your first agent in Module 1.
+
+include::ROOT:nav.adoc[]

@@ -1,0 +1,8 @@
+// Shared lab attributes — values injected by Showroom user data (AgnosticV must supply all of these).
+:console_url: {openshift_console_url}
+:api_url: {openshift_api_url}
+:user: {user}
+:password: {password}
+:devhub_url: {devhub_url}
+:gitops_url: {gitops_url}
+:ocp_version: {ocp_version}
