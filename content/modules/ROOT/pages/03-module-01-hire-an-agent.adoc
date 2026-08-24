@@ -34,9 +34,11 @@ Red Hat Developer Hub is ACME's front door for anything a developer requests fro
 
 . In the left navigation, click *Self-service*.
 +
-**Reference needed**: confirm this navigation label against the deployed Developer Hub version; earlier releases label the same page *Create*.
+NOTE: On older Developer Hub releases the same page is labelled *Create...* — it is the same catalog of golden-path templates.
 
-. Find the *Create an AI Agent* template and click *Choose*.
+. Find the *OpenClaw Agent* template and click *Choose*.
++
+You will also see *OpenClaw Agent (advanced -- every option)* in the list. That variant exposes every field the platform is about to wire for you -- identity, model backend, skills, knowledge bases, gateway, deployment. This lab hires with the simple template and inspects that wiring after the fact, which is the point: the platform makes the safe choices so one sentence is enough.
 
 . In the name field, enter:
 +
@@ -98,17 +100,17 @@ If the output differs, complete the login steps from the lab details page before
 +
 [source,role="execute",subs="attributes"]
 ----
-oc get pods -n {user}-agents
+oc get pods -n agent-office
 ----
 +
-**Reference needed**: confirm the agent namespace naming (`{user}-agents`) against the live environment.
+NOTE: In this environment every agent runs in the shared `agent-office` namespace; the platform derives your agent's name from the description you wrote. List the workstations with `oc get agentworkstations -n agent-office` and find yours -- it is the newest one.
 +
 Re-run the command until the pod reports `Running`. The first start pulls the agent image, so allow a minute or 2. Expected output (the pod name may differ):
 +
 [subs="attributes"]
 ----
 NAME                 READY   STATUS    RESTARTS   AGE
-{user}-assistant-0   1/1     Running   0          2m
+<your-agent>-0       1/1     Running   0          2m
 ----
 
 // TODO: Add screenshot
@@ -139,7 +141,7 @@ Your agent appears in the list.
 +
 [source,role="execute",subs="attributes"]
 ----
-oc get agentworkstation {user}-assistant -n {user}-agents -o yaml
+oc get agentworkstation <your-agent> -n agent-office -o yaml
 ----
 
 . In the `spec`, find the values that came from your form: the purpose sentence you wrote, the skills you granted, the gateway reference, and the model reference. Nothing else configured this agent. What you granted is what it has.
@@ -150,7 +152,7 @@ oc get agentworkstation {user}-assistant -n {user}-agents -o yaml
 Introduce yourself. What is your purpose, and which skills were you hired with?
 ----
 +
-**Reference needed**: the template creates a Mattermost channel for the agent; confirm how lab users reach the channel (URL and channel name) in the live environment.
+The template created the channel at hire time: open Mattermost at {mattermost_url}, sign in as `{user}`, and find the channel named after your agent.
 
 . Read the reply. The agent answers in its channel, and its answer reflects the purpose sentence and the skills you saw in the resource.
 
@@ -194,7 +196,7 @@ Module 2 builds on that fact. Because the agent lives in git, you will change it
 ////
 Assets needed (capture against the live environment):
 
-. content/modules/ROOT/assets/images/module-01-agent-template-form.png - Developer Hub "Create an AI Agent" form with name, purpose, skills, gateway, and model fields filled in
+. content/modules/ROOT/assets/images/module-01-agent-template-form.png - Developer Hub "OpenClaw Agent" template form with the one-sentence agent description filled in
 . content/modules/ROOT/assets/images/module-01-gitops-application.png - OpenShift GitOps Application view for the agent, resource tree Synced and Healthy
 . content/modules/ROOT/assets/images/module-01-first-contact.png - Agent chat channel showing the first reply
 ////

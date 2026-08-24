@@ -6,3 +6,4 @@
 :devhub_url: {devhub_url}
 :gitops_url: {gitops_url}
 :ocp_version: {ocp_version}
+:mattermost_url: {mattermost_url}

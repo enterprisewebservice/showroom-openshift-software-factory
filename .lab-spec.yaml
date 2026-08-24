@@ -45,6 +45,7 @@ ph_payload:
         openshift_api_url: "{openshift_api_url}"
         devhub_url: "{devhub_url}"
         gitops_url: "{gitops_url}"
+        mattermost_url: "{mattermost_url}"
     reference_materials:
       - ~/vibe-projects/sandboxd/governed-agent-platform/docs/openshift-software-factory-blueprint.md
       - https://rhpds.github.io/rhdp-skills-marketplace/reference/best-practices.html
