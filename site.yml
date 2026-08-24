@@ -1,7 +1,7 @@
 ---
 site:
-  title: Showroom Template Demo
-  url: https://github.com/rhpds/showroom_template_nookbag
+  title: 'The OpenShift Software Factory: Agents as Staff'
+  url: https://github.com/enterprisewebservice/showroom-openshift-software-factory
   start_page: modules::index.adoc
 
 content:
