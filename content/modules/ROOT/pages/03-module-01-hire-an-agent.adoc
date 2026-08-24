@@ -128,7 +128,7 @@ On a vendor control plane, you trust that onboarding happened correctly. Here yo
 +
 [source,role="execute",subs="attributes"]
 ----
-oc get agentworkstation -n {user}-agents
+oc get agentworkstation -n agent-office
 ----
 +
 Your agent appears in the list.
