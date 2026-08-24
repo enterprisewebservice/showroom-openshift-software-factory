@@ -53,6 +53,11 @@ ph_payload:
       demonstrable in the environment. Short paragraphs. The attendee is treated as a competent
       platform person seeing agents-as-workloads for the first time.
 notes:
+  model_access: >-
+    OpenShift AI Models-as-a-Service (early access — label support status honestly in lab copy).
+    External frontier models brokered by MaaS with per-user keys/quotas; optional in-cluster vLLM
+    registered into the same MaaS as the sovereign endpoint for Module 7's swap. Agents never hold
+    provider credentials. Deployer: enterprisewebservice/software-factory-deployer.
   showroom_setup:
     deployment: ocp
     tabs: [terminal, openshift-console, developer-hub]
