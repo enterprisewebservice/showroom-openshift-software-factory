@@ -40,27 +40,23 @@ NOTE: On older Developer Hub releases the same page is labelled *Create...* — 
 +
 You will also see *OpenClaw Agent (advanced -- every option)* in the list. That variant exposes every field the platform is about to wire for you -- identity, model backend, skills, knowledge bases, gateway, deployment. This lab hires with the simple template and inspects that wiring after the fact, which is the point: the platform makes the safe choices so one sentence is enough.
 
-. In the name field, enter:
+. The form has exactly one field: *Agent*. Write the brief you would give a new hire on day 1, and include the name you want the agent to carry:
 +
 [subs="attributes"]
 ----
-{user}-assistant
+You are {user}-assistant, ACME Financial's platform assistant: investigate questions about this OpenShift cluster and document what you find.
 ----
-
-. In the purpose field, write the 1-sentence brief you would give a new hire on day 1:
 +
-----
-You are ACME Financial's platform assistant: investigate questions about this OpenShift cluster and document what you find.
-----
+Everything else -- the skills the agent starts with, the gateway its tool calls route through, the model that serves as its brain -- is chosen by the platform's defaults. Skills are versioned know-how packs (Module 4 teaches with one). The gateway is a Model Context Protocol (MCP) gateway, the control point every tool call routes through (Module 3 governs it). The model is a swappable endpoint (Module 7 swaps it without touching anything else).
++
+NOTE: The platform derives the agent's name from your sentence. Naming it explicitly, as above, keeps the rest of this lab's commands aligned; if your agent ends up with a different name, substitute it wherever `{user}-assistant` appears.
 
-. Keep the defaults for the remaining fields. Skills grant versioned know-how packs (Module 4 teaches with one). The gateway is a Model Context Protocol (MCP) gateway, the control point every tool call routes through (Module 3 governs it). The model is the agent's brain, a swappable endpoint (Module 7 swaps it without touching anything else).
-
-. Click through to the review step, check your inputs, and click *Create*.
+. Review your sentence and click *Create*.
 
 The template run executes in front of you. It creates a git repository for the agent, registers the agent in the catalog, and hands the rollout to Red Hat OpenShift GitOps.
 
 // TODO: Add screenshot
-image::module-01-agent-template-form.png[Developer Hub agent creation form showing name, purpose, skills, gateway, and model fields,link=self,window=blank,width=700]
+image::module-01-agent-template-form.png[Developer Hub OpenClaw Agent template with the one-sentence agent description filled in,link=self,window=blank,width=700]
 
 === Verify
 
@@ -120,7 +116,7 @@ image::module-01-gitops-application.png[OpenShift GitOps Application view showin
 
 * The Application for `{user}-assistant` reports *Synced* and *Healthy*
 * The AgentWorkstation resource appears in the Application's resource tree
-* `oc get pods -n {user}-agents` shows the agent pod with STATUS `Running`
+* `oc get pods -n agent-office` shows the agent pod with STATUS `Running`
 
 == Exercise 3: Read the wiring and make first contact
 
