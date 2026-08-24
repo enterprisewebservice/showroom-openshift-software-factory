@@ -134,7 +134,7 @@ Rolling back an AI agent's behavior on this platform is the same operation as ro
 +
 If you prefer the command line, clone the repository and run:
 +
-[source,bash,subs="attributes"]
+[source,text,subs="attributes"]
 ----
 # Replace <repo-url> with the URL shown in the catalog entry.
 git clone <repo-url>
