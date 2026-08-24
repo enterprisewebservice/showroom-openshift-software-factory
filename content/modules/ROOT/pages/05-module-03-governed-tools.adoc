@@ -1,0 +1,209 @@
+= Module 3: Governed tools
+include::partial$_attributes.adoc[]
+:source-highlighter: rouge
+:toc: macro
+:toclevels: 1
+
+// Attributes used by this module (injected by Showroom from lab user data):
+// {user}, {password}, {ocp_version}, {devhub_url}, {gitops_url}, {mattermost_url}, {openshift_console_url}
+
+The factory.ai question for this module: connectors and MCP integrations, but with enterprise trust. On a vendor AI platform, the agent process holds the integration credentials. Here, every tool call routes through an MCP (Model Context Protocol) gateway that authorizes the call, injects the credential on the call path, and writes the audit line. The agent never sees the secret.
+
+Plan on 30 minutes: trigger a tool call and read the result, inspect the agent pod to confirm it holds no downstream credential, examine the declared exception pattern for direct integrations, then read the gateway's access log and watch a live call appear.
+
+== Learning objectives
+
+By the end of this module, you'll be able to:
+
+* Trigger a governed tool call from a Mattermost conversation and identify the tool's contribution to the agent's reply
+* Confirm that the agent's workstation pod holds no credential for the downstream system
+* Explain the declared exception pattern for direct MCP integrations and why it preserves reviewability
+* Read the MCP gateway's access log and match a live tool call to its audit entry
+
+== Exercise 1: Make the agent use a tool
+
+Your agent is wired to a set of tools through the MCP gateway. You did not configure this wiring in Module 1 or Module 2: it is declared in `base/agentgateway.yaml` in the agent's git repository. In this exercise you ask the agent something that requires a tool, then read what it returned.
+
+. Open link:{mattermost_url}[Mattermost^] and sign in as `{user}` with password `{password}`.
+
+. Navigate to the `{user}-assistant` channel.
+
+. Send a message that requires external information the agent cannot produce from its training data alone:
++
+[source,text]
+----
+Search the web for the latest Red Hat OpenShift release notes and summarize the most recent release.
+----
++
+NOTE: A web search is a convenient trigger because the result is verifiable: the agent will cite a version number, a date, or a URL. You can also ask the agent to search a git repository or look up documentation. Any request that requires the agent to reach outside its context window will trigger a tool call.
+
+. Read the reply. The agent's response should include content sourced from the tool: a version reference, a release date, a URL, or a summary of content the agent could not have known from training data.
++
+// TODO: Add screenshot
+image::module-03-tool-reply.png[Mattermost channel showing the agent's reply citing web search results with a version number or URL,link=self,window=blank,width=700]
+
+=== Verify
+
+* The agent replied with content that references external information: a URL, a version number, a release date, or a document title
+* The reply is not a refusal or a statement that the agent lacks access to current information
+
+== Exercise 2: Hunt for the credential
+
+The agent used a tool that reached an external system. Now check whether the agent's process holds the credential for that system.
+
+. List the pods in the `agent-office` namespace:
++
+[source,bash,role="execute"]
+----
+oc get pods -n agent-office
+----
++
+Locate the workstation pod for your agent. Its name begins with `{user}-assistant`. Note the full pod name.
+
+. Inspect the pod's environment for any credential-shaped values:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc exec $(oc get pods -n agent-office -o name | grep {user}-assistant | head -1) \
+  -n agent-office -- env | grep -iE "token|key|secret"
+----
++
+**Reference needed:** Verify the exact grep output against a live default-wired agent pod. Internal platform variables (for example, the Kubernetes service account token mount) may appear, but no downstream-system credential should be present: no search API key, no git token, no MCP server secret.
++
+The agent process does not hold the tool's credential. The MCP gateway holds it and injects it on each forwarded call.
+
+. Inspect the AgentWorkstation resource to see what the spec declares:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc get agentworkstation {user}-assistant -n agent-office -o yaml
+----
++
+In the output, find `spec.gatewayRef`. It names the gateway your agent's tool calls route through. There is no `spec.credentials` block and no inline API key. The agent is authorized to call tools; it is not authorized to hold the secrets those tools require.
++
+// TODO: Add screenshot
+image::module-03-env-grep.png[Terminal showing the env grep result from the agent pod with no downstream-system credential,link=self,window=blank,width=700]
++
+// TODO: Add screenshot
+image::module-03-agentworkstation-yaml.png[AgentWorkstation YAML showing spec.gatewayRef with no inline credential fields,link=self,window=blank,width=700]
+
+=== Verify
+
+* The `env` output from the agent's workstation pod contains no downstream-system credential (no search API key, no git token)
+* The AgentWorkstation resource's `spec` contains a `gatewayRef` reference, not inline credentials
+
+== The declared exception
+
+The MCP gateway handles credentials for every tool it governs. Some integrations genuinely require a direct MCP server connection: a proprietary internal system, a tool the gateway does not yet catalog, or a prototype the team is testing before promoting to the governed tier.
+
+The platform's answer is not "configure it in the vendor console." The answer is a declared, reviewable line in the manifest in git.
+
+Open `base/agentworkstation.yaml` in your agent's repository and look for the `spec.tools` section. A direct MCP integration appears as:
+
+[source,yaml]
+----
+spec:
+  tools:
+    mcpServers:
+      - name: my-internal-system
+        url: https://mcp.internal.acme.com
+        envFromSecret: my-internal-system-credentials
+----
+
+The `envFromSecret` field names a Kubernetes Secret that the platform injects at runtime. The agent process does not see the secret's value. An engineer who wants to add or change a direct integration opens a pull request that adds or modifies this block. That pull request goes through the same code review as any other change: the diff is readable, the reviewer is named, the merge timestamp is the moment of record.
+
+Contrast that with the vendor alternative: an API key pasted into a configuration field in someone else's control plane, visible only to whoever opened that screen, with no diff, no reviewer, and no trail in your own audit system.
+
+Your agent's current manifest likely has no `spec.tools.mcpServers` block: all its tool access routes through the gateway. That is the default and the correct default. The direct-integration pattern exists for the exception, not the rule.
+
+== Exercise 3: Read the gateway's evidence
+
+Every tool call the agent makes passes through the MCP gateway. The gateway logs each one. In this exercise you read that log and watch a new line appear in real time.
+
+. Find the gateway pods:
++
+[source,bash,role="execute"]
+----
+oc get pods -n agent-office | grep mcp-gateway
+----
++
+NOTE: 2 gateway deployments exist: `mcp-gateway` (the operator) and `mcp-gateway-data-science-gateway-class` (the gateway class your agent's tool calls route through; its service is the MCP endpoint in the agent's own configuration). The commands below target the gateway class.
+
+. Read the gateway's recent access log:
++
+[source,bash,role="execute"]
+----
+oc logs deploy/mcp-gateway-data-science-gateway-class -n agent-office --since=10m | grep "POST /mcp"
+----
++
+Each line is an Envoy access-log entry for one tool call. A representative line looks like:
++
+[source,text]
+----
+[2026-08-22T20:05:04.205Z] "POST /mcp HTTP/1.1" 200 - via_upstream ...
+----
++
+The `200` confirms the gateway authorized and forwarded the call. A `403` would mean the gateway denied it: the agent can only reach tools the gateway permits.
++
+**Reference needed:** Confirm whether a richer per-call authorization log (with tool name and caller identity) is exposed to attendees beyond the Envoy access log. The Envoy access log is the guaranteed observable.
+
+. Return to link:{mattermost_url}[Mattermost^] and trigger another tool call:
++
+[source,text]
+----
+Search the web for the Red Hat OpenShift {ocp_version} documentation landing page and give me the URL.
+----
+
+. As soon as the agent replies, re-run the log command with a shorter window:
++
+[source,bash,role="execute"]
+----
+oc logs deploy/mcp-gateway-data-science-gateway-class -n agent-office --since=2m | grep "POST /mcp"
+----
++
+A new line with today's timestamp should appear. That line is the gateway's audit record for the call you just triggered from Mattermost.
++
+// TODO: Add screenshot
+image::module-03-gateway-log.png[Terminal output showing MCP gateway access-log lines with POST /mcp entries and 200 status,link=self,window=blank,width=700]
+
+=== Verify
+
+* `oc get pods -n agent-office | grep mcp-gateway` returns at least one running pod
+* The initial log query returns at least one `POST /mcp` line from the tool call in Exercise 1
+* After triggering the second tool call, a new log line with a fresh timestamp appears in the 2-minute window
+
+== What just happened
+
+On a vendor AI platform, the agent process holds the integration credentials. The vendor's control plane authorizes calls: the audit trail, if one exists at all, lives in the vendor's system under the vendor's retention policy.
+
+What you observed here is structurally different. The agent triggered a tool call. The call routed to the MCP gateway: the gateway checked authorization, injected the credential, forwarded the call, and wrote an access-log line. The agent received the result. At no point did the credential cross the agent's process boundary.
+
+The audit line you read in Exercise 3 is not a log in a vendor's SaaS dashboard. It is a log on your cluster, in your namespace, accessible to your operations team, under your organization's retention policy.
+
+The declared exception pattern for direct MCP integrations completes the picture. Every tool call either goes through the governed gateway, or it is declared in git with a reviewable manifest change. There is no third path where a credential is configured silently in a UI with no diff and no reviewer.
+
+The factory.ai question for this module was "connectors and MCP integrations, but with enterprise trust." The answer: same integrations, but authorization, credential injection, and audit live in infrastructure the agent cannot override, and the whole arrangement is declared in git.
+
+== Learning outcomes
+
+By completing this module, you should now understand:
+
+* ✓ How to trigger a governed tool call from Mattermost and identify the tool's contribution to the agent's reply
+* ✓ Why the agent's workstation pod holds no downstream-system credential, and where the credential actually lives
+* ✓ When the declared exception pattern applies and how it preserves the same reviewability guarantee as the governed gateway
+* ✓ How to read the MCP gateway's access log and match a live call to its audit entry
+
+== Module summary
+
+Tool calls route through the MCP gateway. The gateway authorizes, injects, and audits: the agent never sees the secret. When a direct integration is genuinely needed, it is a declared line in git reviewed in a pull request. Every call produces an audit line on your cluster.
+
+Module 4 turns to skills. An agent's capabilities come from skills declared in git, published as OCI artifacts, and versioned with the same controls as any other software. In Module 4, you will add a skill to your agent and trace it from the skill catalog to a live behavior change.
+
+////
+Assets needed (capture against the live environment):
+
+. content/modules/ROOT/assets/images/module-03-tool-reply.png - Mattermost channel showing the agent's reply to the web search prompt, citing an external URL, version number, or release date that confirms the tool was used
+. content/modules/ROOT/assets/images/module-03-env-grep.png - Terminal output of the env grep command from inside the agent's workstation pod, showing no downstream-system credential (search API key, git token, or similar)
+. content/modules/ROOT/assets/images/module-03-agentworkstation-yaml.png - oc get agentworkstation YAML output showing spec.gatewayRef with no inline credential fields alongside it
+. content/modules/ROOT/assets/images/module-03-gateway-log.png - Terminal output of oc logs deploy/mcp-gateway with POST /mcp lines visible and a 200 status on each entry
+////

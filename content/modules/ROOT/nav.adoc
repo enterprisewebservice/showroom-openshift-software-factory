@@ -3,3 +3,4 @@
 * xref:02-details.adoc[Prerequisites and environment]
 * xref:03-module-01-hire-an-agent.adoc[Module 1: Hire an agent]
 * xref:04-module-02-the-agent-is-in-git.adoc[Module 2: The agent is in git]
+* xref:05-module-03-governed-tools.adoc[Module 3: Governed tools]
