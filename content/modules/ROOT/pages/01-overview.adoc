@@ -20,13 +20,13 @@ Your manager put it plainly: "We want the delegation model. We are not shipping 
 
 **Your assignment**: build the equivalent capability on the OpenShift {ocp_version} cluster ACME already governs. Hire an agent through Red Hat Developer Hub, govern its tools through a gateway, teach it with versioned know-how, and put it to work in the pipeline.
 
-**The objective**: a microservice running in production that an agent shipped — with the git history, gateway audit trail, image signatures, and scan results to prove every step happened inside ACME's boundary.
+**The objective**: a microservice running in production that an agent shipped, with the git history, gateway audit trail, image signatures, and scan results to prove every step happened inside ACME's boundary.
 
 **The workplace is the value. The brain is a choice.** That is the claim. The 8 modules in this lab are the proof.
 
 == The concept map: factory.ai to OpenShift
 
-Every concept factory.ai sells maps to something you build or use in this lab. Keep this table handy — the modules walk it top to bottom.
+Every concept factory.ai sells maps to something you build or use in this lab. Keep this table handy; the modules walk it top to bottom.
 
 [cols="3,4,1",options="header"]
 |===
@@ -53,7 +53,7 @@ Every concept factory.ai sells maps to something you build or use in this lab. K
 |5
 
 |**Autonomy levels**: flags the agent process sets on itself
-|Gateway tool-gating profiles enforced outside the agent — infrastructure the agent cannot override
+|Gateway tool-gating profiles enforced outside the agent: infrastructure the agent cannot override
 |3, 5
 
 |**The Software Factory**: code-gen, validate, and release stages
@@ -128,7 +128,7 @@ An agent here is a workload, not a SaaS seat. 4 flows carry the whole architectu
 
 == Workshop agenda
 
-The hands-on core runs about 3.5 hours. The estimates below include reading and verification, so plan a half day. Module 6 is the long one on purpose — it is the capstone.
+The hands-on core runs about 3.5 hours. The estimates below include reading and verification, so plan a half day. Module 6 is the long one on purpose: it is the capstone.
 
 [cols="2,5,1",options="header"]
 |===
@@ -143,7 +143,7 @@ The hands-on core runs about 3.5 hours. The estimates below include reading and 
 |~25 min
 
 |3. Governed tools
-|Call tools through the MCP gateway as the agent. Read the per-call authorization decisions and the audit log. Search the agent's environment for credentials — and find none.
+|Call tools through the MCP gateway as the agent. Read the per-call authorization decisions and the audit log. Search the agent's environment for credentials, and find none.
 |~30 min
 
 |4. Teach with a mindifact
@@ -182,7 +182,7 @@ None of it required a second platform. The pattern is made of OpenShift, so it g
 == Common questions
 
 **"Is this lab anti-factory.ai?"**
-→ No. They proved enterprises will delegate real work to agents, and module 8 credits what their product does better today, the review surface among them. The comparison is about where governance lives — judge that yourself in module 6.
+→ No. They proved enterprises will delegate real work to agents, and module 8 credits what their product does better today, the review surface among them. The comparison is about where governance lives; judge that yourself in module 6.
 
 **"I have never run an AI model. Am I in the right room?"**
 → Yes. The environment provides the model endpoints. In module 7 you change which brain the agent uses by editing 1 field; you never operate the model server itself.

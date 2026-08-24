@@ -100,7 +100,7 @@ If the output differs, complete the login steps from the lab details page before
 oc get pods -n agent-office
 ----
 +
-NOTE: In this environment every agent runs in the shared `agent-office` namespace; the platform derives your agent's name from the description you wrote. List the workstations with `oc get agentworkstations -n agent-office` and find yours -- it is the newest one.
+NOTE: In this environment every agent runs in the shared `agent-office` namespace; the platform derives your agent's name from the description you wrote. List the workstations with `oc get agentworkstations -n agent-office` and find yours; it is the newest one.
 +
 Re-run the command until the pod reports `Running`. The first start pulls the agent image, so allow a minute or 2. Expected output (the pod name may differ):
 +
