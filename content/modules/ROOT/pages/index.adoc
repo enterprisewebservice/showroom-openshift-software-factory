@@ -1,4 +1,4 @@
-= The OpenShift Software Factory — Agents as Staff
+= The OpenShift Software Factory: Agents as Staff
 
 Welcome to the OpenShift Software Factory workshop.
 
@@ -6,7 +6,7 @@ ACME Financial wants what factory.ai sells: AI development agents that plan, cod
 
 This workshop takes the other path. You build the equivalent capability on the OpenShift platform ACME already governs, then you put it to work. You hire agents through Red Hat Developer Hub, govern every tool call at a Model Context Protocol (MCP) gateway, deliver know-how as versioned packs, run headless agents inside pipelines, and finish by shipping a microservice to production — with an agent doing the work.
 
-One idea carries the whole lab: *an agent is a workload*. It is declared in git, reconciled by OpenShift GitOps, governed at the gateway, and audited like everything else on the cluster. The workplace is the value. The brain — the model — is a choice, and in Module 7 you swap it without touching anything else.
+A single idea carries the whole lab: *an agent is a workload*. It is declared in git, reconciled by OpenShift GitOps, governed at the gateway, and audited like everything else on the cluster. The workplace is the value. The brain — the model — is a choice, and in Module 7 you swap it without touching anything else.
 
 == What you'll learn
 
@@ -62,7 +62,7 @@ The workshop runs as 8 modules, each anchored to something you do in the environ
 
 == Who this is for
 
-This workshop is designed for platform engineers, architects, and technical sellers who need to evaluate — or build — AI development agents under enterprise governance. You are treated as a competent platform person seeing agents-as-workloads for the first time: every agent concept arrives through objects you already know, such as git repositories, custom resources, pipelines, and routes.
+This workshop is designed for platform engineers, architects, and technical sellers who need to evaluate (or build) AI development agents under enterprise governance. You are treated as a competent platform person seeing agents-as-workloads for the first time: every agent concept arrives through objects you already know, such as git repositories, custom resources, pipelines, and routes.
 
 **Experience level**: Intermediate
 

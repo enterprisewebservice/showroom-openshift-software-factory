@@ -10,7 +10,7 @@ Why this lab exists, what you build, and how the 8 modules fit together.
 
 == Your role and mission
 
-You are a platform engineer at ACME Financial. Last month your leadership watched a factory.ai demo and came back wanting what they saw: AI development agents that take on real engineering work — plan, code, test, ship — and hand back finished results.
+You are a platform engineer at ACME Financial. Last month your leadership watched a factory.ai demo and came back wanting what they saw: AI development agents that take on real engineering work (plan, code, test, ship) and hand back finished results.
 
 They are right to want it. factory.ai proved this market. Their agents deliver delegated work end to end, and enterprises pay for the result. Nothing in this lab argues with that.
 
@@ -32,35 +32,35 @@ Every concept factory.ai sells maps to something you build or use in this lab. K
 |===
 |factory.ai sells |You build and use |Module
 
-|**Droids** — autonomous agents that plan, code, and ship
+|**Droids**: autonomous agents that plan, code, and ship
 |`AgentWorkstation` custom resources. An operator turns YAML into a running agent: a pod with a persistent workspace, declared in git
 |1–2
 
-|**Factory App** — delegate work, onboard and manage agents
+|**Factory App**: delegate work, onboard and manage agents
 |Red Hat Developer Hub. Agents are catalog components; hiring one is a scaffolder template
 |1
 
-|**Connectors** — integrations with source control, ticketing, and chat
+|**Connectors**: integrations with source control, ticketing, and chat
 |Model Context Protocol (MCP) servers behind a governed gateway (Red Hat Connectivity Link): per-call authorization, credential injection, a full audit trail
 |3
 
-|**Skills** — per-agent know-how files
+|**Skills**: per-agent know-how files
 |Mindifact packs: versioned know-how with dependencies, delivered to the agent like a software artifact
 |4
 
-|**Droid Exec** — headless agent runs in CI
+|**Droid Exec**: headless agent runs in CI
 |A headless agent task inside an OpenShift Pipelines (Tekton) run, executing in the cluster
 |5
 
-|**Autonomy levels** — flags the agent process sets on itself
+|**Autonomy levels**: flags the agent process sets on itself
 |Gateway tool-gating profiles enforced outside the agent — infrastructure the agent cannot override
 |3, 5
 
-|**The Software Factory** — code-gen, validate, and release stages
+|**The Software Factory**: code-gen, validate, and release stages
 |The supply chain you already trust: build, sign, scan, produce a software bill of materials (SBOM), promote through OpenShift GitOps
 |6
 
-|**Model independence** — bring your own keys, route across providers
+|**Model independence**: bring your own keys, route across providers
 |Models-as-a-Service endpoints for frontier models, and in-cluster vLLM on Red Hat OpenShift AI for sovereign ones. Swap the model reference; nothing else changes
 |7
 |===
@@ -95,8 +95,8 @@ You should have:
 
 * Working comfort in the OpenShift web console and with basic `oc` commands
 * A normal git workflow: branch, commit, pull request, review
-* Conceptual familiarity with Kubernetes resources — Deployments, operators, custom resources
-* No AI or model-serving background — the environment provides every model endpoint you use
+* Conceptual familiarity with Kubernetes resources: Deployments, operators, custom resources
+* No AI or model-serving background: the environment provides every model endpoint you use
 
 Environment access, URLs, and credentials are on the next page.
 
@@ -111,19 +111,20 @@ Environment access, URLs, and credentials are on the next page.
 * **Supply chain provenance**: agent-written code ships without in-house attestation → no signatures, SBOM, or scan gates the security team controls
 * **Deployment reach**: ACME runs OpenShift in 2 public clouds and on-premises, including restricted networks → a hosted-only control plane cannot follow the workloads
 
-**The opportunity**: everything a hosted agent platform re-implements — identity, tool governance, pipelines, promotion, audit — already runs on ACME's cluster as supported product. This lab assembles those pieces into the same delegation capability, governed in place.
+**The opportunity**: everything a hosted agent platform re-implements (identity, tool governance, pipelines, promotion, audit) already runs on ACME's cluster as supported product. This lab assembles those pieces into the same delegation capability, governed in place.
 
 == How the pieces fit
 
 An agent here is a workload, not a SaaS seat. 4 flows carry the whole architecture:
 
-. **Hire** — a sentence typed into Red Hat Developer Hub renders a git repo and a set of custom resources; an operator turns them into a running agent with a persistent workspace.
-. **Work** — the agent does its work in its own workstation pod, using know-how installed from versioned mindifact packs.
-. **Tool call** — every tool call passes through the MCP gateway: authorize the call, inject the credential, write the audit line. The agent never sees a key.
-. **Ship** — the agent's commits ride the supply chain: build, sign, scan, and promote through OpenShift GitOps. The agent's own definition changes through the same gates.
+. **Hire**: a sentence typed into Red Hat Developer Hub renders a git repo and a set of custom resources; an operator turns them into a running agent with a persistent workspace.
+. **Work**: the agent does its work in its own workstation pod, using know-how installed from versioned mindifact packs.
+. **Tool call**: every tool call passes through the MCP gateway: authorize the call, inject the credential, write the audit line. The agent never sees a key.
+. **Ship**: the agent's commits ride the supply chain: build, sign, scan, and promote through OpenShift GitOps. The agent's own definition changes through the same gates.
 
 // TODO: Add architecture diagram
-image::software-factory-architecture.png[Architecture diagram showing Red Hat Developer Hub as the front door, an operator reconciling custom resources into agent workstation pods, the MCP gateway governing tool calls, swappable model endpoints, and the supply chain from git through pipeline to GitOps promotion,link=self,window=blank,width=800,title="The OpenShift Software Factory at a glance"]
+// Uncomment when the diagram file exists:
+// image::software-factory-architecture.png[Architecture diagram showing Red Hat Developer Hub as the front door, an operator reconciling custom resources into agent workstation pods, the MCP gateway governing tool calls, swappable model endpoints, and the supply chain from git through pipeline to GitOps promotion,link=self,window=blank,width=800,title="The OpenShift Software Factory at a glance"]
 
 == Workshop agenda
 
@@ -134,7 +135,7 @@ The hands-on core runs about 3.5 hours. The estimates below include reading and 
 |Module |What you do |Time
 
 |1. Hire an agent
-|Type 1 sentence into a Red Hat Developer Hub template. Review what the platform wires up — repo, skills, tool grants, model — and watch the agent come online.
+|Type 1 sentence into a Red Hat Developer Hub template. Review what the platform wires up (repo, skills, tool grants, model) and watch the agent come online.
 |~30 min
 
 |2. The agent is in git
@@ -171,12 +172,12 @@ The hands-on core runs about 3.5 hours. The estimates below include reading and 
 By the end of module 8 you can show, live:
 
 * A production microservice with a route serving traffic, shipped end to end by an agent hired in module 1
-* The agent itself declared in git — prompt, tools, model, skills — reviewed and revertible like any other code
+* The agent itself declared in git (prompt, tools, model, skills) reviewed and revertible like any other code
 * A gateway audit line for every tool call the agent made along the way
 * Signatures, an SBOM, and scan results for every image it shipped
 * The same agent doing the same work on a sovereign in-cluster model
 
-None of it required a second platform. The pattern is made of OpenShift, so it goes where OpenShift goes — AWS, Azure, Google Cloud, on-premises, or fully disconnected — and every piece is declared in git, so rebuilding it is a pull request, not a project.
+None of it required a second platform. The pattern is made of OpenShift, so it goes where OpenShift goes (AWS, Azure, Google Cloud, on-premises, or fully disconnected) and every piece is declared in git, so rebuilding it is a pull request, not a project.
 
 == Common questions
 
@@ -187,7 +188,7 @@ None of it required a second platform. The pattern is made of OpenShift, so it g
 → Yes. The environment provides the model endpoints. In module 7 you change which brain the agent uses by editing 1 field; you never operate the model server itself.
 
 **"Does an agent really push to production here?"**
-→ Yes, through the same gates a human commit rides: build, sign, scan, promote. Module 6 ends with you loading the live route and walking the audit trail behind it.
+→ Yes, through the same gates a human commit rides: build, sign, scan, and promote. Module 6 ends with you loading the live route and walking the audit trail behind it.
 
 **"How much of this is supported product versus reference build?"**
-→ The governance surfaces — Red Hat Developer Hub, OpenShift Pipelines, OpenShift GitOps, Red Hat Connectivity Link — are supported products. The agent operator and the mindifact registry are reference builds running in your environment. Module 8's gap map labels every component, so you leave knowing which is which.
+→ The governance surfaces (Red Hat Developer Hub, OpenShift Pipelines, OpenShift GitOps, Red Hat Connectivity Link) are supported products. The agent operator and the mindifact registry are reference builds running in your environment. Module 8's gap map labels every component, so you leave knowing which is which.
