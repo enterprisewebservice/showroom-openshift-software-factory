@@ -7,11 +7,11 @@ include::partial$_attributes.adoc[]
 // Attributes used by this module (injected by Showroom from lab user data):
 // {user}, {password}, {ocp_version}, {devhub_url}, {gitops_url}
 
-ACME Financial wants what factory.ai sells: AI development agents that deliver working software, not chat transcripts. The platform team vetoed the vendor pitch for 3 reasons. Credentials would leave the building. The audit trail would live in someone else's control plane. The software supply chain would answer to a vendor roadmap.
+ACME Financial wants what AgentWorks sells: AI development agents that deliver working software, not chat transcripts. The platform team vetoed the vendor pitch for 3 reasons. Credentials would leave the building. The audit trail would live in someone else's control plane. The software supply chain would answer to a vendor roadmap.
 
 Your job in this lab is to prove ACME does not have to choose. You will build the same capability on the Red Hat OpenShift {ocp_version} cluster ACME already governs, then put it to work.
 
-In factory.ai terms, this module is onboarding a Droid. On this platform, the hire is a pull request: the agent is an OpenShift workload, and everything it receives (purpose, skills, tool access, and model) is declared in git before it runs. In about 2 minutes you will have a working agent, and you will be able to point at every object that made it exist.
+In AgentWorks terms, this module is onboarding a hosted agent. On this platform, the hire is a pull request: the agent is an OpenShift workload, and everything it receives (purpose, skills, tool access, and model) is declared in git before it runs. In about 2 minutes you will have a working agent, and you will be able to point at every object that made it exist.
 
 Plan on 30 minutes: hire the agent, watch the platform onboard it, then read the wiring and make first contact.
 
@@ -174,7 +174,7 @@ The form produced 4 objects. Together they are the entire hire:
 
 Note what is missing. The form never asked for credentials, and none were delivered to the agent. Tool access is a reference to a gateway, not a bundle of secrets. Module 3 proves that claim by searching the agent's environment for credentials and finding none.
 
-The factory.ai comparison is direct: onboarding a Droid and hiring this agent both take about 2 minutes. The difference is where the artifacts live. Here, every object above sits on ACME's cluster, in ACME's git, under ACME's RBAC, backup, and audit. There is no vendor control plane in this story.
+The AgentWorks comparison is direct: onboarding a hosted agent and hiring this agent both take about 2 minutes. The difference is where the artifacts live. Here, every object above sits on ACME's cluster, in ACME's git, under ACME's RBAC, backup, and audit. There is no vendor control plane in this story.
 
 == Learning outcomes
 

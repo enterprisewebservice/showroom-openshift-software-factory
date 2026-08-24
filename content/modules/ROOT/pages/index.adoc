@@ -2,7 +2,7 @@
 
 Welcome to the OpenShift Software Factory workshop.
 
-ACME Financial wants what factory.ai sells: AI development agents that plan, code, and ship real work. The platform team wants it too, right up to the fine print. A vendor control plane would hold the organization's credentials. Agent activity would be audited in someone else's system. Code would ship through a supply chain the team does not own. For a regulated financial company, that is 3 non-starters in a single purchase order.
+ACME Financial wants what AgentWorks sells (AgentWorks is fictional: a composite of the commercial AI-development-agent platforms): AI development agents that plan, code, and ship real work. The platform team wants it too, right up to the fine print. A vendor control plane would hold the organization's credentials. Agent activity would be audited in someone else's system. Code would ship through a supply chain the team does not own. For a regulated financial company, that is 3 non-starters in a single purchase order.
 
 This workshop takes the other path. You build the equivalent capability on the OpenShift platform ACME already governs, then you put it to work. You hire agents through Red Hat Developer Hub, govern every tool call at a Model Context Protocol (MCP) gateway, deliver know-how as versioned packs, run headless agents inside pipelines, and finish by shipping a microservice to production, with an agent doing the work.
 
@@ -56,7 +56,7 @@ The workshop runs as 8 modules, each anchored to something you do in the environ
 |~20 min
 
 |8. The gap map
-|Compare the result with factory.ai, feature by feature. Identify which gaps remain, and why none of them are trust, governance, or deployment reach.
+|Compare the result with AgentWorks, feature by feature. Identify which gaps remain, and why none of them are trust, governance, or deployment reach.
 |~15 min
 |===
 

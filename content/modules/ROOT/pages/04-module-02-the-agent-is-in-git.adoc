@@ -7,7 +7,7 @@ include::partial$_attributes.adoc[]
 // Attributes used by this module (injected by Showroom from lab user data):
 // {user}, {password}, {ocp_version}, {devhub_url}, {gitops_url}, {mattermost_url}
 
-The factory.ai question for this module is straightforward: where does the droid live? On a vendor platform, the answer is the vendor's control plane. On this platform, the answer is a git repository that ACME owns, on ACME's cluster.
+The AgentWorks question for this module is straightforward: where does the hosted agent live? On a vendor platform, the answer is the vendor's control plane. On this platform, the answer is a git repository that ACME owns, on ACME's cluster.
 
 You created that repository in Module 1, through the Developer Hub template. This module opens it, changes what is inside, and watches OpenShift GitOps carry the change to the running agent. Then it undoes the change the same way.
 
@@ -178,13 +178,13 @@ image::module-02-rollback-reply.png[Mattermost channel showing the agent's reply
 
 == What just happened
 
-On a vendor AI platform, a Droid's configuration lives in the vendor's control plane. Changing it means opening the vendor's UI. Rolling it back depends on whether the vendor stored the previous version.
+On a vendor AI platform, a hosted agent's configuration lives in the vendor's control plane. Changing it means opening the vendor's UI. Rolling it back depends on whether the vendor stored the previous version.
 
 What you did here is structurally different. The agent's directive is a file in a git repository. Changing it is a pull request with a diff. Reviewing it is code review. Merging it is the moment of record. Reverting it is a git revert. Every step produces an artifact in the same system the rest of ACME's software uses: a commit, a pull request, a review comment, an audit log.
 
 OpenShift GitOps propagated every commit to the cluster without a deploy command. The operator reloaded the agent when the workspace changed. You controlled the behavior by controlling the file.
 
-The factory.ai question for this module was "where does the droid live?" The answer: in git, exactly where everything else at ACME lives.
+The AgentWorks question for this module was "where does the hosted agent live?" The answer: in git, exactly where everything else at ACME lives.
 
 == Learning outcomes
 

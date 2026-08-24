@@ -7,7 +7,7 @@ include::partial$_attributes.adoc[]
 // Attributes used by this module (injected by Showroom from lab user data):
 // {user}, {password}, {ocp_version}, {devhub_url}, {gitops_url}, {mattermost_url}, {openshift_console_url}
 
-The factory.ai question for this module: connectors and MCP integrations, but with enterprise trust. On a vendor AI platform, the agent process holds the integration credentials. Here, every tool call routes through an MCP (Model Context Protocol) gateway that authorizes the call, injects the credential on the call path, and writes the audit line. The agent never sees the secret.
+The AgentWorks question for this module: connectors and MCP integrations, but with enterprise trust. On a vendor AI platform, the agent process holds the integration credentials. Here, every tool call routes through an MCP (Model Context Protocol) gateway that authorizes the call, injects the credential on the call path, and writes the audit line. The agent never sees the secret.
 
 Plan on 30 minutes: trigger a tool call and read the result, inspect the agent pod to confirm it holds no downstream credential, examine the declared exception pattern for direct integrations, then read the gateway's access log and watch a live call appear.
 
@@ -182,7 +182,7 @@ The audit line you read in Exercise 3 is not a log in a vendor's SaaS dashboard.
 
 The declared exception pattern for direct MCP integrations completes the picture. Every tool call either goes through the governed gateway, or it is declared in git with a reviewable manifest change. There is no third path where a credential is configured silently in a UI with no diff and no reviewer.
 
-The factory.ai question for this module was "connectors and MCP integrations, but with enterprise trust." The answer: same integrations, but authorization, credential injection, and audit live in infrastructure the agent cannot override, and the whole arrangement is declared in git.
+The AgentWorks question for this module was "connectors and MCP integrations, but with enterprise trust." The answer: same integrations, but authorization, credential injection, and audit live in infrastructure the agent cannot override, and the whole arrangement is declared in git.
 
 == Learning outcomes
 

@@ -10,9 +10,9 @@ Why this lab exists, what you build, and how the 8 modules fit together.
 
 == Your role and mission
 
-You are a platform engineer at ACME Financial. Last month your leadership watched a factory.ai demo and came back wanting what they saw: AI development agents that take on real engineering work (plan, code, test, ship) and hand back finished results.
+You are a platform engineer at ACME Financial. Last month your leadership watched an AgentWorks demo (AgentWorks is fictional: a composite of the commercial AI-development-agent platforms; its capabilities here are representative of the category, not any single vendor) and came back wanting what they saw: AI development agents that take on real engineering work (plan, code, test, ship) and hand back finished results.
 
-They are right to want it. factory.ai proved this market. Their agents deliver delegated work end to end, and enterprises pay for the result. Nothing in this lab argues with that.
+They are right to want it. The commercial agent platforms have proven this market. Their agents deliver delegated work end to end, and enterprises pay for the result. Nothing in this lab argues with that.
 
 The problem is the shape of the product. A vendor control plane holds organization metadata and authentication. Vendor-managed machines run the agents. Governance, identity, and telemetry are re-implemented inside the vendor's stack, then integrated back into yours. For a regulated financial company, the 3 things that product needs are the 3 things ACME cannot hand over: credentials, the audit trail, and the software supply chain.
 
@@ -24,19 +24,19 @@ Your manager put it plainly: "We want the delegation model. We are not shipping 
 
 **The workplace is the value. The brain is a choice.** That is the claim. The 8 modules in this lab are the proof.
 
-== The concept map: factory.ai to OpenShift
+== The concept map: AgentWorks to OpenShift
 
-Every concept factory.ai sells maps to something you build or use in this lab. Keep this table handy; the modules walk it top to bottom.
+Every concept AgentWorks sells maps to something you build or use in this lab. Keep this table handy; the modules walk it top to bottom.
 
 [cols="3,4,1",options="header"]
 |===
-|factory.ai sells |You build and use |Module
+|AgentWorks sells |You build and use |Module
 
-|**Droids**: autonomous agents that plan, code, and ship
+|**Hosted agents**: autonomous agents that plan, code, and ship
 |`AgentWorkstation` custom resources. An operator turns YAML into a running agent: a pod with a persistent workspace, declared in git
 |1–2
 
-|**Factory App**: delegate work, onboard and manage agents
+|**The vendor console**: delegate work, onboard and manage agents
 |Red Hat Developer Hub. Agents are catalog components; hiring one is a scaffolder template
 |1
 
@@ -48,7 +48,7 @@ Every concept factory.ai sells maps to something you build or use in this lab. K
 |Mindifact packs: versioned know-how with dependencies, delivered to the agent like a software artifact
 |4
 
-|**Droid Exec**: headless agent runs in CI
+|**The headless runner**: headless agent runs in CI
 |A headless agent task inside an OpenShift Pipelines (Tekton) run, executing in the cluster
 |5
 
@@ -163,7 +163,7 @@ The hands-on core runs about 3.5 hours. The estimates below include reading and 
 |~20 min
 
 |8. The gap map
-|Put the honest factory.ai comparison on the table: where this stack is ahead, where theirs is, and what closes the gaps.
+|Put the honest AgentWorks comparison on the table: where this stack is ahead, where theirs is, and what closes the gaps.
 |~15 min
 |===
 
@@ -181,7 +181,7 @@ None of it required a second platform. The pattern is made of OpenShift, so it g
 
 == Common questions
 
-**"Is this lab anti-factory.ai?"**
+**"Is this lab bashing the commercial agent vendors?"**
 → No. They proved enterprises will delegate real work to agents, and module 8 credits what their product does better today, the review surface among them. The comparison is about where governance lives; judge that yourself in module 6.
 
 **"I have never run an AI model. Am I in the right room?"**

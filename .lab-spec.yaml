@@ -19,20 +19,20 @@ ph_payload:
       - Ship a microservice to production through the agent-driven supply chain (build, sign, scan, promote)
       - Swap the agent's model between a frontier endpoint and a sovereign in-cluster vLLM without touching anything else
     business_scenario: >-
-      ACME Financial wants what factory.ai sells — AI development agents that deliver real work —
+      ACME Financial wants what AgentWorks (fictional composite vendor) sells — AI development agents that deliver real work —
       but their platform team cannot hand credentials, audit, or the supply chain to a vendor
       control plane. In this lab you build the equivalent capability on the OpenShift platform
       they already govern, then put it to work shipping software.
     duration: half-day (~4 hours hands-on)
     module_outline: |
-      Module 1 (~30 min): Hire an agent — one sentence in the Dev Hub template; review the wiring (skills, tools, gateway, brain); agent live in ~2 minutes. [factory.ai: Droids / Factory App onboarding]
-      Module 2 (~25 min): The agent is in git — edit the agent's prompt via PR, watch OpenShift GitOps reconcile, roll it back. [factory.ai: where does the droid live?]
-      Module 3 (~30 min): Governed tools — call a tool through the MCP gateway as the agent; find the credential in the agent env (it is not there); read the audit line. [factory.ai: Connectors/MCP, with enterprise trust]
-      Module 4 (~30 min): Teach with a mindifact — install a versioned skill pack; re-run the task; the agent now follows the procedure. [factory.ai: Skills/harness, supply-chain graded]
-      Module 5 (~30 min): Headless agent in the pipeline — trigger a Tekton PipelineRun with an agent task; autonomy tier is the gateway profile bound to the run. [factory.ai: Droid Exec + autonomy levels]
-      Module 6 (~60 min, capstone): Ship to production — file an intent with the ops manager; a dev agent scaffolds the microservice from a golden-path template; the supply-chain pipeline builds, signs and scans; GitOps promotes; verify the live route and walk the audit trail end to end. [factory.ai: the Software Factory, with SLSA provenance]
-      Module 7 (~20 min): Swap the brain — change the model reference frontier ↔ sovereign vLLM; re-run Module 4's task; nothing else changed. [factory.ai: model independence, plus the part they can't do — you RUN the model]
-      Module 8 (~15 min): The gap map — honest factory.ai comparison: what this stack still lacks (Mission Control UX, AutoWiki, session forking, one-flag autonomy) and why every gap is UI/ergonomics while none are trust, governance, or deployment reach.
+      Module 1 (~30 min): Hire an agent — one sentence in the Dev Hub template; review the wiring (skills, tools, gateway, brain); agent live in ~2 minutes. [AgentWorks: hosted-agent onboarding]
+      Module 2 (~25 min): The agent is in git — edit the agent's prompt via PR, watch OpenShift GitOps reconcile, roll it back. [AgentWorks: where does the hosted agent live?]
+      Module 3 (~30 min): Governed tools — call a tool through the MCP gateway as the agent; find the credential in the agent env (it is not there); read the audit line. [AgentWorks: connectors, with enterprise trust]
+      Module 4 (~30 min): Teach with a mindifact — install a versioned skill pack; re-run the task; the agent now follows the procedure. [AgentWorks: skills/harness, supply-chain graded]
+      Module 5 (~30 min): Headless agent in the pipeline — trigger a Tekton PipelineRun with an agent task; autonomy tier is the gateway profile bound to the run. [AgentWorks: the headless runner + autonomy levels]
+      Module 6 (~60 min, capstone): Ship to production — file an intent with the ops manager; a dev agent scaffolds the microservice from a golden-path template; the supply-chain pipeline builds, signs and scans; GitOps promotes; verify the live route and walk the audit trail end to end. [AgentWorks: the software factory, with SLSA provenance]
+      Module 7 (~20 min): Swap the brain — change the model reference frontier ↔ sovereign vLLM; re-run Module 4's task; nothing else changed. [AgentWorks: model independence, plus the part a SaaS cannot do — you RUN the model]
+      Module 8 (~15 min): The gap map — honest AgentWorks comparison: what this stack still lacks (mission-dashboard UX, automated repo wiki, session forking, one-flag autonomy) and why every gap is UI/ergonomics while none are trust, governance, or deployment reach.
     env:
       lab_type: ocp
       cluster_type: multinode
@@ -53,6 +53,9 @@ ph_payload:
       Direct technical-seller voice: concrete, active, no rallying cries or filler. Every claim
       demonstrable in the environment. Short paragraphs. The attendee is treated as a competent
       platform person seeing agents-as-workloads for the first time.
+vendor_naming: >-
+  AgentWorks is the workshop's FICTIONAL composite stand-in for commercial AI-dev-agent
+  platforms. Never name real vendors in workshop-facing content, catalog descriptions, or blogs.
 notes:
   model_access: >-
     OpenShift AI Models-as-a-Service (early access — label support status honestly in lab copy).
