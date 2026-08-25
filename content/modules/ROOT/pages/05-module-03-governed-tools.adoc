@@ -156,7 +156,20 @@ oc get pods -n {user}-agent-workspace
 +
 Your agent's runtime is here. The MCP gateway is *not* — and that is the design, not an omission. The control point your calls cross lives in the platform's namespace, outside every tenant's reach. You saw its address in Exercise 2: the `url` in your agent's `mcpServers` config points at a service in another namespace. Your calls leave home to be governed.
 
-. You cannot read the gateway's log, because it is one shared stream containing *every* tenant's calls — a platform that let you read it would be leaking everyone else's activity to you, and yours to them. The audit trail belongs to the auditor; the tenant's part is *generating* evidence on demand:
+. Now try to read the gateway's log yourself — the auditor's command, run from your seat:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc logs deploy/mcp-gateway-data-science-gateway-class -n agent-office --since=2m
+----
++
+[source,text,subs="attributes"]
+----
+Error from server (Forbidden): deployments.apps "mcp-gateway-data-science-gateway-class" is forbidden:
+User "{user}" cannot get resource "deployments" in API group "apps" in the namespace "agent-office"
+----
++
+That `Forbidden` is not a misconfiguration — it is the tenancy boundary holding. The gateway's log is one shared stream containing *every* tenant's calls; a platform that let you read it would be leaking everyone else's activity to you, and yours to them. The audit trail belongs to the auditor. The tenant's part is *generating* evidence on demand:
 +
 Trigger a governed call from link:{mattermost_url}[Mattermost^]:
 +
@@ -167,9 +180,9 @@ Using your gitea tools, what is the latest commit message in your gitops repo?
 +
 The reply is the commit *you* made in Module 2 — the agent reading its own history back to you, through the gateway, on your credential.
 
-. *Facilitator beat* — the platform operator runs, on the shared screen:
+. The same command you were just denied succeeds for the platform operator. *Facilitator, on the shared screen:*
 +
-[source,bash,subs="attributes"]
+[source,text]
 ----
 oc logs deploy/mcp-gateway-data-science-gateway-class -n agent-office --since=2m | grep "POST /mcp"
 ----
