@@ -105,7 +105,7 @@ No platform admin credential — the identity that MINTS seat badges — no prov
 oc get pods -n {user}-agent-workspace -w
 ----
 +
-When the refresher runs — every thirty minutes, or on the facilitator's live trigger — your gateway pod is *not* replaced: same pod name, `RESTARTS` still `0`, its age climbing straight through the boundary. Ask your agent for `gitea_get_me` on either side of a refresh and it answers as {user} both times, on two different tokens, without the runtime under it ever moving. The old workshop compromise — accept a token with no clock of its own, because self-expiring credentials meant restarting a seat twice an hour — is gone: churn-free delivery buys the stronger credential at no cost to the running agent.
+When the refresher runs — every thirty minutes, or on demand during the session — your gateway pod is *not* replaced: same pod name, `RESTARTS` still `0`, its age climbing straight through the boundary. Ask your agent for `gitea_get_me` on either side of a refresh and it answers as {user} both times, on two different tokens, without the runtime under it ever moving. The old workshop compromise — accept a token with no clock of its own, because self-expiring credentials meant restarting a seat twice an hour — is gone: churn-free delivery buys the stronger credential at no cost to the running agent.
 
 // TODO screenshot (capture during the live walkthrough, then restore):
 // image::module-03-env-grep.png[Terminal showing the env grep result: the runtime control-plane token and the seat git credential,link=self,window=blank,width=700]
@@ -182,22 +182,7 @@ The reply is the commit *you* made in Module 2 — the agent reading its own his
 
 . From your seat, that is the whole exercise: you proved the boundary (the `Forbidden`), and you generated an audit record on demand (the agent's reply is your receipt that the governed call happened). Seeing the record itself is the platform operator's move — which is the point.
 
-[NOTE]
-====
-*Facilitator:* run the command the attendees were just denied — from a **platform-admin session**, not a seat terminal (their step just proved seat identities are refused):
-
-  oc logs deploy/mcp-gateway-data-science-gateway-class -n agent-office --since=2m | grep "POST /mcp"
-
-Within moments of an attendee's agent replying, a new Envoy access-log line lands:
-
-  [2026-08-22T20:05:04.205Z] "POST /mcp HTTP/1.1" 200 - via_upstream ...
-
-The `200` is the gateway authorizing and forwarding the call their message caused; a `403` would be a refusal. Put it on the shared screen: the room watches tenants generate audit records they cannot read, into a stream only the platform can.
-
-Testing solo? Run it from a second terminal logged in as the cluster admin — the Showroom terminal is your seat and will keep answering `Forbidden`, correctly.
-
-A per-seat audit view — each tenant reading only its own lines — is an honest gap today: Red Hat Connectivity Link's access log is per-gateway, not per-caller. It joins the product-ask column of Module 8's gap map, alongside per-caller credential injection.
-====
+The platform side of this record — the access-log line your message just produced — is shown on the shared screen during the session; it is not yours to open, and now you know exactly why.
 
 // TODO screenshot (capture during the live walkthrough, then restore):
 // image::module-03-gateway-log.png[Terminal output showing MCP gateway access-log lines with POST /mcp entries and 200 status,link=self,window=blank,width=700]
