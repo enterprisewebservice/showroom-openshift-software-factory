@@ -90,11 +90,12 @@ Do this before module 1. It takes about 2 minutes.
 
 . In the *Terminal* tab, sign in as yourself. The terminal starts out
 authenticated as the lab environment's service account — the first command
-you run makes it yours:
+you run makes it yours. Enter the password from *Your credentials* above
+when prompted:
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
-oc login -u {user} -p {password} {openshift_api_url}
+oc login -u {user} {openshift_api_url}
 ----
 
 . Verify who you are now:
