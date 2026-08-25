@@ -88,7 +88,16 @@ One identity everywhere: the OpenShift console, Developer Hub, and OpenShift Git
 
 Do this before module 1. It takes about 2 minutes.
 
-. In the *Terminal* tab, check who you are:
+. In the *Terminal* tab, sign in as yourself. The terminal starts out
+authenticated as the lab environment's service account — the first command
+you run makes it yours:
++
+[source,bash,role="execute",subs="+attributes"]
+----
+oc login -u {user} -p {password} {openshift_api_url}
+----
+
+. Verify who you are now:
 +
 [source,bash,role="execute"]
 ----
@@ -100,13 +109,6 @@ Expected output:
 [subs="+attributes"]
 ----
 {user}
-----
-
-. If that reports an error or a different user, sign in:
-+
-[source,bash,role="execute",subs="+attributes"]
-----
-oc login -u {user} -p {password} {openshift_api_url}
 ----
 
 . List your projects:
