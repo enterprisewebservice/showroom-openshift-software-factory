@@ -84,6 +84,8 @@ Provisioning stamps a personal set of values into this guide. Wherever these app
 
 One identity everywhere: the OpenShift console, Developer Hub, and OpenShift GitOps all authenticate against the same Keycloak, so this username and password works in each of them.
 
+You also hold a second, narrower identity: `admin-{user}` — an operator persona with full admin inside your own `{user}-agent-workspace` namespace and no access anywhere else, using the same password. Module 3 puts it to work.
+
 === Verify your access
 
 Do this before module 1. It takes about 2 minutes.

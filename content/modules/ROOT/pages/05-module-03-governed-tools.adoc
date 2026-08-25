@@ -182,22 +182,63 @@ The reply is the commit *you* made in Module 2 — the agent reading its own his
 
 . From your seat, that is the whole exercise: you proved the boundary (the `Forbidden`), and you generated an audit record on demand (the agent's reply is your receipt that the governed call happened). Seeing the record itself is the platform operator's move — which is the point.
 
-The platform side of this record — the access-log line your message just produced — is shown on the shared screen during the session; it is not yours to open, and now you know exactly why.
+. Now the payoff, at your own blast radius. You hold a *second identity*: `admin-{user}` — a namespace-scoped operator persona with full admin inside `{user}-agent-workspace` and no access anywhere else. Same password as your seat. Switch to it:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc login -u admin-{user} {openshift_api_url}
+----
+
+. Prove the persona's shape in two commands:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc auth can-i get pods -n {user}-agent-workspace; oc auth can-i get pods -n agent-office
+----
++
+`yes`, then `no`. An operator — for exactly one namespace.
+
+. Read your agent's tool-call ledger — the tenant-side record of every tool it has ever invoked, straight from its trajectory files:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw -- \
+  sh -c 'grep -ho "\"toolName\":\"[a-z_]*\"" /home/node/.openclaw/agents/{user}-assistant/sessions/*.jsonl | sort | uniq -c | sort -rn'
+----
++
+[source,text]
+----
+    330 "toolName":"web_fetch"
+    147 "toolName":"exec"
+      8 "toolName":"governed__gitea_list_org_repos"
+      6 "toolName":"governed__gitea_get_me"
+----
++
+The census tells the whole module in four lines: built-ins (`web_fetch`, `exec`) ran ungoverned from the runtime; every governed call is namespaced `governed__` — those crossed the gateway on your credential, and the calls you triggered this exercise are in the count. This ledger is yours because it lives at your blast radius. Its platform-side twin — the gateway's access-log line for those same `governed__` calls — lives in the shared stream you were denied above, shown on the shared screen during the session.
+
+. Return to your seat identity — the rest of the workshop runs as `{user}`:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc login -u {user} {openshift_api_url}
+----
 
 // TODO screenshot (capture during the live walkthrough, then restore):
 // image::module-03-gateway-log.png[Terminal output showing MCP gateway access-log lines with POST /mcp entries and 200 status,link=self,window=blank,width=700]
 
 === Verify
 
-* `oc get pods -n {user}-agent-workspace | grep mcp-gateway` returns at least one running pod
-* The initial log query returns at least one `POST /mcp` line from the tool call in Exercise 1
-* After triggering the second tool call, a new log line with a fresh timestamp appears in the 2-minute window
+* The auditor's command from your seat returns `Forbidden` — with your username in the error
+* Your agent's reply to the commit question is your receipt that the governed call happened
+* As `admin-{user}`: `can-i` answers `yes` for your workspace and `no` for `agent-office`
+* The tool-call ledger shows `governed__gitea_*` entries alongside the ungoverned built-ins
+* You are signed back in as `{user}`
 
 == What just happened
 
-On a vendor AI platform, the agent process holds the integration credentials. The vendor's control plane authorizes calls: the audit trail, if one exists at all, lives in the vendor's system under the vendor's retention policy.
+On a vendor AI platform, the agent holds integration credentials the vendor minted, on the vendor's lifecycle, and the audit trail — if one exists — lives in the vendor's system under the vendor's retention policy.
 
-What you observed here is structurally different. The agent triggered a tool call. The call routed to the MCP gateway: the gateway checked authorization, injected the credential, forwarded the call, and wrote an access-log line. The agent received the result. At no point did the credential cross the agent's process boundary.
+What you observed here is structurally different, and not because the agent holds nothing — it holds its own delegated badge. The difference is who controls every other fact about that credential: your platform minted it, scoped it to what you already own, decays it on a platform clock the agent cannot touch, and records every governed call it makes — the tenant-side ledger at your blast radius, the platform-side stream at the auditor's. The vendor is not in the room. Every link of that chain runs on the cluster you govern.
 
 The audit line you read in Exercise 3 is not a log in a vendor's SaaS dashboard. It is a log on your cluster, in your namespace, accessible to your operations team, under your organization's retention policy.
 
