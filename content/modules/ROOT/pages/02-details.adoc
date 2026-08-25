@@ -121,9 +121,9 @@ oc get projects
 +
 You see only the projects you are entitled to. Other attendees' projects do not appear. That is the isolation model working, not a permissions problem.
 
-. Open the *OpenShift Console* tab. When the console offers a choice of identity providers, pick *workshop* and sign in as {user} — or pick *factory-sso* to use the same single sign-on the other tabs use.
+. Click the *OpenShift Console* tab — it opens in its own browser tab (the console does not allow embedding). When it offers a choice of identity providers, pick *workshop* and sign in as {user} — or pick *factory-sso* to use the same single sign-on the other surfaces use.
 
-. Open the *Developer Hub* tab and sign in with the same credentials.
+. Click the *Developer Hub* tab — also its own browser tab — and sign in with the same credentials.
 
 Success looks like:
 
