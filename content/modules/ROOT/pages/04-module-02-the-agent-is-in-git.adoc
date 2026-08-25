@@ -91,9 +91,16 @@ After the merge, OpenShift GitOps detects the new commit on the main branch and 
 
 . Open link:{gitops_url}[OpenShift GitOps^] and sign in with `{user}` / `{password}`.
 
-. Find the Application for `{user}-assistant` and open it. Watch the sync status. Within about 60 seconds the Application moves through *OutOfSync* to *Synced* as it applies the updated directive to the cluster.
+. Open the Application named `{user}-agents-{user}-assistant-agent`. Do not expect to catch it mid-sync: on this platform the automated sync typically completes within seconds of your merge, so by the time you switch tabs it usually already reads *Synced* again. The evidence is in *Last Sync* (open the Application's *History*): the synced revision matches the commit you just made.
 
-. Once the Application reports *Synced*, wait for the agent pod to return to `Running`. The operator reconciles the AgentWorkstation resource and the agent process reloads with the updated directive.
+. The agent pod does not restart for a directive change — and that is the point: the operator re-renders the agent's identity in place, in seconds, while the pod stays `Running`. Verify with the terminal instead of waiting on pods:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.spec.systemPrompt}'
+----
++
+The directive printed is the one you just merged.
 +
 [source,bash,role="execute",subs="attributes"]
 ----
@@ -152,7 +159,7 @@ git revert <commit-hash> --no-edit
 git push origin main
 ----
 
-. Return to link:{gitops_url}[OpenShift GitOps^] and watch the Application sync again. The same reconciliation loop runs: the reverted directive file replaces the modified one on the cluster.
+. Return to link:{gitops_url}[OpenShift GitOps^]. The same loop runs — and just as fast: check the Application's *History* for a new sync against your revert commit rather than waiting to see a transition.
 
 . Wait for the agent pod to return to `Running`:
 +
