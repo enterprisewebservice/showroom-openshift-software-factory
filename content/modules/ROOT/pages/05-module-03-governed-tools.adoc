@@ -16,9 +16,9 @@ Plan on 30 minutes: trigger a tool call and read the result, inspect the agent p
 By the end of this module, you'll be able to:
 
 * Trigger a governed tool call from a Mattermost conversation and identify the tool's contribution to the agent's reply
-* Confirm that the agent's workstation pod holds no credential for the downstream system
+* Trace your seat credential's lifecycle from Vault to the runtime, and explain why the agent can hold it but never mint or renew it
 * Explain the declared exception pattern for direct MCP integrations and why it preserves reviewability
-* Read the MCP gateway's access log and match a live tool call to its audit entry
+* Generate a governed call on demand, match it to the gateway's audit entry, and explain why the audit stream is platform-scoped
 
 == Exercise 1: Make the agent use a tool
 
@@ -28,24 +28,23 @@ Your agent is wired to a set of tools through the MCP gateway. You did not confi
 
 . Navigate to the `{user}-assistant` channel.
 
-. Send a message that requires external information the agent cannot produce from its training data alone:
+. Ask the agent who the platform thinks it is:
 +
 [source,text]
 ----
-Search the web for the latest Red Hat OpenShift release notes and summarize the most recent release.
+Using your governed git tools: who are you in Gitea, and which repositories exist in your org?
 ----
-+
-NOTE: A web search is a convenient trigger because the result is verifiable: the agent will cite a version number, a date, or a URL. You can also ask the agent to search a git repository or look up documentation. Any request that requires the agent to reach outside its context window will trigger a tool call.
 
-. Read the reply. The agent's response should include content sourced from the tool: a version reference, a release date, a URL, or a summary of content the agent could not have known from training data.
+. Read the reply. It reports the identity `{user}` (not an admin), the org `{user}-agents`, and one repository: `{user}-assistant-agent-gitops` — the repo the hire created in Module 1 and you edited in Module 2. The agent just read its own employment contract through the platform's governed tools, authenticated as *you*: every `gitea_*` call carries your seat's credential, so the agent sees exactly what you own and nothing else.
 +
-// TODO: Add screenshot
+NOTE: Not every tool is a governed tool. `web_search` and `web_fetch` are built-ins that run straight from the agent's runtime and never cross the MCP gateway — useful, but outside this module's story. The `gitea_*` family is different: those calls route through the gateway, carry your seat credential, and leave audit entries. That distinction — which calls are governed and which are not — is exactly what a platform team needs to be able to answer.
++
 // TODO screenshot (capture during the live walkthrough, then restore):
-// image::module-03-tool-reply.png[Mattermost channel showing the agent's reply citing web search results with a version number or URL,link=self,window=blank,width=700]
+// image::module-03-tool-reply.png[Mattermost reply reporting the seat's Gitea identity and its own gitops repository,link=self,window=blank,width=700]
 
 === Verify
 
-* The agent replied with content that references external information: a URL, a version number, a release date, or a document title
+* The agent reports your username as its Gitea identity, your org, and your agent's own gitops repository
 * The reply is not a refusal or a statement that the agent lacks access to current information
 
 == Exercise 2: The credential supply chain
@@ -161,10 +160,12 @@ Your agent's runtime is here. The MCP gateway is *not* — and that is the desig
 +
 Trigger a governed call from link:{mattermost_url}[Mattermost^]:
 +
-[source,text,subs="attributes"]
+[source,text]
 ----
-Search the web for the Red Hat OpenShift {ocp_version} documentation landing page and give me the URL.
+Using your gitea tools, what is the latest commit message in your gitops repo?
 ----
++
+The reply is the commit *you* made in Module 2 — the agent reading its own history back to you, through the gateway, on your credential.
 
 . *Facilitator beat* — the platform operator runs, on the shared screen:
 +
