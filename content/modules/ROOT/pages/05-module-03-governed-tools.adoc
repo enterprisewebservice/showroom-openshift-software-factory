@@ -52,7 +52,7 @@ NOTE: A web search is a convenient trigger because the result is verifiable: the
 
 Your agent's `gitea_*` tools act as *you*, against *your* org — yet you never typed a token anywhere. This exercise walks the credential's whole life, one hop per command, on the same rails the platform runs its own identities; your seat simply has a lane of its own.
 
-. *Vault is the source of truth.* The platform minted a Gitea token for your seat and stored it in the cluster's Vault. You cannot see Vault (that is the point), but you can see the machinery that drinks from it.
+. *Vault is the source of truth.* The platform established a Gitea OAuth2 grant for your seat and holds its refresh token in the cluster's Vault, alongside the short-lived access token your runtime actually uses. You cannot see Vault (that is the point), but you can see the machinery that drinks from it.
 
 . *External Secrets Operator keeps your workspace copy faithful to Vault:*
 +
@@ -61,7 +61,7 @@ Your agent's `gitea_*` tools act as *you*, against *your* org — yet you never 
 oc get externalsecret {user}-gitea-token -n {user}-agent-workspace
 ----
 +
-`STORE vault-cluster`, `REFRESH 1m`, `STATUS SecretSynced`, `READY True`. Two clocks, and keeping them apart is the point: the `1m` here is the *delivery* loop — every minute ESO checks Vault and reconciles the Secret, which is why a change anywhere upstream lands in your workspace within sixty seconds. The *badge itself* changes on a different clock entirely — when the rotator re-mints it (nightly, or on the facilitator's trigger), which you will see in step 6. Delivery is continuous; the credential is not.
+`STORE vault-cluster`, `REFRESH 1m`, `STATUS SecretSynced`, `READY True`. Two clocks, and keeping them apart is the point: the `1m` here is the *delivery* loop — every minute ESO checks Vault and reconciles the Secret, which is why a change anywhere upstream lands in your workspace within sixty seconds. The *badge itself* changes on a different clock entirely — a fresh access token every thirty minutes from the platform refresher, each one self-expiring within the hour, which you will see in step 6. Delivery is continuous; the credential is deliberately not.
 
 . *Git declares the reference, never the value:*
 +
@@ -83,7 +83,7 @@ oc exec $(oc get pods -n {user}-agent-workspace -o name | grep {user}-assistant 
 +
 Two results: `OPENCLAW_GATEWAY_TOKEN` (the runtime's own control-plane plumbing) and `GITEA_TOKEN` — your seat's credential, exactly where the chain delivered it. Note what is absent: no provider API key in the environment (model auth is a short-lived file a platform sidecar rotates), no platform git identity, and nothing for tools like `ops-metrics` or `golden-path-probe`, whose credentials are injected on the gateway side and exist nowhere in your namespace at all.
 
-. *The badge and the vault keys.* Your agent is a coding agent — its skills (including `find-token`, later this module) run real scripts, so it can read its own environment, including `GITEA_TOKEN`. That is not a leak; it is the design: this token is the agent's *own delegated badge* — it acts as {user}, inside {user}'s org, so an agent reading its own badge can reach exactly what its owner already owns. The badge is rotated nightly, revocable in one API call, and platform-scoped per seat. Red-team it yourself in Mattermost:
+. *The badge and the vault keys.* Your agent is a coding agent — its skills (including `find-token`, later this module) run real scripts, so it can read its own environment, including `GITEA_TOKEN`. That is not a leak; it is the design: this token is the agent's *own delegated badge* — it acts as {user}, inside {user}'s org, so an agent reading its own badge can reach exactly what its owner already owns. The badge self-expires within the hour, is refreshed every thirty minutes, is revocable by simply not refreshing, and is platform-scoped per seat. Red-team it yourself in Mattermost:
 +
 [source,text]
 ----
@@ -99,14 +99,14 @@ oc get secrets -n {user}-agent-workspace
 +
 No platform admin credential — the identity that MINTS seat badges — no provider API key, no other seat's badge. An agent cannot exfiltrate what its entire namespace does not contain. Scope, rotation, and audit are the boundary — not hoping the workload never looks at its own pocket.
 
-. *The badge decays — and the agent holds no pen to renew it.* This is the discipline that makes holding a credential safe: what your agent possesses is a *wasting asset*. Nightly, a platform rotator re-mints your token — revoking the predecessor — and writes Vault. Within a minute the sync loop lands it in your Secret, and the operator, which watches credential *content*, rolls your agent's runtime so it never executes a call on a stale credential. The agent cannot refresh, extend, or re-mint its own badge: minting requires the platform's admin credential, and you already proved that credential does not exist anywhere the agent lives. On the reference cluster, the platform's own git identity runs the purest form of this — an app token that *self-expires within the hour*, renewed every thirty minutes by platform machinery, where revoking means simply *stopping*. Your seat's badge gets its finite lifetime by re-mint instead (a PAT has no clock of its own), a deliberate trade: self-expiring tokens require refreshing the runtime twice an hour, and a workshop seat should not restart mid-exercise. Continued access is never a state; it is a standing decision, renewed on a cadence, by machinery the workload cannot touch. When the facilitator triggers a rotation live, watch it happen:
+. *The badge decays — and the agent holds no pen to renew it.* This is the discipline that makes holding a credential safe: what your agent possesses is a *wasting asset*, and now literally one. Your seat's badge is a Gitea OAuth2 access token that *self-expires within the hour* — the very same credential lifecycle the platform's own git identity runs, no longer a lesser substitute for it. Every thirty minutes a platform refresher exchanges a held refresh token for a fresh access token and writes Vault; within a minute the sync loop lands it in your Secret, and the operator renders the new value straight into your agent's tool configuration, which the runtime *hot-reloads in place*. No pod restart, no pause: the credential changes under a running agent and its next `gitea_*` call simply uses the new one. The agent cannot refresh, extend, or re-mint its own badge — the refresh token lives only in the platform's Vault, never in your namespace, and you already proved no minting credential exists where the agent lives. Revoking, then, is not an action but an *omission*: stop the refresher and every seat's access token ages out within the hour, all at once, with nothing to explicitly revoke. Continued access is never a state; it is a standing decision, renewed on a cadence, by machinery the workload cannot touch. Watch the credential live through a refresh with the runtime never restarting:
 +
 [source,bash,subs="attributes"]
 ----
 oc get pods -n {user}-agent-workspace -w
 ----
 +
-The gateway pod is replaced within about two minutes of the rotation, and your agent's git tools keep working on the other side — with a token that did not exist three minutes ago.
+When the refresher runs — every thirty minutes, or on the facilitator's live trigger — your gateway pod is *not* replaced: same pod name, `RESTARTS` still `0`, its age climbing straight through the boundary. Ask your agent for `gitea_get_me` on either side of a refresh and it answers as {user} both times, on two different tokens, without the runtime under it ever moving. The old workshop compromise — accept a token with no clock of its own, because self-expiring credentials meant restarting a seat twice an hour — is gone: churn-free delivery buys the stronger credential at no cost to the running agent.
 
 // TODO screenshot (capture during the live walkthrough, then restore):
 // image::module-03-env-grep.png[Terminal showing the env grep result: the runtime control-plane token and the seat git credential,link=self,window=blank,width=700]
@@ -115,7 +115,7 @@ The gateway pod is replaced within about two minutes of the rotation, and your a
 
 === Verify
 
-* The ExternalSecret in your workspace is `SecretSynced`/`Ready` against the `vault-cluster` store, delivering on a one-minute sync loop (the badge itself changes only when the rotator re-mints it)
+* The ExternalSecret in your workspace is `SecretSynced`/`Ready` against the `vault-cluster` store, delivering on a one-minute sync loop (the badge itself changes when the refresher renews it every thirty minutes, each token self-expiring within the hour)
 * The AgentWorkstation spec declares `envFromSecret: {user}-gitea-token` — a reference, never a value
 * The `env` grep shows exactly the two platform-placed tokens, and nothing for the gateway-injected tools
 * Asked to check its own badge, the agent verifies without revealing it — and your workspace's Secret list contains no platform identity and no other seat's credential
@@ -144,54 +144,46 @@ Contrast that with the vendor alternative: an API key pasted into a configuratio
 
 Your agent's current manifest likely has no `spec.tools.mcpServers` block: all its tool access routes through the gateway. That is the default and the correct default. The direct-integration pattern exists for the exception, not the rule.
 
-== Exercise 3: Read the gateway's evidence
+== Exercise 3: The evidence lives with the auditor
 
-Every tool call the agent makes passes through the MCP gateway. The gateway logs each one. In this exercise you read that log and watch a new line appear in real time.
+Every tool call your agent makes crosses the MCP gateway, and the gateway logs each one. But notice where that gateway runs — and where it does not:
 
-. Find the gateway pods:
+. Look for it in your own namespace:
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-oc get pods -n {user}-agent-workspace | grep mcp-gateway
+oc get pods -n {user}-agent-workspace
 ----
 +
-NOTE: 2 gateway deployments exist: `mcp-gateway` (the operator) and `mcp-gateway-data-science-gateway-class` (the gateway class your agent's tool calls route through; its service is the MCP endpoint in the agent's own configuration). The commands below target the gateway class.
+Your agent's runtime is here. The MCP gateway is *not* — and that is the design, not an omission. The control point your calls cross lives in the platform's namespace, outside every tenant's reach. You saw its address in Exercise 2: the `url` in your agent's `mcpServers` config points at a service in another namespace. Your calls leave home to be governed.
 
-. Read the gateway's recent access log:
+. You cannot read the gateway's log — and you should sit with why: it is one shared stream containing *every* tenant's calls. A platform that let you read it would be leaking everyone else's activity to you, and yours to them. The audit trail belongs to the auditor. What the tenant gets is the ability to *generate* evidence on demand:
 +
-[source,bash,role="execute",subs="attributes"]
-----
-oc logs deploy/mcp-gateway-data-science-gateway-class -n {user}-agent-workspace --since=10m | grep "POST /mcp"
-----
-+
-Each line is an Envoy access-log entry for one tool call. A representative line looks like:
-+
-[source,text]
-----
-[2026-08-22T20:05:04.205Z] "POST /mcp HTTP/1.1" 200 - via_upstream ...
-----
-+
-The `200` confirms the gateway authorized and forwarded the call. A `403` would mean the gateway denied it: the agent can only reach tools the gateway permits.
-+
-// Reference needed (resolve in live session): Confirm whether a richer per-call authorization log (with tool name and caller identity) is exposed to attendees beyond the Envoy access log. The Envoy access log is the guaranteed observable.
-
-. Return to link:{mattermost_url}[Mattermost^] and trigger another tool call:
+Trigger a governed call from link:{mattermost_url}[Mattermost^]:
 +
 [source,text,subs="attributes"]
 ----
 Search the web for the Red Hat OpenShift {ocp_version} documentation landing page and give me the URL.
 ----
 
-. As soon as the agent replies, re-run the log command with a shorter window:
+. *Facilitator beat* — the platform operator runs, on the shared screen:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,subs="attributes"]
 ----
-oc logs deploy/mcp-gateway-data-science-gateway-class -n {user}-agent-workspace --since=2m | grep "POST /mcp"
+oc logs deploy/mcp-gateway-data-science-gateway-class -n agent-office --since=2m | grep "POST /mcp"
 ----
 +
-A new line with today's timestamp should appear. That line is the gateway's audit record for the call you just triggered from Mattermost.
+Within moments of the agent's reply, a new Envoy access-log line appears:
 +
-// TODO: Add screenshot
+[source,text]
+----
+[2026-08-22T20:05:04.205Z] "POST /mcp HTTP/1.1" 200 - via_upstream ...
+----
++
+The `200` is the gateway authorizing and forwarding the call your message caused; a `403` would be the gateway refusing one. The room just watched a tenant generate an audit record it cannot read, into a stream only the platform can.
++
+NOTE: A per-seat audit view — each tenant reading only its own lines — is an honest gap today: Red Hat Connectivity Link's access log is per-gateway, not per-caller. It joins the product-ask column of Module 8's gap map, alongside per-caller credential injection.
+
 // TODO screenshot (capture during the live walkthrough, then restore):
 // image::module-03-gateway-log.png[Terminal output showing MCP gateway access-log lines with POST /mcp entries and 200 status,link=self,window=blank,width=700]
 
