@@ -180,23 +180,24 @@ Using your gitea tools, what is the latest commit message in your gitops repo?
 +
 The reply is the commit *you* made in Module 2 — the agent reading its own history back to you, through the gateway, on your credential.
 
-. The same command you were just denied succeeds for the platform operator. *Facilitator, on the shared screen:*
-+
-[source,text]
-----
-oc logs deploy/mcp-gateway-data-science-gateway-class -n agent-office --since=2m | grep "POST /mcp"
-----
-+
-Within moments of the agent's reply, a new Envoy access-log line appears:
-+
-[source,text]
-----
-[2026-08-22T20:05:04.205Z] "POST /mcp HTTP/1.1" 200 - via_upstream ...
-----
-+
-The `200` is the gateway authorizing and forwarding the call your message caused; a `403` would be the gateway refusing one. The room just watched a tenant generate an audit record it cannot read, into a stream only the platform can.
-+
-NOTE: A per-seat audit view — each tenant reading only its own lines — is an honest gap today: Red Hat Connectivity Link's access log is per-gateway, not per-caller. It joins the product-ask column of Module 8's gap map, alongside per-caller credential injection.
+. From your seat, that is the whole exercise: you proved the boundary (the `Forbidden`), and you generated an audit record on demand (the agent's reply is your receipt that the governed call happened). Seeing the record itself is the platform operator's move — which is the point.
+
+[NOTE]
+====
+*Facilitator:* run the command the attendees were just denied — from a **platform-admin session**, not a seat terminal (their step just proved seat identities are refused):
+
+  oc logs deploy/mcp-gateway-data-science-gateway-class -n agent-office --since=2m | grep "POST /mcp"
+
+Within moments of an attendee's agent replying, a new Envoy access-log line lands:
+
+  [2026-08-22T20:05:04.205Z] "POST /mcp HTTP/1.1" 200 - via_upstream ...
+
+The `200` is the gateway authorizing and forwarding the call their message caused; a `403` would be a refusal. Put it on the shared screen: the room watches tenants generate audit records they cannot read, into a stream only the platform can.
+
+Testing solo? Run it from a second terminal logged in as the cluster admin — the Showroom terminal is your seat and will keep answering `Forbidden`, correctly.
+
+A per-seat audit view — each tenant reading only its own lines — is an honest gap today: Red Hat Connectivity Link's access log is per-gateway, not per-caller. It joins the product-ask column of Module 8's gap map, alongside per-caller credential injection.
+====
 
 // TODO screenshot (capture during the live walkthrough, then restore):
 // image::module-03-gateway-log.png[Terminal output showing MCP gateway access-log lines with POST /mcp entries and 200 status,link=self,window=blank,width=700]
