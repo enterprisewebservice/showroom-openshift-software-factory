@@ -51,11 +51,11 @@ image::module-03-tool-reply.png[Mattermost channel showing the agent's reply cit
 
 The agent used a tool that reached an external system. Now check whether the agent's process holds the credential for that system.
 
-. List the pods in the `agent-office` namespace:
+. List the pods in your `{user}-agent-workspace` namespace:
 +
 [source,bash,role="execute"]
 ----
-oc get pods -n agent-office
+oc get pods -n {user}-agent-workspace
 ----
 +
 Locate the workstation pod for your agent. Its name begins with `{user}-assistant`. Note the full pod name.
@@ -64,8 +64,8 @@ Locate the workstation pod for your agent. Its name begins with `{user}-assistan
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-oc exec $(oc get pods -n agent-office -o name | grep {user}-assistant | head -1) \
-  -n agent-office -- env | grep -iE "token|key|secret"
+oc exec $(oc get pods -n {user}-agent-workspace -o name | grep {user}-assistant | head -1) \
+  -n {user}-agent-workspace -- env | grep -iE "token|key|secret"
 ----
 +
 // Reference needed (resolve in live session): Verify the exact grep output against a live default-wired agent pod. Internal platform variables (for example, the Kubernetes service account token mount) may appear, but no downstream-system credential should be present: no search API key, no git token, no MCP server secret.
@@ -76,7 +76,7 @@ The agent process does not hold the tool's credential. The MCP gateway holds it 
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-oc get agentworkstation {user}-assistant -n agent-office -o yaml
+oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o yaml
 ----
 +
 In the output, find `spec.gatewayRef`. It names the gateway your agent's tool calls route through. There is no `spec.credentials` block and no inline API key. The agent is authorized to call tools; it is not authorized to hold the secrets those tools require.
@@ -124,7 +124,7 @@ Every tool call the agent makes passes through the MCP gateway. The gateway logs
 +
 [source,bash,role="execute"]
 ----
-oc get pods -n agent-office | grep mcp-gateway
+oc get pods -n {user}-agent-workspace | grep mcp-gateway
 ----
 +
 NOTE: 2 gateway deployments exist: `mcp-gateway` (the operator) and `mcp-gateway-data-science-gateway-class` (the gateway class your agent's tool calls route through; its service is the MCP endpoint in the agent's own configuration). The commands below target the gateway class.
@@ -133,7 +133,7 @@ NOTE: 2 gateway deployments exist: `mcp-gateway` (the operator) and `mcp-gateway
 +
 [source,bash,role="execute"]
 ----
-oc logs deploy/mcp-gateway-data-science-gateway-class -n agent-office --since=10m | grep "POST /mcp"
+oc logs deploy/mcp-gateway-data-science-gateway-class -n {user}-agent-workspace --since=10m | grep "POST /mcp"
 ----
 +
 Each line is an Envoy access-log entry for one tool call. A representative line looks like:
@@ -158,7 +158,7 @@ Search the web for the Red Hat OpenShift {ocp_version} documentation landing pag
 +
 [source,bash,role="execute"]
 ----
-oc logs deploy/mcp-gateway-data-science-gateway-class -n agent-office --since=2m | grep "POST /mcp"
+oc logs deploy/mcp-gateway-data-science-gateway-class -n {user}-agent-workspace --since=2m | grep "POST /mcp"
 ----
 +
 A new line with today's timestamp should appear. That line is the gateway's audit record for the call you just triggered from Mattermost.
@@ -168,7 +168,7 @@ image::module-03-gateway-log.png[Terminal output showing MCP gateway access-log 
 
 === Verify
 
-* `oc get pods -n agent-office | grep mcp-gateway` returns at least one running pod
+* `oc get pods -n {user}-agent-workspace | grep mcp-gateway` returns at least one running pod
 * The initial log query returns at least one `POST /mcp` line from the tool call in Exercise 1
 * After triggering the second tool call, a new log line with a fresh timestamp appears in the 2-minute window
 

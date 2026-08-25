@@ -46,7 +46,7 @@ This field is the agent's directive: the standing instructions it receives at th
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-oc get agentworkstation -n agent-office -o yaml
+oc get agentworkstation -n {user}-agent-workspace -o yaml
 ----
 +
 Find `{user}-assistant` in the output and verify its `spec` matches the manifest you just read.
@@ -96,7 +96,7 @@ After the merge, OpenShift GitOps detects the new commit on the main branch and 
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-oc get pods -n agent-office
+oc get pods -n {user}-agent-workspace
 ----
 
 . Open link:{mattermost_url}[Mattermost^], sign in as `{user}`, and find the `{user}-assistant` channel. Send the same question from Module 1:
@@ -121,7 +121,7 @@ image::module-02-three-bullet-reply.png[Mattermost channel showing the agent's r
 
 * The pull request merged successfully and the main branch contains the new directive line
 * The OpenShift GitOps Application for `{user}-assistant` reports *Synced* and *Healthy*
-* The agent pod in `agent-office` is in `Running` status
+* The agent pod in `{user}-agent-workspace` is in `Running` status
 * The agent's reply in Mattermost contains exactly 3 bullet points
 
 == Exercise 3: Roll back the change
@@ -154,7 +154,7 @@ git push origin main
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-oc get pods -n agent-office
+oc get pods -n {user}-agent-workspace
 ----
 
 . Open link:{mattermost_url}[Mattermost^] and send the same question again:

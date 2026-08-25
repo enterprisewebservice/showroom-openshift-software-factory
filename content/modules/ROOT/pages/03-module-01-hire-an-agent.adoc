@@ -97,10 +97,10 @@ If the output differs, complete the login steps from the lab details page before
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-oc get pods -n agent-office
+oc get pods -n {user}-agent-workspace
 ----
 +
-NOTE: In this environment every agent runs in the shared `agent-office` namespace; the platform derives your agent's name from the description you wrote. List the workstations with `oc get agentworkstations -n agent-office` and find yours; it is the newest one.
+NOTE: In this environment every agent runs in the shared `agent-office` namespace; the platform derives your agent's name from the description you wrote. List the workstations with `oc get agentworkstations -n {user}-agent-workspace` and find yours; it is the newest one.
 +
 Re-run the command until the pod reports `Running`. The first start pulls the agent image, so allow a minute or 2. Expected output (the pod name may differ):
 +
@@ -117,7 +117,7 @@ image::module-01-gitops-application.png[OpenShift GitOps Application view showin
 
 * The Application for `{user}-assistant` reports *Synced* and *Healthy*
 * The AgentWorkstation resource appears in the Application's resource tree
-* `oc get pods -n agent-office` shows the agent pod with STATUS `Running`
+* `oc get pods -n {user}-agent-workspace` shows the agent pod with STATUS `Running`
 
 == Exercise 3: Read the wiring and make first contact
 
@@ -129,7 +129,7 @@ On a vendor control plane, you trust that onboarding happened correctly. Here yo
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-oc get agentworkstation -n agent-office
+oc get agentworkstation -n {user}-agent-workspace
 ----
 +
 Your agent appears in the list.
@@ -138,7 +138,7 @@ Your agent appears in the list.
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-oc get agentworkstation <your-agent> -n agent-office -o yaml
+oc get agentworkstation <your-agent> -n {user}-agent-workspace -o yaml
 ----
 
 . In the `spec`, find the values that came from your form: the purpose sentence you wrote, the skills you granted, the gateway reference, and the model reference. Nothing else configured this agent. What you granted is what it has.
