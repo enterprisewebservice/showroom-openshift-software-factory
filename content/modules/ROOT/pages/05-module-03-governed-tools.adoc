@@ -157,7 +157,7 @@ oc get pods -n {user}-agent-workspace
 +
 Your agent's runtime is here. The MCP gateway is *not* — and that is the design, not an omission. The control point your calls cross lives in the platform's namespace, outside every tenant's reach. You saw its address in Exercise 2: the `url` in your agent's `mcpServers` config points at a service in another namespace. Your calls leave home to be governed.
 
-. You cannot read the gateway's log — and you should sit with why: it is one shared stream containing *every* tenant's calls. A platform that let you read it would be leaking everyone else's activity to you, and yours to them. The audit trail belongs to the auditor. What the tenant gets is the ability to *generate* evidence on demand:
+. You cannot read the gateway's log, because it is one shared stream containing *every* tenant's calls — a platform that let you read it would be leaking everyone else's activity to you, and yours to them. The audit trail belongs to the auditor; the tenant's part is *generating* evidence on demand:
 +
 Trigger a governed call from link:{mattermost_url}[Mattermost^]:
 +
