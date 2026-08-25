@@ -181,7 +181,9 @@ Short on time? Modules 1, 3, 4, and 6 carry the core arc: hire, govern, teach, s
 * `oc whoami` reports an error or the wrong user: re-run the `oc login` command from the verification steps.
 * Keycloak rejects your password: confirm you are using the exact values from this page, because each attendee's credentials differ. If it still fails, tell your facilitator.
 
-== Attributes needed
+////
+AUTHOR REFERENCE (not rendered): attributes this page consumes.
+Provisioning injects a per-attendee value for each.
 
 This page renders the following Showroom attributes. Provisioning injects a per-attendee value for each:
 
@@ -192,6 +194,7 @@ This page renders the following Showroom attributes. Provisioning injects a per-
 * `+{gitops_url}+`: OpenShift GitOps console URL
 * `+{ocp_version}+`: OpenShift version string
 
-// AUTHOR NOTE: {openshift_api_url} is used by the oc login step but is not yet
-// declared in .lab-spec.yaml env.attributes. Add it to the provisioning spec
-// (it is a standard Showroom attribute per SKILL-COMMON-RULES).
+AUTHOR NOTE: {openshift_api_url} is used by the oc login step but is not yet
+declared in .lab-spec.yaml env.attributes. Add it to the provisioning spec
+(it is a standard Showroom attribute per SKILL-COMMON-RULES).
+////
