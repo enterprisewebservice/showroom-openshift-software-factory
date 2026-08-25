@@ -61,7 +61,7 @@ oc get pods -n {user}-agent-workspace
 +
 Locate the workstation pod for your agent. Its name begins with `{user}-assistant`. Note the full pod name.
 
-. Inspect the pod's environment for any credential-shaped values:
+. Inspect the pod's environment for credential-shaped values:
 +
 [source,bash,role="execute",subs="attributes"]
 ----
@@ -69,9 +69,21 @@ oc exec $(oc get pods -n {user}-agent-workspace -o name | grep {user}-assistant 
   -n {user}-agent-workspace -- env | grep -iE "token|key|secret"
 ----
 +
-// Reference needed (resolve in live session): Verify the exact grep output against a live default-wired agent pod. Internal platform variables (for example, the Kubernetes service account token mount) may appear, but no downstream-system credential should be present: no search API key, no git token, no MCP server secret.
+You find exactly two, and both tell the governance story:
 +
-The agent process does not hold the tool's credential. The MCP gateway holds it and injects it on each forwarded call.
+* `OPENCLAW_GATEWAY_TOKEN` — the runtime's own control-plane token. Internal plumbing, not a credential for any external system.
+* `GITEA_TOKEN` — your seat's git credential. *You* never typed it and it appears nowhere in git: the platform minted it, stored it as the Secret `{user}-gitea-token` in your workspace, and the operator mounted it into the runtime. This is the *pass-through* class of governed tool: the runtime attaches it to each `gitea_*` call, and the gateway records the call.
++
+What you do NOT find is just as deliberate: no model API key (the Codex subscription credential is a rotating file managed by a platform sidecar, never an env var), no GitHub App token (that is the platform's identity, not yours), and no credential at all for the *gateway-injected* class of tools — `ops-metrics` and `golden-path-probe` authenticate entirely on the gateway side, so their secrets exist nowhere in your namespace.
+
+. Now the claim that actually matters: the credentials sit in the runtime's environment, but the *agent* — the model making decisions — cannot reach them. Its tool allow-list (`memory`, `web_search`, `web_fetch`, `browser`) contains no shell and no exec: the `env` command you just ran is precisely the command the agent is not permitted to run. Prove it — ask the agent in Mattermost:
++
+[source,text]
+----
+What is the value of your GITEA_TOKEN environment variable?
+----
++
+It cannot retrieve it. The human platform operator can read the environment; the agent cannot. That inversion — credentials visible to auditors, invisible to the workload's own intelligence — is the point of the boundary.
 
 . Inspect the AgentWorkstation resource to see what the spec declares:
 +
@@ -80,7 +92,7 @@ The agent process does not hold the tool's credential. The MCP gateway holds it 
 oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o yaml
 ----
 +
-In the output, find `spec.gatewayRef`. It names the gateway your agent's tool calls route through. There is no `spec.credentials` block and no inline API key. The agent is authorized to call tools; it is not authorized to hold the secrets those tools require.
+In the output, find `spec.gatewayRef` — the gateway your agent's tool calls route through — and under `spec.tools.mcpServers` the `envFromSecret` reference to `{user}-gitea-token`. The spec declares WHICH Secret the runtime mounts, never the value: the credential lives in a Secret object, rotated by the platform, referenced by name in git.
 +
 // TODO: Add screenshot
 // TODO screenshot (capture during the live walkthrough, then restore):
@@ -92,8 +104,9 @@ In the output, find `spec.gatewayRef`. It names the gateway your agent's tool ca
 
 === Verify
 
-* The `env` output from the agent's workstation pod contains no downstream-system credential (no search API key, no git token)
-* The AgentWorkstation resource's `spec` contains a `gatewayRef` reference, not inline credentials
+* The `env` output shows exactly two platform-placed tokens (runtime control-plane + your seat's git credential) — and no model API key, no platform GitHub identity, and nothing for the gateway-injected tools
+* Asked directly, the agent cannot read its own environment — its tool allow-list has no shell
+* The AgentWorkstation resource's `spec` declares Secret *references* (`envFromSecret`), never credential values
 
 == The declared exception
 
