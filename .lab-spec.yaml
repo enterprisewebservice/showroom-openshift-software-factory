@@ -70,6 +70,17 @@ notes:
   milestones:
     A: content complete + deliverable instructor-led against salamander
     B: agnosticd-v2 workload + AgnosticV catalog item (self-service on demo.redhat.com)
+  governed_gitea_tools: >-
+    Live 2026-08-25 (Module 3 implications): workshop hires now get gitea_* tools (54) through
+    the governed MCP gateway, authenticated PER SEAT — the agent's AgentGateway sends the seat's
+    own Gitea token (Secret <user>-gitea-token, minted by the deployer's gitea stage) and
+    gitea-mcp consumes it per call, so tool actions run as the attendee's Gitea user against
+    their own org, and a call without the credential fails closed. Good demo beat: gitea_get_me
+    returns userN; the gateway's Envoy access log is the audit trail. Contrast with github_*:
+    those tools are the reference cluster's platform-identity pattern and are NOT part of the
+    workshop story — do not script beats against them from seat agents (the shared gateway still
+    exposes the github backend under UNPREFIXED tool names with the platform App identity;
+    per-user tool filtering is not yet enabled — an honest-labeling caveat, not a feature).
   capstone_source: >-
     Module 6 is the ops-manager production story from the Agents as Staff series: dev agent
     generates a microservice via the golden-path template, Tekton/TSSC builds signed artifacts,
