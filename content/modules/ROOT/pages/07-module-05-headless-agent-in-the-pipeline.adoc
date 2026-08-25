@@ -1,0 +1,242 @@
+= Module 5: Headless agent in the pipeline
+include::partial$_attributes.adoc[]
+:source-highlighter: rouge
+:toc: macro
+:toclevels: 1
+
+// Attributes used by this module (injected by Showroom from lab user data):
+// {user}, {password}, {ocp_version}, {openshift_console_url}
+
+Modules 1 through 4 put a human in the loop. You sent a message, the agent replied in Mattermost, you read the result and moved on.
+
+Agents do not always wait to be asked. When the trigger is a pipeline event — a commit landing, a promotion gate opening, a scheduled policy check — the agent runs headless: no chat interface, no reply thread. The output is a Tekton result that downstream tasks can read, pipelines can route, and auditors can trace.
+
+The AgentWorks term for this is the headless runner. AgentWorks gives you an autonomy flag at trigger time: `--autonomy=supervised` or `--autonomy=full`. On this platform there is no flag. Autonomy is the set of tools the gateway profile authorizes for the caller. A platform administrator declares the profile. The PipelineRun references it. The agent cannot promote itself to a wider profile at runtime.
+
+Plan on 30 minutes: read the gateway profile that governs a headless caller, apply a minimal PipelineRun that invokes the agent once, watch it execute, and collect the result.
+
+== Learning objectives
+
+By the end of this module, you'll be able to:
+
+* Explain why headless agent autonomy is a gateway profile (platform policy) and not a flag the agent controls
+* Apply a minimal self-contained PipelineRun manifest that runs the agent headless and captures its reply as a structured result
+* Monitor a running PipelineRun with `oc` and `tkn`
+* Retrieve an agent's headless output from a named Tekton result after the run completes
+
+== Exercise 1: Read the gateway profile
+
+Your agent gateway, created in Module 1, is already running in your workspace. When the interactive agent calls it, the call is authorized against one named profile. When a pipeline task calls it, the call is authorized against a profile the platform administrator bound to that caller — one that may permit a narrower tool set. The agent cannot observe which profile is in effect and cannot change it.
+
+. List the gateway resources in your namespace:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc get agentgateway -n {user}-agent-workspace
+----
++
+// AUTHOR NOTE (verify live): confirm the CRD kind is `agentgateway` (lowercase, singular) and that a resource named `{user}-assistant-gateway` is present. Adjust if the operator uses a different naming convention.
+
+. Read the full gateway resource:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc get agentgateway {user}-assistant-gateway \
+  -n {user}-agent-workspace -o yaml
+----
++
+// AUTHOR NOTE (verify live): locate `spec.profiles` (or the equivalent authorization block) in the output and confirm the field path used in the explanation below matches the actual schema. The spec may use `spec.authzPolicies`, `spec.toolPolicies`, or a similar structure.
++
+Find the profiles section in the output. Each profile lists the tool namespaces it authorizes — for example, `gitea_*`, `web_fetch`, or a wildcard that covers everything. A caller is bound to exactly one profile, and the gateway enforces the boundary before any tool call executes. The profile is declared configuration; it is not a parameter the caller passes at runtime.
+
+. Read which profile the interactive agent references:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc get agentworkstation {user}-assistant \
+  -n {user}-agent-workspace \
+  -o jsonpath='{.spec.gatewayRef}'
+----
++
+// AUTHOR NOTE (verify live): confirm `spec.gatewayRef` is a struct that includes both the gateway name and a profile name. The field may be `spec.gatewayRef.profile` or encoded differently (e.g., `spec.gatewayProfile`).
++
+The `gatewayRef` field names both the gateway and the profile the agent was hired with. The same gateway serves both interactive agents and headless pipeline callers; the profile is what differentiates what each is permitted to do.
+
+=== Verify
+
+* `oc get agentgateway -n {user}-agent-workspace` returns at least one resource
+* The gateway YAML contains a profiles or authorization section listing at least one named profile
+* The AgentWorkstation `{user}-assistant` carries a `gatewayRef` that identifies both the gateway and the profile
+
+== Exercise 2: Trigger a headless PipelineRun
+
+A headless agent run is a standard Tekton PipelineRun with one task: send a prompt to the agent via the gateway's headless endpoint, wait for the reply, and write the reply to a Tekton result. The PipelineRun runs in your namespace. The agent gateway service is already running there — the same gateway that handled the governed tool calls in Module 3.
+
+The manifest below is self-contained: it defines the pipeline spec and the agent task inline. No pre-existing Pipeline or Task resource is required.
+
+. Save the manifest to disk:
++
+[source,bash,role="execute",subs="attributes"]
+----
+cat <<'MANIFEST' > /tmp/headless-agent-run.yaml
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: headless-agent-run-
+  namespace: {user}-agent-workspace
+  labels:
+    lab-module: "05"
+    seat: "{user}"
+spec:
+  timeouts:
+    pipeline: 10m
+  pipelineSpec:
+    results:
+      - name: agent-reply
+        description: The headless agent's response
+        value: $(tasks.ask-agent.results.reply)
+    tasks:
+      - name: ask-agent
+        taskSpec:
+          results:
+            - name: reply
+              description: The agent's reply to the headless prompt
+          steps:
+            - name: invoke
+              image: registry.access.redhat.com/ubi9/ubi9:latest
+              env:
+                - name: GATEWAY_URL
+                  value: "http://{user}-assistant-gateway.{user}-agent-workspace.svc.cluster.local:8080"
+              script: |
+                #!/bin/sh
+                set -eu
+                PROMPT="You are running headless inside a Tekton pipeline. \
+List every pod currently running in namespace {user}-agent-workspace. \
+Reply in exactly 3 bullets. No preamble. No sign-off."
+                REPLY=$(curl -sf -X POST "${GATEWAY_URL}/v1/headless/invoke" \
+                  -H "Content-Type: application/json" \
+                  -d "{\"prompt\":\"${PROMPT}\",\"agent\":\"{user}-assistant\"}" \
+                  | python3 -c \
+                  "import sys,json; d=json.load(sys.stdin); print(d.get('reply',d.get('content','(no reply field)')))")
+                printf '%s' "${REPLY}" > $(results.reply.path)
+MANIFEST
+echo "Manifest written."
+----
++
+// AUTHOR NOTE (verify live): confirm the gateway service name (`{user}-assistant-gateway`), the port (8080), and the headless endpoint path (`/v1/headless/invoke`). Verify the request body fields (`prompt`, `agent`) and the response field (`reply` / `content`) against the openclaw gateway's actual headless API. Confirm `ubi9/ubi9:latest` is pullable from the cluster's registry and includes curl and python3; if not, substitute an appropriate image (e.g., `registry.access.redhat.com/ubi9/python-311:latest` with curl added, or a lab-provided toolbox image).
+
+. Apply the manifest and capture the generated name:
++
+[source,bash,role="execute",subs="attributes"]
+----
+PIPELINE_RUN=$(oc create -f /tmp/headless-agent-run.yaml \
+  -o name | cut -d/ -f2)
+echo "PipelineRun: ${PIPELINE_RUN}"
+----
++
+`oc create -o name` prints the full resource path (e.g., `pipelinerun.tekton.dev/headless-agent-run-abcde`). The `cut` command extracts just the resource name. The shell variable `PIPELINE_RUN` is used in every subsequent command in this exercise — keep this terminal open.
+
+. Watch the run reach a terminal state:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc get pipelinerun -n {user}-agent-workspace -w
+----
++
+Press `Ctrl+C` once the run shows `Succeeded` or `Failed` in the STATUS column. The watch line updates each time the resource changes. You will see the run move through `Running` while the agent task executes. Allow up to 10 minutes for the first run — the task image pulls on first use.
+
+. Stream the task log to watch the agent execute:
++
+[source,bash,role="execute",subs="attributes"]
+----
+tkn pipelinerun logs ${PIPELINE_RUN} \
+  -n {user}-agent-workspace -f
+----
++
+// AUTHOR NOTE (verify live): confirm `tkn` is on PATH in the lab terminal (the lab spec states it is available). If `${PIPELINE_RUN}` is unset in a new terminal, re-run the capture command from step 2 before running this.
++
+The log streams the `invoke` step's standard output. The agent's reply appears in the step output before the task exits successfully.
++
+// TODO screenshot (capture during the live walkthrough, then restore):
+// image::module-05-pipelinerun-logs.png[Terminal showing tkn pipelinerun logs with the invoke step running and the agent's 3-bullet reply visible in the output stream,link=self,window=blank,width=700]
+
+=== Verify
+
+* `oc create` prints a `pipelinerun.tekton.dev/headless-agent-run-XXXXX created` line
+* `echo "PipelineRun: ${PIPELINE_RUN}"` outputs a non-empty name
+* `oc get pipelinerun -n {user}-agent-workspace` shows the run reaching `Succeeded` within 10 minutes
+* `tkn pipelinerun logs` shows the agent's reply in the `invoke` step output
+
+== Exercise 3: Read the pipeline result
+
+A log line is ephemeral. A Tekton result is a named, structured value attached to the PipelineRun — readable after the run completes, addressable by downstream tasks, and queryable with `oc`. The agent's reply landed there, not just in the log. This is the difference between output you read once and output the pipeline can act on.
+
+. Read the result directly from the PipelineRun status:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc get pipelinerun ${PIPELINE_RUN} \
+  -n {user}-agent-workspace \
+  -o jsonpath='{.status.pipelineResults}' \
+  | python3 -m json.tool
+----
++
+The output is a JSON array. Find the entry with `"name": "agent-reply"` and read its `"value"`. That is the 3-bullet reply the agent produced when it ran headless inside the pipeline. It is now a named result on the PipelineRun, addressable in a longer pipeline as `$(tasks.ask-agent.results.reply)` — a downstream task could promote it, sign it, or send it as a notification without replaying the run.
+
+. Inspect the PipelineRun in the OpenShift Console for a visual confirmation:
++
+Open link:{openshift_console_url}[OpenShift Console^] and sign in as `{user}` / `{password}`.
++
+Navigate to *Pipelines* → *PipelineRuns* in the Developer perspective. Select namespace `{user}-agent-workspace`. Open the `headless-agent-run-XXXXX` entry. The *Results* tab shows the `agent-reply` result alongside its value.
++
+// AUTHOR NOTE (verify live): confirm PipelineRuns appear at Pipelines → PipelineRuns in the Developer perspective on this version of OpenShift Console; on some builds the path differs or requires switching the perspective toggle.
++
+// TODO screenshot (capture during the live walkthrough, then restore):
+// image::module-05-pipelinerun-result.png[OpenShift Console PipelineRun detail view showing the Results tab with agent-reply name and 3-bullet text visible,link=self,window=blank,width=700]
+
+. Confirm the run stayed in your namespace and did not touch shared infrastructure:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc get pipelinerun -n {user}-agent-workspace --show-labels
+----
++
+Every PipelineRun created in this module carries `seat={user}`. No shared namespace was involved at any point.
+
+=== Verify
+
+* `oc get pipelinerun ... -o jsonpath='{.status.pipelineResults}'` returns a JSON array with an `agent-reply` entry whose `value` is non-empty
+* The OpenShift Console shows the PipelineRun in namespace `{user}-agent-workspace` with the result on the Results tab
+* All PipelineRuns shown by `--show-labels` carry `seat={user}`
+
+== What just happened
+
+The same agent, the same gateway, the same model — but no human in the loop and no Mattermost channel. The trigger was `oc create`. The output was a named Tekton result on a PipelineRun in your namespace.
+
+The AgentWorks headless runner gives the autonomy decision to the caller: pass a flag, choose a behavior. What you built here puts the autonomy decision in a different place: a gateway profile that a platform administrator declared, that the pipeline's caller was bound to, and that the agent cannot change. The agent ran within the boundary the platform set, and the boundary is a piece of declared configuration — not a flag the agent observed and chose to respect.
+
+That distinction matters at scale. A hundred pipeline runs in a hundred namespaces, each bounded by its declared profile, all routed through the same gateway binary. The platform team can narrow a profile for every run with one manifest change, revoke a tool by editing one policy resource, and audit every governed call without visiting a vendor dashboard. The agent's footprint is what the platform allows, not what the agent requests.
+
+The next module takes this pattern the rest of the way. The headless run becomes a production pipeline: the agent scaffolds a microservice, the supply chain builds and signs it, GitOps promotes it, and the requesting agent calls the shipped service as a new governed tool. The factory's output becomes the factory's new capability.
+
+== Learning outcomes
+
+By completing this module, you should now understand:
+
+* ✓ Why headless agent autonomy is a declared gateway profile and not a flag the agent can change at runtime
+* ✓ How to write and apply a minimal self-contained PipelineRun that invokes the agent headless and captures its reply as a structured result
+* ✓ How to monitor a running PipelineRun with `oc get pipelinerun -w` and `tkn pipelinerun logs`
+* ✓ How to retrieve an agent's headless output from a named Tekton result after the run completes
+
+== Module summary
+
+The agent ran headless inside a Tekton pipeline. The autonomy tier was a gateway profile — platform policy, not a runtime flag. The reply landed as a named Tekton result in your namespace, addressable by downstream tasks and readable with `oc`.
+
+Module 6 puts that headless pattern to production use: a dev agent scaffolds a microservice from a golden-path template, the supply-chain pipeline builds, signs, and promotes it, and the requesting agent calls the shipped service as a new governed tool to close the original intent.
+
+////
+Assets needed (capture against the live environment):
+
+. content/modules/ROOT/assets/images/module-05-pipelinerun-logs.png — Terminal showing `tkn pipelinerun logs` output with the invoke step running and the agent's 3-bullet reply visible in the log stream
+. content/modules/ROOT/assets/images/module-05-pipelinerun-result.png — OpenShift Console PipelineRun detail view, Results tab, with agent-reply name and 3-bullet value visible
+////

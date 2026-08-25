@@ -1,0 +1,353 @@
+= Module 6: Ship to production
+include::partial$_attributes.adoc[]
+:source-highlighter: rouge
+:toc: macro
+:toclevels: 1
+
+// Attributes used by this module (injected by Showroom from lab user data):
+// {user}, {password}, {ocp_version}, {devhub_url}, {gitops_url}, {mattermost_url}, {openshift_console_url}, {openshift_api_url}
+
+The factory has been running since Module 1. You governed its tool calls in Module 3, taught it in Module 4, and ran it headless in a pipeline in Module 5. This module turns all of that into output: a shipped microservice, promoted to production, consumed as a new governed tool by the agent that originally asked for it.
+
+The request comes from Morgan, ACME Financial's ops manager. Morgan needs a greeting-style lookup service. Old process: file a ticket, wait two weeks, follow up, wait more. Today's process: file an intent in Mattermost to a dev agent, watch the governed tool calls scaffold the service and open a pull request, merge it, and let the supply chain do the rest. The move that makes it Morgan's Monday: once the service is promoted to production, you register it behind the MCP gateway so the assistant agent Morgan already talks to can call it as a new governed tool, complete the original intent, and post the answer — all in Mattermost, all with an audit entry for every call.
+
+Five exercises, about 60 minutes total. Each has a clean stopping point.
+
+== Learning objectives
+
+By the end of this module, you'll be able to:
+
+* Hire a second agent from the same Developer Hub template and explain how a different brief composes a materially different capability set
+* Commission a microservice through a Mattermost intent and trace the dev agent's governed Gitea tool calls to your org
+* Read a supply-chain PipelineRun and confirm the build, sign, and scan stages completed before GitOps promoted the service
+* Register a newly shipped service behind the MCP gateway using an MCPServerRegistration resource
+* Trace the complete loop — a governed tool call from the requesting agent, through the gateway, to the service the factory just built — and read the audit entry that proves it happened
+
+== Exercise 1: Hire the dev agent
+
+In Module 1 you hired `{user}-assistant` with one sentence about investigating and documenting the cluster. That sentence drove the platform to the skill catalog, and the platform composed an investigation kit. A different sentence composes a different kit.
+
+This exercise uses the same Developer Hub template. The only thing that changes is the brief.
+
+. Open link:{devhub_url}[Red Hat Developer Hub^] and sign in as `{user}` with password `{password}`.
+
+. In the left navigation, click *Self-service*.
+
+. Find the *OpenClaw Agent* template and click *Choose*.
++
+// AUTHOR NOTE (verify live): confirm the template is still named "OpenClaw Agent" and not a version-stamped variant (e.g., "OpenClaw Agent v2"). Update the name in this step if it has changed.
+
+. For *What will your agent be doing?*, write:
++
+[source,text,subs="attributes"]
+----
+You are {user}-dev, a software engineer on the ACME Financial platform team: take assigned intents from Mattermost, scaffold new services from the golden-path template into your Gitea org using your governed git tools, open pull requests for review, and see builds through the pipeline.
+----
++
+The sentence is doing real work: "governed git tools" signals Gitea MCP integration, "golden-path template" signals the scaffold skill, and "open pull requests" signals the PR workflow. The platform reads the brief and composes from the catalog accordingly.
+
+. Click *Suggest*. Read the composed plan. Compare it with what the platform composed for `{user}-assistant` in Module 1.
++
+The assistant received an investigation and documentation kit. The dev agent receives a development and scaffolding kit — a different set of skills pulled from the same catalog, driven by the same single-sentence input. Same form, same template, different brief, different employee.
++
+// AUTHOR NOTE (verify live): confirm Suggest selects a materially different skill composition for the dev brief versus the assistant brief — specifically, confirm the presence of a scaffold or golden-path skill and the absence of investigation or documentation skills. Note the exact skill names selected here.
+
+. Click *Review*, check the composed summary, then click *Create*. Watch the scaffolding steps complete.
++
+The run creates a git repository for the dev agent, registers it in the catalog, and hands the rollout to OpenShift GitOps.
++
+// AUTHOR NOTE (verify live): confirm the exact git repository name produced for a dev agent hire. The expected pattern is `{user}-dev-agent-gitops` or similar. Update any reference to that name in the rest of this module.
+
+. Open link:{gitops_url}[OpenShift GitOps^] and sign in as `{user}` / `{password}`. Find the Application for `{user}-dev` and watch it reach *Synced* and *Healthy*.
+
+. In the terminal, confirm the dev agent pod is running:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc get pods -n {user}-agent-workspace
+----
++
+// AUTHOR NOTE (verify live): confirm whether both agents (assistant and dev) run in the same {user}-agent-workspace namespace, or whether each agent hire produces its own namespace. Update the namespace in this command and in all subsequent steps if the platform places them differently.
++
+Expected: both `{user}-assistant` and `{user}-dev` pods appear with `Running` status. Allow up to 2 minutes for the first image pull.
+
+// TODO screenshot (capture during the live walkthrough, then restore):
+// image::module-06-dev-agent-compose.png[Developer Hub Suggest output for the dev brief: a scaffold skill and Gitea integration, distinct from the assistant's investigation kit,link=self,window=blank,width=700]
+
+=== Verify
+
+* The Developer Hub scaffolding run completes with no errors
+* The run page links to the dev agent's new git repository and catalog entry
+* The OpenShift GitOps Application for `{user}-dev` reports *Synced* and *Healthy*
+* `oc get pods -n {user}-agent-workspace` shows `{user}-dev` at `Running` status alongside `{user}-assistant`
+
+== Exercise 2: Commission the microservice
+
+The dev agent is live. Give it a job. You will open the dev agent's Mattermost channel and describe the service you want built. The agent will use its governed Gitea tools to scaffold the service, commit the files to your org, and open a pull request.
+
+. Open link:{mattermost_url}[Mattermost^] and sign in as `{user}` with password `{password}`.
+
+. Find the channel for `{user}-dev`. The hire template created it at the same time it created the channel for `{user}-assistant` in Module 1.
++
+// AUTHOR NOTE (verify live): confirm the dev agent channel naming convention. Expected: a channel named `{user}-dev` or the agent's derived name from the brief. If the convention differs, note the actual channel name here.
+
+. Send the intent:
++
+[source,text]
+----
+Please build a service called hello-service: a single REST endpoint GET /hello?name=<name> that returns a JSON greeting like {"hello": "<name>"}. Use the golden-path template and open a pull request to my Gitea org for review.
+----
++
+// AUTHOR NOTE (verify live): confirm this level of prompt specificity is sufficient for the dev agent to invoke the scaffold skill and the gitea_* tools without asking for clarification. If the agent requests additional detail, note what it needed and revise the intent text here.
+
+. Watch the agent's reply. It should describe the steps it is taking: calling the scaffold skill, creating the repository, writing the files, and opening the pull request. Each `gitea_*` call carries your seat credential and leaves an audit entry — the same credential lifecycle you traced in Module 3.
++
+// AUTHOR NOTE (verify live): note which gitea_* tools appear in the agent's reply or in the tool-call ledger. Expected: gitea_create_repo, gitea_create_file (or batch equivalent), gitea_create_pull_request. If the scaffold skill itself wraps the Gitea calls, note whether the individual tool names are surfaced in the reply.
+
+. Open your Gitea org at the URL the agent posts in its reply. Find the new `hello-service` repository in the `{user}-agents` org.
++
+// AUTHOR NOTE (verify live): confirm the Gitea org URL and that the repository appears under `{user}-agents` after the agent's tool calls complete. If the org name differs, update all subsequent references.
+
+. Open the pull request the agent created. Read the diff: the golden-path template files are there — a service skeleton with the build configuration the supply-chain pipeline expects.
++
+// AUTHOR NOTE (verify live): note the exact file set the scaffold skill produces. Expected: Dockerfile, Tekton pipeline binding or event listener configuration, Kubernetes Service and Deployment manifests, application source skeleton. List the verified file set here and update the bullet in Exercise 3 step 3.
+
+// TODO screenshot (capture during the live walkthrough, then restore):
+// image::module-06-dev-agent-reply.png[Mattermost reply from {user}-dev describing the Gitea tool calls it made and linking to the pull request it opened,link=self,window=blank,width=700]
+
+// TODO screenshot (capture during the live walkthrough, then restore):
+// image::module-06-gitea-pr-diff.png[Gitea pull request showing the golden-path template files committed by the dev agent,link=self,window=blank,width=700]
+
+=== Verify
+
+* The dev agent replied in its Mattermost channel and described the steps it took
+* A `hello-service` repository exists in your `{user}-agents` Gitea org
+* An open pull request in that repository contains the scaffolded service files
+
+== Exercise 3: Merge and watch the supply chain
+
+The dev agent opened the pull request. You own the merge decision — the same pattern you practiced in Module 2: the diff is readable, the source is the agent's tool calls, and the merge is the moment of record. Once you merge, the supply-chain pipeline triggers automatically.
+
+. Open the pull request in Gitea and review the diff. When you are satisfied, merge the pull request.
++
+// AUTHOR NOTE (verify live): confirm the merge alone is sufficient to trigger the supply-chain PipelineRun (i.e., a Pipelines-as-Code EventListener or webhook is registered on the hello-service repository at scaffold time). If a webhook registration step is required first, document it here as a numbered step before the merge.
+
+. In the terminal, watch for the PipelineRun to start:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc get pipelinerun -n {user}-agent-workspace --watch
+----
++
+// AUTHOR NOTE (verify live): confirm the PipelineRun runs in {user}-agent-workspace. If the supply chain uses a shared CI namespace (e.g., tssc-ci, openshift-pipelines, or similar), replace the namespace in this command and the next. Note the verified namespace here.
+
+. When the PipelineRun appears, get its current status:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc get pipelinerun -n {user}-agent-workspace -o wide
+----
++
+The supply-chain pipeline runs three stages before promotion:
++
+* *Build*: the container image is built from the Dockerfile in the scaffold
+* *Sign*: the image is signed with the platform's key, producing a Sigstore cosign signature and an SLSA provenance attestation
+* *Scan*: the image is scanned for known vulnerabilities; a failing scan blocks promotion
++
+// AUTHOR NOTE (verify live): confirm the exact task names in the TSSC PipelineRun for each stage (build/sign/scan may appear as different names, e.g., buildah, cosign-sign, grype-scan). List the verified task names here and update the bullets above to match.
+
+. Open the link:{openshift_console_url}[OpenShift Console^], navigate to *Pipelines* → *PipelineRuns* in the `{user}-agent-workspace` namespace, and click the active PipelineRun. Watch the task graph: build completes first, then sign, then scan, then the promotion step.
++
+// AUTHOR NOTE (verify live): confirm whether GitOps promotion is a task inside the PipelineRun or a separate mechanism (e.g., a pipeline task commits an updated image tag to a GitOps repo, which an ArgoCD ApplicationSet then syncs). If promotion is a separate GitOps sync, add a step here to open the GitOps Application for hello-service and confirm it reaches Synced and Healthy.
+
+. When all stages complete, verify the service is running:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc get pods -n {user}-agent-workspace -l app=hello-service
+----
++
+// AUTHOR NOTE (verify live): confirm the deployed service namespace and the label selector. GitOps may promote hello-service into a separate production namespace (e.g., {user}-app-prod). Update the namespace and label selector here to match the live promotion target.
++
+Expected: a pod with `hello-service` in the name at `Running` status.
+
+. Confirm the service responds:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc exec -n {user}-agent-workspace \
+  $(oc get pods -n {user}-agent-workspace -o name | grep {user}-assistant | head -1) \
+  -c openclaw -- \
+  curl -s "http://hello-service.{user}-agent-workspace.svc.cluster.local:8080/hello?name=Morgan"
+----
++
+// AUTHOR NOTE (verify live): confirm the service DNS name, namespace, and port (port may differ from 8080). Update the namespace in the URL to match the promotion target from the previous step. If the assistant-gateway pod does not have curl, substitute any pod in {user}-agent-workspace that does (e.g., oc run curl-test --image=registry.access.redhat.com/ubi9/ubi-minimal:latest --rm -it --restart=Never -- curl -s "<url>").
++
+Expected: a JSON response like `{"hello": "Morgan"}`.
+
+// TODO screenshot (capture during the live walkthrough, then restore):
+// image::module-06-pipeline-stages.png[OpenShift Console PipelineRun task graph showing build, sign, and scan tasks in Succeeded status,link=self,window=blank,width=700]
+
+// TODO screenshot (capture during the live walkthrough, then restore):
+// image::module-06-service-running.png[Terminal showing hello-service pod at Running status and curl returning a JSON greeting,link=self,window=blank,width=700]
+
+=== Verify
+
+* The pull request merged successfully
+* A PipelineRun started in response to the merge
+* The PipelineRun completed with all three stages (build, sign, scan) at *Succeeded* status
+* The hello-service pod is in `Running` status
+* A `curl` to the service endpoint returns a JSON greeting
+
+== Exercise 4: Register the service behind the gateway
+
+The service is live. At this point, no agent knows it exists. To make it callable as a governed tool, you register it with an MCPServerRegistration resource. The gateway picks up the registration and exposes the service's endpoints as tool calls — routed through the same authorization, credential-injection, and audit path as every other governed tool in this lab.
+
+. Create the registration resource:
++
+[source,bash,role="execute",subs="attributes"]
+----
+cat <<'EOF' | oc apply -n {user}-agent-workspace -f -
+apiVersion: openclaw.io/v1alpha1
+kind: MCPServerRegistration
+metadata:
+  name: {user}-hello-service
+spec:
+  endpoint:
+    url: http://hello-service.{user}-agent-workspace.svc.cluster.local:8080/mcp
+  toolPrefix: hello
+  gatewayRef:
+    name: data-science-gateway-class
+    namespace: agent-office
+EOF
+----
++
+// AUTHOR NOTE (verify live): confirm the MCPServerRegistration CRD API version (openclaw.io/v1alpha1 or a newer version) and the exact spec field names (endpoint.url, toolPrefix, gatewayRef). Update the namespace in the URL to match where GitOps promoted hello-service. Confirm whether hello-service exposes a /mcp endpoint natively or requires a sidecar MCP adapter to be declared in the spec.
++
+// AUTHOR NOTE (verify live): confirm the gatewayRef name (data-science-gateway-class is the current gateway class name — verify it has not changed since Module 3).
+
+. Watch the gateway accept the registration:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc get mcpserverregistration {user}-hello-service -n {user}-agent-workspace
+----
++
+// AUTHOR NOTE (verify live): confirm the status field name the operator sets when the gateway accepts a registration (expected: a READY column or a status condition of type Ready). Note the verified field name here.
++
+Expected: a status indicating the registration is active.
+
+. Confirm the tool is visible to your assistant agent. Open link:{mattermost_url}[Mattermost^] and navigate to the `{user}-assistant` channel. Send:
++
+[source,text]
+----
+List the governed tools available to you. Do any of them start with "hello"?
+----
++
+// AUTHOR NOTE (verify live): confirm the tool name the gateway exposes for the registered service. The toolPrefix "hello" means the exposed tool name is likely "hello_greet" or "hello_hello" depending on the MCP server's tool manifest. Note the verified tool name here and update the closing-loop prompt in Exercise 5 to name it explicitly.
+
+// TODO screenshot (capture during the live walkthrough, then restore):
+// image::module-06-mcp-registration.png[Terminal showing MCPServerRegistration in Ready status, and Mattermost reply from the assistant confirming a hello tool is available,link=self,window=blank,width=700]
+
+=== Verify
+
+* `oc get mcpserverregistration {user}-hello-service -n {user}-agent-workspace` shows a Ready status
+* The assistant agent reports a governed tool matching the `hello` prefix in its Mattermost reply
+
+== Exercise 5: Close the loop
+
+The service is live. The gateway knows about it. The assistant agent that ACME's ops manager has been talking to all morning can now call it as a governed tool.
+
+This is the beat that makes it Morgan's Monday. Morgan had a request. The factory built the capability. The agent that Morgan talks to can now call it. Every step in that chain — intent, scaffold, build, sign, scan, promote, register, call — produced an artifact on the platform ACME governs.
+
+. Open link:{mattermost_url}[Mattermost^], sign in as `{user}`, and navigate to the `{user}-assistant` channel.
+
+. Ask the assistant to use the new service:
++
+[source,text]
+----
+Please call the hello-service tool and get a greeting for Morgan. Post the result here.
+----
++
+// AUTHOR NOTE (verify live): replace "hello-service tool" in the prompt with the exact tool name verified in Exercise 4 step 3. The assistant recognizes the name more reliably when the prompt matches the gateway-exposed name precisely.
+
+. Read the agent's reply. It reports the greeting from hello-service, delivered through the governed gateway. The factory's output is now the factory's new capability.
+
+. Read your tenant-side tool-call ledger to confirm the governed call was made:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc exec $(oc get pods -n {user}-agent-workspace -o name | grep {user}-assistant | head -1) \
+  -n {user}-agent-workspace -c openclaw -- \
+  sh -c 'grep -ho "\"toolName\":\"[a-z_]*\"" \
+    /home/node/.openclaw/agents/{user}-assistant/sessions/*.jsonl \
+    | sort | uniq -c | sort -rn | head -20'
+----
++
+// AUTHOR NOTE (verify live): confirm the session JSONL path inside the assistant container. This mirrors the audit command from Module 3 — if that path changed, update both modules.
++
+The `hello_*` tool call appears in the ledger alongside the `governed__gitea_*` calls you saw in Module 3. The ledger entry is your tenant-side receipt. Its platform-side twin — the gateway's access-log line for this call — lives in the shared stream the platform operator reads, on the same cluster, under the same retention policy as every other audit artifact ACME governs.
+
+. Read the supply-chain attestation on the image the pipeline signed in Exercise 3:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc get imagestreamtag hello-service:latest -n {user}-agent-workspace \
+  -o jsonpath='{.image.metadata.annotations}' 2>/dev/null || \
+  echo "See AUTHOR NOTE: image may be in Quay, not an ImageStream"
+----
++
+// AUTHOR NOTE (verify live): confirm where the signed image lives. If the TSSC pipeline pushes to an internal Quay registry (not an ImageStream), replace this command with the cosign verify-attestation command for the Quay image reference: cosign verify-attestation <image-ref> --type slsaprovenance. Note where the attendee finds <image-ref> (e.g., the PipelineRun's task result, the Deployment's image field, or the Quay UI).
++
+The attestation records what inputs produced what outputs: the commit hash the dev agent's PR introduced, the pipeline that signed it, and the image digest the gateway is now serving. Any operator can follow that chain from the tool call in Mattermost back to the intent Morgan posted in the dev agent's channel.
+
+// TODO screenshot (capture during the live walkthrough, then restore):
+// image::module-06-loop-closed.png[Mattermost {user}-assistant channel showing the assistant's reply with the hello-service greeting for Morgan,link=self,window=blank,width=700]
+
+// TODO screenshot (capture during the live walkthrough, then restore):
+// image::module-06-audit-ledger.png[Terminal tool-call ledger showing the hello governed tool call alongside the governed__gitea_* calls from Module 3,link=self,window=blank,width=700]
+
+=== Verify
+
+* The assistant agent replied in Mattermost with the greeting from hello-service
+* The tenant-side tool-call ledger shows a `hello_*` entry marked as a governed call
+* The image attestation command returns annotation data, confirming the pipeline's signing step produced a traceable artifact
+
+== What just happened
+
+AgentWorks ships a connector catalog. The list is fixed: the integrations the vendor chose to include, on the vendor's roadmap, installed on the vendor's timeline. Adding a connector means waiting for the vendor or filing a marketplace request.
+
+What you built here works differently. The factory consumed a natural-language intent, scaffolded a service from a governed template, built a signed and scanned image through the TSSC pipeline, promoted it with OpenShift GitOps, registered it behind the MCP gateway, and exposed it as a new governed tool — one that did not exist in the catalog before Morgan asked for it. The requesting agent called it the same session. The catalog grew with the work.
+
+The signed image carries an SLSA provenance attestation: the pipeline task that signed it recorded what inputs produced what outputs. Any operator can start at the tool call in Mattermost and trace back to the pull request the dev agent opened, to the scaffold skill the platform applied, to the intent Morgan posted. The supply chain is legible from end to end because every step produced an artifact on the platform ACME governs — not in a vendor's dashboard, not behind a vendor's API, not subject to a vendor's retention policy.
+
+The MCP gateway is why the assistant agent could call a service that was not in the catalog when the lab started. The platform's trust boundary did not expand: same gateway, same authorization model, same per-call audit path. The catalog grew because you applied a resource to a namespace. On a vendor AI platform, that step is a support ticket. Here it is a `kubectl apply`.
+
+== Learning outcomes
+
+By completing this module, you should now understand:
+
+* ✓ How the same Developer Hub template produces materially different agents, because the one-sentence brief drives catalog composition — the skill kit follows the stated job, not a preset role menu
+* ✓ How a dev agent uses governed Gitea tools to scaffold a service, commit files, and open a pull request entirely through the governed tool path, with every call audited at the tenant-side ledger and the platform-side gateway log
+* ✓ What the TSSC supply-chain pipeline does before a service is promoted: build, sign (SLSA attestation), and scan — in that order, blocking promotion on a failing scan
+* ✓ How an MCPServerRegistration resource adds a shipped service to the gateway's tool catalog without changing the gateway's trust model or authorization path
+* ✓ Why "the factory's output became the factory's new capability" is the structural difference from a vendor connector catalog: on this platform, the catalog grows with the work, every capability runs on infrastructure ACME governs, and provenance covers the full chain from intent to governed tool call
+
+== Module summary
+
+Morgan's request went from intent to governed tool call in one lab session. The dev agent scaffolded the service, the supply chain built and signed it, GitOps promoted it, the gateway registered it, and the assistant called it before the session ended. Every step produced an artifact: a pull request, a signed image, a GitOps sync, an MCPServerRegistration, an audit entry.
+
+Module 7 isolates the one component this platform controls that a SaaS cannot: the model. You will swap the frontier endpoint for an in-cluster vLLM, re-run Module 4's task, and confirm that nothing else — no agent config, no tool wiring, no skill pin — changed.
+
+////
+Assets needed (capture against the live environment):
+
+. content/modules/ROOT/assets/images/module-06-dev-agent-compose.png — Developer Hub Suggest output for the dev brief: scaffold skill and Gitea integration in the composed kit, visibly distinct from the assistant's investigation kit
+. content/modules/ROOT/assets/images/module-06-dev-agent-reply.png — Mattermost channel for {user}-dev showing the agent's description of the Gitea tool calls it made and a link to the pull request it opened
+. content/modules/ROOT/assets/images/module-06-gitea-pr-diff.png — Gitea pull request diff showing the golden-path template files committed by the dev agent (Dockerfile, pipeline binding, service manifest, source skeleton)
+. content/modules/ROOT/assets/images/module-06-pipeline-stages.png — OpenShift Console PipelineRun task graph showing build, sign (cosign/SLSA), and scan tasks in Succeeded status
+. content/modules/ROOT/assets/images/module-06-service-running.png — Terminal showing hello-service pod in Running status and curl to the service endpoint returning a JSON greeting
+. content/modules/ROOT/assets/images/module-06-mcp-registration.png — Terminal showing MCPServerRegistration in Ready status; Mattermost reply from {user}-assistant confirming the hello tool is visible
+. content/modules/ROOT/assets/images/module-06-loop-closed.png — Mattermost {user}-assistant channel showing the assistant's reply with the hello-service greeting for Morgan
+. content/modules/ROOT/assets/images/module-06-audit-ledger.png — Terminal tool-call ledger showing the hello governed tool call alongside the governed__gitea_* calls from Module 3
+////

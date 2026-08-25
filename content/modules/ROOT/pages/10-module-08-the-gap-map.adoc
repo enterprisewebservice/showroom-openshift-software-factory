@@ -1,0 +1,187 @@
+= Module 8: The gap map
+include::partial$_attributes.adoc[]
+:source-highlighter: rouge
+:toc: macro
+:toclevels: 1
+
+// Attributes used by this module (injected by Showroom from lab user data):
+// {user}, {ocp_version}
+
+You have run the whole factory. An agent was hired, versioned, governed, taught, launched headless in a pipeline, shipped software, and swapped its brain. No vendor control plane was in the room.
+
+This module does not add objects to your cluster. It adds clarity. You will score what you built against what a commercial agent platform of this class offers, name the gaps honestly, and then categorize every gap by type — UI, ergonomics, roadmap depth, or structural.
+
+Plan on 15 minutes.
+
+toc::[]
+
+== What you built and proved
+
+Seven modules. Each row ties a capability to the evidence you personally produced.
+
+[cols="3,1,4",options="header"]
+|===
+|Capability |Module |Evidence you produced
+
+|Hire a governed agent through a Developer Hub golden-path template
+|1
+|`oc get agentworkstation` returned your agent; catalog entry appeared in Developer Hub; agent replied in its Mattermost channel with the purpose sentence you wrote
+
+|Edit the agent's behavior via pull request and roll back through git
+|2
+|OpenShift GitOps converged on the PR merge; rollback reverted the behavior by reverting the commit — no imperative command required
+
+|Govern every tool call through an MCP gateway, with no downstream credential in the agent pod
+|3
+|`env grep` returned exactly two platform-placed tokens and nothing for gateway-injected tools; `oc logs deploy/mcp-gateway` returned `Forbidden`; tool-call ledger showed `governed__gitea_*` entries alongside ungoverned built-ins
+
+|Deliver versioned know-how as an installable skill pack and change behavior without redeployment
+|4
+|Re-ran the task after skill pack install; agent followed the new procedure; prior behavior is reproducible by pinning the previous pack version
+
+|Run a headless agent inside a Tekton PipelineRun with autonomy set by the gateway profile
+|5
+|PipelineRun completed; the agent task's autonomy tier was the gateway profile bound to that run, not the agent's interactive default
+
+|Ship a microservice through the supply chain and register it as a new governed tool
+|6
+|Microservice built, signed, and scanned by the Tekton pipeline; GitOps promoted it; `MCPServerRegistration` appeared; the requesting agent called it through the gateway and the audit line recorded the call
+
+|Swap the model between frontier and sovereign vLLM without changing any other configuration
+|7
+|Re-ran Module 4's task on the sovereign endpoint; behavior matched; nothing else in the agent's spec changed
+|===
+
+== The gap map
+
+=== What commercial agent platforms of this class have that this stack still lacks
+
+These are real gaps. They are listed without apology.
+
+[cols="2,3,3",options="header"]
+|===
+|Gap |What commercial platforms of this class offer |Current state of this stack
+
+|Mission-dashboard UX
+|A purpose-built operational view: active agents, run counts, success rates, and resource spend — visible on one screen without assembling data from separate tools.
+|The underlying data exists — in OpenShift metrics, the gateway audit stream, and GitOps application state — but no aggregated operator panel surfaces it. You assemble the picture today across existing consoles.
+
+|Automated repo wiki
+|When an agent's repository is created, the platform generates onboarding prose: what the agent does, which tools it holds, how to reach it.
+|The Developer Hub catalog entry covers the tool-and-skill declaration. Free-text onboarding documentation is not auto-generated. It is a template field that has no populated default yet.
+
+|Session forking
+|Clone a running agent session — including its conversation context and tool state — and branch the investigation without losing the original thread.
+|Session state is durable in the agent's trajectory files, but the operator does not yet surface a fork operation. The data model supports it; the control surface does not.
+
+|One-flag autonomy ergonomics
+|Change an agent's or pipeline task's autonomy level with a single field flip; the platform enforces the new tier across all downstream calls immediately.
+|The gateway profile controls autonomy and is declared in git. Changing it requires a commit and a reconcile — correct and auditable, but not a polished toggle. The mechanism is sound; the interface is not finished.
+|===
+
+=== Platform product-asks surfaced by this lab
+
+These are gaps the lab's own construction exposed. They are labeled as such in this lab's specification, and each appeared during Module 3.
+
+[cols="2,3,3",options="header"]
+|===
+|Product-ask |Current state |What the complete feature looks like
+
+|Per-caller credential injection at the gateway for all tool families
+|The `gitea_*` family is fully per-seat: each call carries your seat's own credential, injected from `{user}-gitea-token`. Other tool families on the shared gateway still use the platform's own identity on each call, not the calling agent's.
+|Every tool family on the gateway injects the caller's scoped credential per call. No tool executes under a shared platform identity when a per-seat identity is appropriate.
+
+|Per-user tool-list filtering
+|The gateway advertises all available tools to every connected agent. A seat's credential governs whether a call succeeds, but the visible menu is not yet filtered by identity. An agent can see — and attempt — tools it would be denied.
+|The gateway delivers a tool list filtered to what the requesting identity is authorized to call. An agent's visible surface matches its permitted surface.
+
+|Per-seat audit-log slicing
+|The gateway records every call. The full stream is platform-scoped and correctly off-limits to tenants — you proved that with the `Forbidden` return in Module 3. The tenant-side tool-call ledger is a partial substitute, but it is a local record, not a queryable slice of the authoritative stream.
+|The platform exposes a queryable, per-seat view of the authoritative audit stream — same data as the platform operator sees, scoped to the requesting identity, with the same retention and export controls.
+|===
+
+== What the gaps are not
+
+Scan the two tables above. Neither contains a gap in trust, governance, or deployment reach. That is not selective framing — it reflects where the work went.
+
+[cols="3,3",options="header"]
+|===
+|Trust property |Where you demonstrated it
+
+|Credential lifecycle: Vault → External Secrets Operator → self-expiring per-seat token; agent cannot renew or mint
+|Module 3, Exercise 2: walked the full chain one hop at a time; watched the badge decay and refresh without a pod restart
+
+|Tenancy and per-seat isolation: per-attendee namespace, RBAC enforcement, per-seat identity on every governed call
+|Modules 1–3: `oc get projects` showed only your projects; `gitea_get_me` returned your username; `oc auth can-i` confirmed the `admin-{user}` persona's exact scope
+
+|Audit trail: platform-scoped stream, tenancy boundary enforced, tenant-side ledger at your blast radius
+|Module 3, Exercise 3: `oc logs deploy/mcp-gateway` returned `Forbidden` with your username; tool-call ledger showed `governed__gitea_*` entries you triggered
+
+|Software supply chain: build, sign, scan, provenance, GitOps-gated promotion
+|Module 6: Tekton pipeline built and signed the microservice; GitOps promoted only the signed artifact; `MCPServerRegistration` declared it before any agent could call it
+
+|Model sovereignty: swap without configuration change; agents never hold provider credentials
+|Module 7: changed the model reference; re-ran Module 4's task; behavior matched; nothing else in the agent's spec moved
+
+|Hybrid-cloud and on-premises deployment: the same platform on any public cloud or on-premises infrastructure
+|Structural to OpenShift {ocp_version}: the cluster this lab ran on could be AWS, Azure, GCP, or bare metal with no change to anything the agent stack touches
+|===
+
+Every property in this table is structural — built into the platform's architecture before the first agent was hired. None of them are roadmap items. Each one was live and running under your hands.
+
+The gaps in the previous section are real. They belong in a buy-vs-build analysis. What they do not do is change the trust baseline.
+
+== Score it for your organization
+
+These questions have no universal answer. Score them against your organization's actual requirements.
+
+[cols="1,5",options="header"]
+|===
+|# |Question
+
+|1
+|*The gap taxonomy.* The gaps in the first table are UX and ergonomics. The gaps in the second table are roadmap completeness items for the platform team. Which column would your organization's security or compliance group veto a platform over? Does that column contain anything that is absent here?
+
+|2
+|*Build versus operate.* A commercial agent platform of this class narrows the operator's surface: the UX gaps above are smaller, and the platform-asks are someone else's roadmap. The tradeoff is that the governance controls you exercised during this lab — credential lifecycle, audit ownership, supply chain, model placement — live in that vendor's implementation, not yours. For your organization's threat model, which side of that tradeoff is the harder limit?
+
+|3
+|*Model placement.* Do any of your organization's legal, data-governance, or export-control requirements constrain where model inference can run? If so, is that constraint compatible with a SaaS control plane that owns the model endpoint? Count the constraints that apply.
+
+|4
+|*Supply chain accountability.* Module 6 shipped software an agent wrote through the same supply chain controls as human-written code: signed artifacts, provenance, GitOps-gated promotion. If your organization ships regulated software — financial, medical, defense — who must be accountable for artifact provenance? Is that compatible with a third party building and signing the artifacts?
+|===
+
+== Learning outcomes
+
+By completing this module, you should now understand:
+
+* ✓ Which capabilities this platform delivers today, and where each was demonstrated across the seven prior modules
+* ✓ Where commercial agent platforms of this class have features this stack does not yet match, and what category each gap falls into
+* ✓ Why no gap in the map touches trust, governance, or deployment reach — those properties are structural and were each demonstrated hands-on
+* ✓ How to frame the build-versus-operate tradeoff for an audience with real security, compliance, or data-sovereignty requirements
+
+== Lab summary
+
+Seven modules. One factory. An agent was hired through a governed template, lives in git, calls tools through an MCP gateway that authorizes and audits every call, learns from versioned skill packs, runs headless inside Tekton pipelines, ships software through a supply chain that signs and scans the artifacts, and can swap its model without changing anything else. The agent's output — a microservice it scaffolded — became a new governed tool the requesting agent used to close the original job.
+
+The gap map is real. The UX gaps are smaller on a commercial platform. The ergonomics are more polished. The operational surface the vendor manages is narrower. Those are not dismissible facts.
+
+What the gap map does not contain: a gap in credential lifecycle, in tenancy, in audit ownership, in supply chain controls, or in model and deployment portability. Every one of those properties is structural, not policy, and every one ran under your hands today.
+
+The platform holds up all the way down. It is running now.
+
+////
+Author notes:
+
+This module intentionally leaves no objects on the cluster. There are no Verify sections, no `oc` commands for the attendee to run, and no cleanup steps. Cluster state after this module is identical to the state after Module 7.
+
+Gap sources:
+- .lab-spec.yaml module_outline, Module 8: mission-dashboard UX, automated repo wiki, session forking, one-flag autonomy ergonomics
+- .lab-spec.yaml notes.governed_gitea_tools: per-user tool-list filtering not yet enabled (honest-labeling caveat); github_* tools still use platform identity, not per-seat; per-seat audit-log slicing not yet available
+- 05-module-03-governed-tools.adoc: Forbidden boundary prose; tool-call ledger census; credential chain walk
+
+AgentWorks is the lab's fictional composite stand-in per .lab-spec.yaml vendor_naming. No real vendor is named or implied in this file. AgentWorks capabilities are attributed generically as "commercial agent platforms of this class."
+
+Hybrid-cloud framing note: OpenShift is the same platform on any public cloud or on-premises infrastructure. It is never framed as "not a cloud" or "instead of a cloud" — it runs in those clouds.
+////
