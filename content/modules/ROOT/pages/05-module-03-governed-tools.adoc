@@ -40,7 +40,8 @@ NOTE: A web search is a convenient trigger because the result is verifiable: the
 . Read the reply. The agent's response should include content sourced from the tool: a version reference, a release date, a URL, or a summary of content the agent could not have known from training data.
 +
 // TODO: Add screenshot
-image::module-03-tool-reply.png[Mattermost channel showing the agent's reply citing web search results with a version number or URL,link=self,window=blank,width=700]
+// TODO screenshot (capture during the live walkthrough, then restore):
+// image::module-03-tool-reply.png[Mattermost channel showing the agent's reply citing web search results with a version number or URL,link=self,window=blank,width=700]
 
 === Verify
 
@@ -82,10 +83,12 @@ oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o yaml
 In the output, find `spec.gatewayRef`. It names the gateway your agent's tool calls route through. There is no `spec.credentials` block and no inline API key. The agent is authorized to call tools; it is not authorized to hold the secrets those tools require.
 +
 // TODO: Add screenshot
-image::module-03-env-grep.png[Terminal showing the env grep result from the agent pod with no downstream-system credential,link=self,window=blank,width=700]
+// TODO screenshot (capture during the live walkthrough, then restore):
+// image::module-03-env-grep.png[Terminal showing the env grep result from the agent pod with no downstream-system credential,link=self,window=blank,width=700]
 +
 // TODO: Add screenshot
-image::module-03-agentworkstation-yaml.png[AgentWorkstation YAML showing spec.gatewayRef with no inline credential fields,link=self,window=blank,width=700]
+// TODO screenshot (capture during the live walkthrough, then restore):
+// image::module-03-agentworkstation-yaml.png[AgentWorkstation YAML showing spec.gatewayRef with no inline credential fields,link=self,window=blank,width=700]
 
 === Verify
 
@@ -164,7 +167,8 @@ oc logs deploy/mcp-gateway-data-science-gateway-class -n {user}-agent-workspace 
 A new line with today's timestamp should appear. That line is the gateway's audit record for the call you just triggered from Mattermost.
 +
 // TODO: Add screenshot
-image::module-03-gateway-log.png[Terminal output showing MCP gateway access-log lines with POST /mcp entries and 200 status,link=self,window=blank,width=700]
+// TODO screenshot (capture during the live walkthrough, then restore):
+// image::module-03-gateway-log.png[Terminal output showing MCP gateway access-log lines with POST /mcp entries and 200 status,link=self,window=blank,width=700]
 
 === Verify
 

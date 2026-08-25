@@ -52,7 +52,8 @@ oc get agentworkstation -n {user}-agent-workspace -o yaml
 Find `{user}-assistant` in the output and verify its `spec` matches the manifest you just read.
 
 // TODO: Add screenshot
-image::module-02-repo-tour.png[Agent git repository showing base/agentworkstation.yaml with the systemPrompt field,link=self,window=blank,width=700]
+// TODO screenshot (capture during the live walkthrough, then restore):
+// image::module-02-repo-tour.png[Agent git repository showing base/agentworkstation.yaml with the systemPrompt field,link=self,window=blank,width=700]
 
 === Verify
 
@@ -109,13 +110,16 @@ Introduce yourself. What is your purpose, and which skills were you hired with?
 . Read the reply. It should follow the new rule: exactly 3 bullet points, no more, no fewer.
 
 // TODO: Add screenshot
-image::module-02-pr-diff.png[Pull request diff showing the new bullet-point rule added to the directive file,link=self,window=blank,width=700]
+// TODO screenshot (capture during the live walkthrough, then restore):
+// image::module-02-pr-diff.png[Pull request diff showing the new bullet-point rule added to the directive file,link=self,window=blank,width=700]
 
 // TODO: Add screenshot
-image::module-02-gitops-sync.png[OpenShift GitOps Application view showing the agent Application Synced and Healthy after the PR merge,link=self,window=blank,width=700]
+// TODO screenshot (capture during the live walkthrough, then restore):
+// image::module-02-gitops-sync.png[OpenShift GitOps Application view showing the agent Application Synced and Healthy after the PR merge,link=self,window=blank,width=700]
 
 // TODO: Add screenshot
-image::module-02-three-bullet-reply.png[Mattermost channel showing the agent's reply constrained to exactly 3 bullet points,link=self,window=blank,width=700]
+// TODO screenshot (capture during the live walkthrough, then restore):
+// image::module-02-three-bullet-reply.png[Mattermost channel showing the agent's reply constrained to exactly 3 bullet points,link=self,window=blank,width=700]
 
 === Verify
 
@@ -167,7 +171,8 @@ Introduce yourself. What is your purpose, and which skills were you hired with?
 . Read the reply. The bullet-point rule is gone. The agent's answer returns to its original form.
 
 // TODO: Add screenshot
-image::module-02-rollback-reply.png[Mattermost channel showing the agent's reply after rollback, free-form and no longer constrained to 3 bullet points,link=self,window=blank,width=700]
+// TODO screenshot (capture during the live walkthrough, then restore):
+// image::module-02-rollback-reply.png[Mattermost channel showing the agent's reply after rollback, free-form and no longer constrained to 3 bullet points,link=self,window=blank,width=700]
 
 === Verify
 
