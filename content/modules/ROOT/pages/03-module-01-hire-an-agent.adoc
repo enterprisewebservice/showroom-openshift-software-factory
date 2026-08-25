@@ -56,8 +56,7 @@ NOTE: The platform derives the agent's name from your brief. Naming it explicitl
 
 The template run executes in front of you. It creates a git repository for the agent, registers the agent in the catalog, and hands the rollout to Red Hat OpenShift GitOps.
 
-// TODO: Add screenshot
-image::module-01-agent-template-form.png[Developer Hub OpenClaw Agent template with the one-sentence agent description filled in,link=self,window=blank,width=700]
+image::module-01-agent-template-form.png[The composed hire: identity drafted from the brief, a new gateway of its own, and the five packs Suggest selected from the catalog,link=self,window=blank,width=700]
 
 === Verify
 
@@ -194,7 +193,7 @@ Module 2 builds on that fact. Because the agent lives in git, you will change it
 ////
 Assets needed (capture against the live environment):
 
-. content/modules/ROOT/assets/images/module-01-agent-template-form.png - Developer Hub "OpenClaw Agent" template form with the one-sentence agent description filled in
+. content/modules/ROOT/assets/images/module-01-agent-template-form.png - the composed hire after Suggest: identity, own gateway, five selected packs, drafted system prompt
 . content/modules/ROOT/assets/images/module-01-gitops-application.png - OpenShift GitOps Application view for the agent, resource tree Synced and Healthy
 . content/modules/ROOT/assets/images/module-01-first-contact.png - Agent chat channel showing the first reply
 ////
