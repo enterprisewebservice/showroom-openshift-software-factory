@@ -155,7 +155,7 @@ The hands-on core runs about 3.5 hours. The estimates below include reading and 
 |~30 min
 
 |6. Ship to production (capstone)
-|An ops manager asks for a service. Your dev agent scaffolds it from a golden-path template; the supply chain builds, signs, and scans it; OpenShift GitOps promotes it. You verify the live route and walk the audit trail.
+|An ops manager asks for a service. Your dev agent scaffolds it from a golden-path template; the supply chain builds, signs, and scans it; OpenShift GitOps promotes it. Then the ops manager uses what it asked for: the service joins the MCP gateway as a governed tool, the agent calls it to complete the original intent, and you walk the audit trail from ask to answer.
 |~60 min
 
 |7. Swap the brain

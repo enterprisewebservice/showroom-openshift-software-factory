@@ -48,7 +48,7 @@ The workshop runs as 8 modules, each anchored to something you do in the environ
 |~30 min
 
 |6. Ship to production (capstone)
-|File an intent with the ops manager. A dev agent scaffolds a microservice from a golden-path template; the pipeline builds, signs, and scans it; OpenShift GitOps promotes it. Verify the live route and walk the audit trail end to end.
+|File an intent with the ops manager. A dev agent scaffolds a microservice from a golden-path template; the pipeline builds, signs, and scans it; OpenShift GitOps promotes it. Then the loop closes: the new service is registered behind the MCP gateway, and the agent that asked for it calls it as a governed tool to finish the original task — you read that call's audit line. The factory's output just became the factory's new capability.
 |~60 min
 
 |7. Swap the brain
