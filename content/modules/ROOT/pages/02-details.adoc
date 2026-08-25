@@ -147,7 +147,7 @@ Everything you create during the lab belongs to you and runs under your identity
 * *Module 6:* a production microservice: scaffolded by your dev agent, built and signed by the pipeline, promoted by OpenShift GitOps
 * *Module 7:* a model swap on your own agent, frontier to sovereign and back
 
-Module 8 is a guided comparison and creates nothing.
+Module 8, the gap map, is a guided comparison against the commercial agent-platform stack — analysis and scoring, not construction, so it is the one module that leaves no new objects on your cluster.
 
 == Per-attendee isolation
 
