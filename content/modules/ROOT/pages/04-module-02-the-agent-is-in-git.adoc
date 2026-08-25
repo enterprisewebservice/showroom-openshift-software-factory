@@ -161,6 +161,8 @@ git push origin main
 
 . Return to link:{gitops_url}[OpenShift GitOps^]. The same loop runs — and just as fast: check the Application's *History* for a new sync against your revert commit rather than waiting to see a transition.
 
+NOTE: The directive lives in the agent's identity, not in the conversation — but the conversation remembers itself. A chat thread that just produced several three-bullet answers may echo that style for a turn or two even after the rollback lands, because the model sees its own recent replies. That is history momentum, not the directive surviving: read the directive back with the `oc` command above to see the enforced truth, then ask a fresh question and watch the style fall away.
+
 . Wait for the agent pod to return to `Running`:
 +
 [source,bash,role="execute",subs="attributes"]
