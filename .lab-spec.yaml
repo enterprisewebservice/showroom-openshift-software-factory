@@ -81,6 +81,10 @@ notes:
     workshop story — do not script beats against them from seat agents (the shared gateway still
     exposes the github backend under UNPREFIXED tool names with the platform App identity;
     per-user tool filtering is not yet enabled — an honest-labeling caveat, not a feature).
+  style_exceptions: >-
+    Em dashes are an accepted, deliberate part of this lab's voice (used
+    consistently across all verified modules); reviewers should not flag
+    them. Numerals for 0-9 per Red Hat style otherwise applies.
   capstone_source: >-
     Module 6 is the ops-manager production story from the Agents as Staff series: dev agent
     generates a microservice via the golden-path template, Tekton/TSSC builds signed artifacts,

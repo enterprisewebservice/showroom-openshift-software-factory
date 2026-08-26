@@ -11,7 +11,7 @@ The factory has been running since Module 1. You governed its tool calls in Modu
 
 The request comes from Morgan, ACME Financial's ops manager. Morgan needs a greeting-style lookup service. Old process: file a ticket, wait two weeks, follow up, wait more. Today's process: file an intent in Mattermost to a dev agent, watch the governed tool calls scaffold the service and open a pull request, merge it, and let the supply chain do the rest. The move that makes it Morgan's Monday: once the service is promoted to production, you register it behind the MCP gateway so the assistant agent Morgan already talks to can call it as a new governed tool, complete the original intent, and post the answer — all in Mattermost, all with an audit entry for every call.
 
-Five exercises, about 60 minutes total. Each has a clean stopping point.
+5 exercises, about 60 minutes total. Each has a clean stopping point.
 
 == Learning objectives
 
@@ -151,14 +151,18 @@ oc get pipelinerun -n {user}-agent-workspace -o wide
 The supply-chain pipeline runs three stages before promotion:
 +
 * *Build*: the container image is built from the Dockerfile in the scaffold
-* *Sign*: the image is signed with the platform's key, producing a Sigstore cosign signature and an SLSA provenance attestation
+* *Sign*: the image is signed with the platform's key, producing a Sigstore cosign signature and an SLSA (Supply-chain Levels for Software Artifacts) provenance attestation
 * *Scan*: the image is scanned for known vulnerabilities; a failing scan blocks promotion
 +
 // AUTHOR NOTE (verify live): confirm the exact task names in the TSSC PipelineRun for each stage (build/sign/scan may appear as different names, e.g., buildah, cosign-sign, grype-scan). List the verified task names here and update the bullets above to match.
 
 . Open the link:{openshift_console_url}[OpenShift Console^], navigate to *Pipelines* → *PipelineRuns* in the `{user}-agent-workspace` namespace, and click the active PipelineRun. Watch the task graph: build completes first, then sign, then scan, then the promotion step.
 +
-// AUTHOR NOTE (verify live): confirm whether GitOps promotion is a task inside the PipelineRun or a separate mechanism (e.g., a pipeline task commits an updated image tag to a GitOps repo, which an ArgoCD ApplicationSet then syncs). If promotion is a separate GitOps sync, add a step here to open the GitOps Application for hello-service and confirm it reaches Synced and Healthy.
+// AUTHOR NOTE (verify live): confirm whether GitOps promotion is a task inside the PipelineRun or a separate mechanism (e.g., a pipeline task commits an updated image tag to a GitOps repo, which an ArgoCD ApplicationSet then syncs), and confirm the Application name the attendee sees (their GitOps view shows only their own apps).
+
+. Open link:{gitops_url}[OpenShift GitOps^] and find the Application for `hello-service`. Wait for it to report *Synced* and *Healthy* — the promotion is GitOps reconciling what the pipeline committed, the same loop you watched carry your directive change in Module 2.
++
+// AUTHOR NOTE (verify live): confirm the hello-service Application name matches the {user}-agents-* pattern the attendee's GitOps visibility rows cover.
 
 . When all stages complete, verify the service is running:
 +
@@ -286,18 +290,30 @@ oc exec $(oc get pods -n {user}-agent-workspace -o name | grep {user}-assistant 
 +
 // AUTHOR NOTE (verify live): confirm the session JSONL path inside the assistant container. This mirrors the audit command from Module 3 — if that path changed, update both modules.
 +
-The `hello_*` tool call appears in the ledger alongside the `governed__gitea_*` calls you saw in Module 3. The ledger entry is your tenant-side receipt. Its platform-side twin — the gateway's access-log line for this call — lives in the shared stream the platform operator reads, on the same cluster, under the same retention policy as every other audit artifact ACME governs.
+The `hello_*` tool call appears in the ledger alongside the `governed__gitea_*` calls you saw in Module 3 — the factory's newest tool, already leaving the same class of record as its oldest. The ledger entry is your tenant-side receipt. Its platform-side twin — the gateway's access-log line for this call — lives in the shared stream you proved in Module 3 you cannot open, shown on the shared screen during the session, on the same cluster, under the same retention policy as every other audit artifact ACME governs.
++
+// AUTHOR NOTE (verify live): confirm the hello tool entries appear namespaced in the ledger (expected shape: a prefixed toolName matching the MCPServerRegistration prefix) and name the exact string here and in the Verify bullet.
 
 . Read the supply-chain attestation on the image the pipeline signed in Exercise 3:
 +
+First read the image reference the pipeline produced — it is recorded on the Deployment GitOps promoted:
++
 [source,bash,role="execute",subs="attributes"]
 ----
-oc get imagestreamtag hello-service:latest -n {user}-agent-workspace \
-  -o jsonpath='{.image.metadata.annotations}' 2>/dev/null || \
-  echo "See AUTHOR NOTE: image may be in Quay, not an ImageStream"
+oc get deploy hello-service -n {user}-agent-workspace \
+  -o jsonpath='{.spec.template.spec.containers[0].image}'
 ----
 +
-// AUTHOR NOTE (verify live): confirm where the signed image lives. If the TSSC pipeline pushes to an internal Quay registry (not an ImageStream), replace this command with the cosign verify-attestation command for the Quay image reference: cosign verify-attestation <image-ref> --type slsaprovenance. Note where the attendee finds <image-ref> (e.g., the PipelineRun's task result, the Deployment's image field, or the Quay UI).
+Then verify the signed attestation on that image:
++
+[source,bash,role="execute",subs="attributes"]
+----
+cosign verify-attestation --type slsaprovenance \
+  $(oc get deploy hello-service -n {user}-agent-workspace \
+    -o jsonpath='{.spec.template.spec.containers[0].image}')
+----
++
+// AUTHOR NOTE (verify live): confirm the TSSC pipeline's registry target and the cosign trust flags this cluster needs (key/keyless, --certificate-identity, insecure registry flags for the in-cluster Quay). Confirm cosign is present in the Showroom terminal image; if not, provide it or move this verification to the pipeline's own verify task output. Confirm the Deployment name and namespace once the golden-path template's output shape is verified.
 +
 The attestation records what inputs produced what outputs: the commit hash the dev agent's PR introduced, the pipeline that signed it, and the image digest the gateway is now serving. Any operator can follow that chain from the tool call in Mattermost back to the intent Morgan posted in the dev agent's channel.
 
@@ -317,7 +333,7 @@ The attestation records what inputs produced what outputs: the commit hash the d
 
 AgentWorks ships a connector catalog. The list is fixed: the integrations the vendor chose to include, on the vendor's roadmap, installed on the vendor's timeline. Adding a connector means waiting for the vendor or filing a marketplace request.
 
-What you built here works differently. The factory consumed a natural-language intent, scaffolded a service from a governed template, built a signed and scanned image through the TSSC pipeline, promoted it with OpenShift GitOps, registered it behind the MCP gateway, and exposed it as a new governed tool — one that did not exist in the catalog before Morgan asked for it. The requesting agent called it the same session. The catalog grew with the work.
+What you built here works differently. The factory consumed a natural-language intent, scaffolded a service from a governed template, built a signed and scanned image through the TSSC (Trusted Software Supply Chain) pipeline, promoted it with OpenShift GitOps, registered it behind the MCP gateway, and exposed it as a new governed tool — one that did not exist in the catalog before Morgan asked for it. The requesting agent called it the same session. The catalog grew with the work.
 
 The signed image carries an SLSA provenance attestation: the pipeline task that signed it recorded what inputs produced what outputs. Any operator can start at the tool call in Mattermost and trace back to the pull request the dev agent opened, to the scaffold skill the platform applied, to the intent Morgan posted. The supply chain is legible from end to end because every step produced an artifact on the platform ACME governs — not in a vendor's dashboard, not behind a vendor's API, not subject to a vendor's retention policy.
 
