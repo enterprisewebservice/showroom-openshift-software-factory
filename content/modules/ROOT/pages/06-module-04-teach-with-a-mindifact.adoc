@@ -185,14 +185,15 @@ oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw --
   ls /home/node/.openclaw/workspaces/{user}-assistant/skills/ | grep incident
 ----
 +
-And read the seed's own accounting in the gateway log:
+And ask the runtime itself what it can now do:
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-oc logs deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw --since=10m | grep -i seeded | tail -1
+oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw -- \
+  openclaw skills list --agent {user}-assistant | grep incident
 ----
 +
-// AUTHOR NOTE (verify live): confirm the exact SEEDED log line shape; expected to include skillSrc=image+1-cluster — the pinned golden set plus exactly one thing this attendee installed.
+`✓ ready` — the runtime's own skill inventory lists your artifact, source `openclaw-workspace`, next to the baked set.
 +
 The union rule in one line: the baked image is the floor, your namespace's declared skills stack on top, and a name collision goes to the pinned image — the platform's set cannot be silently overridden.
 
@@ -216,7 +217,7 @@ curl -s "$(oc get skill platform-incident-triage -n {user}-agent-workspace \
   -o jsonpath='{.metadata.annotations.agentoffice\.ai/content-url}')" | shasum -a 256
 ----
 +
-// AUTHOR NOTE (verify live): confirm status.contentSha256 is populated for a hand-applied CR (it may be written by the operator on resolve); if empty, compute both sides from the content-url and spec.source.inline instead.
+// VERIFIED LIVE 2026-08-26: the operator populates status.contentSha256 on resolve for hand-applied CRs; both sides matched exactly (7e0b3b65…) on the first live run.
 +
 *What does it need?*
 +
@@ -251,7 +252,7 @@ Incident report: users say the orders API is returning 500s since about 10 minut
 
 . Read the reply against the procedure you read in the registry: a *Severity* section with a P1–P4 classification and one-sentence justification, *What we know* holding only stated or verified facts, an *Investigation sequence* in the pack's fixed order, and *Next actions* capped at three bullets.
 +
-// AUTHOR NOTE (verify live): run this beat and confirm the reply follows the four-heading structure; tune the pack's SKILL.md wording if the model drifts, and re-publish as 1.0.1 — which is itself a demonstration of versioned know-how.
+// VERIFIED LIVE 2026-08-26: fresh session answered with exactly the four headings in order (Severity / What we know / Investigation sequence / Next actions). If a future model drifts, tune the pack and publish 1.0.1 — versioned know-how doing what versioned know-how does.
 +
 Same agent. Same model. Same tools. The difference arrived as a versioned dependency, and everything about it — where it came from, what it contains, what it needs — is written down where your platform can read it.
 
