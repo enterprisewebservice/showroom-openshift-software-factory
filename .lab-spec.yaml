@@ -81,6 +81,21 @@ notes:
     workshop story — do not script beats against them from seat agents (the shared gateway still
     exposes the github backend under UNPREFIXED tool names with the platform App identity;
     per-user tool filtering is not yet enabled — an honest-labeling caveat, not a feature).
+  skill_artifact_model: >-
+    The registry behind modules 1 and 4 (mindifact.ai — infrastructure name, never the
+    pattern name in attendee copy) carries FOUR kinds: skill, tool (governed tool
+    definitions), pack (capability bundles: skill + the tool it calls, one coordinate),
+    meta-pack. Two graphs: CONTAINS (pack members) and REQUIRES (declared dependencies,
+    reported satisfied/unsatisfied against the live cluster — never auto-widened).
+    Module 1's Suggest step IS the composer (/catalog/recommend) drawing on this catalog
+    with dependencies included; module 4 installs a single skill deliberately so every
+    moving part is auditable; the pack-level story is read-only in module 4 (kind
+    grouping + supply-chain-ops description). PLANNED module 6 beat (add at its live
+    pass): the shipped service's MCPServerRegistration flips a declared dependency to
+    satisfied — the factory's output satisfies a capability's requires edge. Per-seat
+    server-side pack/tool install is the named installRequest.Namespace roadmap ask;
+    workstation-only pack compartments (verbs/traps/evals) are deliberately not
+    materialized on cluster.
   style_exceptions: >-
     Em dashes are an accepted, deliberate part of this lab's voice (used
     consistently across all verified modules); reviewers should not flag

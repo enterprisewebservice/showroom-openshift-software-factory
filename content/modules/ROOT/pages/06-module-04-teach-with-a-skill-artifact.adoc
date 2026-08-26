@@ -88,11 +88,34 @@ A fixed four-section reply structure, a P1–P4 severity rubric, a numbered inve
 curl -s https://mindifact.ai/v1/platform-incident-triage/metadata.json
 ----
 
+. The registry holds more than skills. Group its index by kind:
++
+[source,bash,role="execute"]
+----
+curl -s https://mindifact.ai/v1/index.json | python3 -c "
+import sys, json, collections
+k = collections.Counter(a['kind'] for a in json.load(sys.stdin)['artifacts'])
+print(dict(k))"
+----
++
+Four kinds. `tool` rows are governed tool definitions — and your skill's declared dependency, `ops-metrics`, is one of them: the dependency names an installable artifact in the same registry, not a wish. `pack` rows bundle a capability. Read one:
++
+[source,bash,role="execute"]
+----
+curl -s https://mindifact.ai/v1/index.json | python3 -c "
+import sys, json
+for a in json.load(sys.stdin)['artifacts']:
+    if a['name'] == 'supply-chain-ops': print(a['description'])"
+----
++
+"Install this and the agent has both the skill and the tool it calls." One coordinate, a whole capability: the procedure and the governed tool it depends on, versioned together. Installing a pack expands to every skill it contains, each stamped with the pack's provenance — and the platform reports each declared dependency as satisfied or not against what actually runs, rather than pretending. This module installs a single skill so you can audit every moving part; the capstone meets the pack model from the other side, when the factory's own output becomes the governed tool a capability depends on.
+
 === Verify
 
 * The index entry shows kind `skill`, version `1.0.0`, and the `ops-metrics` dependency
 * The versioned content URL serves the SKILL.md
 * `metadata.json` lists `1.0.0` under `versions`
+* The index groups into four kinds — `skill`, `tool`, `pack`, `meta-pack` — and the `supply-chain-ops` pack describes a skill-plus-tool bundle
 
 == Exercise 3: Install it into your workspace
 
@@ -271,7 +294,7 @@ The AgentWorks pitch this module answers is "skills/harness, supply-chain graded
 
 What you just did instead:
 
-* *Published know-how as an artifact* — coordinates, version, manifest, declared dependencies, in a registry your platform federates
+* *Published know-how as an artifact* — coordinates, version, manifest, declared dependencies, in a registry your platform federates alongside governed tool definitions and capability packs that bundle skill and tool as one installable unit
 * *Installed it declaratively* — a resource in your namespace, carrying full provenance, applied with the same tool as any other platform change
 * *Watched the operator deliver it* — hands-free re-seed, union over a digest-pinned golden set that an equivalence gate keeps honest
 * *Audited the whole chain* — coordinate, content hash, dependencies, lockfile — with four commands
