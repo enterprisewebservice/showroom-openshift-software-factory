@@ -17,7 +17,7 @@ toc::[]
 
 == What you built and proved
 
-Seven modules. Each row ties a capability to the evidence you personally produced.
+Across 7 modules, each row ties a capability to the evidence you personally produced.
 
 [cols="3,1,4",options="header"]
 |===
@@ -33,7 +33,7 @@ Seven modules. Each row ties a capability to the evidence you personally produce
 
 |Govern every tool call through an MCP gateway, with no downstream credential in the agent pod
 |3
-|`env grep` returned exactly two platform-placed tokens and nothing for gateway-injected tools; `oc logs deploy/mcp-gateway` returned `Forbidden`; tool-call ledger showed `governed__gitea_*` entries alongside ungoverned built-ins
+|`env grep` returned exactly two platform-placed tokens and nothing for gateway-injected tools; `oc logs deploy/mcp-gateway-data-science-gateway-class -n agent-office` returned `Forbidden`; tool-call ledger showed `governed__gitea_*` entries alongside ungoverned built-ins
 
 |Deliver versioned know-how as an installable skill pack and change behavior without redeployment
 |4
@@ -81,7 +81,7 @@ These are real gaps. They are listed without apology.
 
 === Platform product-asks surfaced by this lab
 
-These are gaps the lab's own construction exposed. They are labeled as such in this lab's specification, and each appeared during Module 3.
+These are gaps the lab's own construction exposed. They are labeled as such in this lab's specification; two of them surfaced directly in Module 3, and the tool-list filtering gap is a platform caveat recorded in the lab specification.
 
 [cols="2,3,3",options="header"]
 |===
@@ -112,10 +112,10 @@ Scan the two tables above. Neither contains a gap in trust, governance, or deplo
 |Module 3, Exercise 2: walked the full chain one hop at a time; watched the badge decay and refresh without a pod restart
 
 |Tenancy and per-seat isolation: per-attendee namespace, RBAC enforcement, per-seat identity on every governed call
-|Modules 1–3: `oc get projects` showed only your projects; `gitea_get_me` returned your username; `oc auth can-i` confirmed the `admin-{user}` persona's exact scope
+|Modules 1–3: `oc get pods -n {user}-agent-workspace` showed only your agent's workloads; `gitea_get_me` returned your username; `oc auth can-i` confirmed the `admin-{user}` persona's exact scope
 
 |Audit trail: platform-scoped stream, tenancy boundary enforced, tenant-side ledger at your blast radius
-|Module 3, Exercise 3: `oc logs deploy/mcp-gateway` returned `Forbidden` with your username; tool-call ledger showed `governed__gitea_*` entries you triggered
+|Module 3, Exercise 3: `oc logs deploy/mcp-gateway-data-science-gateway-class -n agent-office` returned `Forbidden` with your username; tool-call ledger showed `governed__gitea_*` entries you triggered
 
 |Software supply chain: build, sign, scan, provenance, GitOps-gated promotion
 |Module 6: Tekton pipeline built and signed the microservice; GitOps promoted only the signed artifact; `MCPServerRegistration` declared it before any agent could call it
@@ -152,7 +152,7 @@ These questions have no universal answer. Score them against your organization's
 |*Supply chain accountability.* Module 6 shipped software an agent wrote through the same supply chain controls as human-written code: signed artifacts, provenance, GitOps-gated promotion. If your organization ships regulated software — financial, medical, defense — who must be accountable for artifact provenance? Is that compatible with a third party building and signing the artifacts?
 |===
 
-== Learning outcomes
+== What You've Learned
 
 By completing this module, you should now understand:
 
@@ -163,7 +163,7 @@ By completing this module, you should now understand:
 
 == Lab summary
 
-Seven modules. One factory. An agent was hired through a governed template, lives in git, calls tools through an MCP gateway that authorizes and audits every call, learns from versioned skill packs, runs headless inside Tekton pipelines, ships software through a supply chain that signs and scans the artifacts, and can swap its model without changing anything else. The agent's output — a microservice it scaffolded — became a new governed tool the requesting agent used to close the original job.
+The count: 7 modules, one factory. An agent was hired through a governed template, lives in git, calls tools through an MCP gateway that authorizes and audits every call, learns from versioned skill packs, runs headless inside Tekton pipelines, ships software through a supply chain that signs and scans the artifacts, and can swap its model without changing anything else. The agent's output — a microservice it scaffolded — became a new governed tool the requesting agent used to close the original job.
 
 The gap map is real. The UX gaps are smaller on a commercial platform. The ergonomics are more polished. The operational surface the vendor manages is narrower. Those are not dismissible facts.
 

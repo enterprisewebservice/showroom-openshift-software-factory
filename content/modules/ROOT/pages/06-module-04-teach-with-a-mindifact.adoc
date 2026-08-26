@@ -7,9 +7,9 @@ include::partial$_attributes.adoc[]
 // Attributes used by this module (injected by Showroom from lab user data):
 // {user}, {password}, {ocp_version}, {devhub_url}, {gitops_url}, {mattermost_url}
 
-The AgentWorks pitch for this module is "skills and harness, supply-chain graded." On a vendor platform, a skill pack ships from the vendor's catalog, versioned however the vendor tracks it, installed on a timeline the vendor controls. The version the agent runs is whatever the platform last deployed.
+The AgentWorks pitch for this module is "skills/harness, supply-chain graded." On a vendor platform, a skill pack ships from the vendor's catalog, versioned however the vendor tracks it, installed on a timeline the vendor controls. The version the agent runs is whatever the platform last deployed.
 
-On this platform, a skill is a mindifact: a versioned OCI artifact published through the same supply chain as every other piece of software ACME governs. Every mindifact carries a content digest. The agent's declaration pins that digest. The cluster catalog checks it at runtime, and a skill that does not match its published artifact does not install.
+On this platform, a skill is a mindifact: a versioned Open Container Initiative (OCI) artifact published through the same supply chain as every other piece of software ACME governs. Every mindifact carries a content digest. The agent's declaration pins that digest. The cluster catalog checks it at runtime, and a skill that does not match its published artifact does not install.
 
 In this module you give your agent a task it handles without a defined procedure, install a versioned mindifact through the Developer Hub Bindings card, and re-run the same task. The agent follows a procedure now. You will read that procedure in the workspace and trace the version pin back to its OCI artifact.
 
@@ -141,7 +141,9 @@ oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
   -o jsonpath='{.spec.skills[*].pack}' && echo
 ----
 +
-`platform-incident-triage` now appears in the output alongside the packs from Module 1.
+`platform-incident-triage` now appears in the output.
++
+// AUTHOR NOTE (verify live): list the pack names that appear alongside platform-incident-triage in the live output and name them here so attendees can confirm the exact set.
 
 . Confirm the skill landed in the agent's workspace:
 +
@@ -179,6 +181,8 @@ Draft an incident investigation summary for this report: "Worker nodes are showi
 ----
 
 . Read the reply. The structure is different now: consistent section headings, a defined severity scale, a reproducible investigation sequence. The agent did not choose this format — it followed the `platform-incident-triage` skill's declared procedure.
++
+// AUTHOR NOTE (verify live): confirm the agent reply follows the section headings, severity scale, and investigation sequence declared in the pack's SKILL.md; update this step's description to match the actual structure the agent produces.
 
 . Read the procedure the agent followed:
 +
@@ -191,6 +195,8 @@ oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw --
 // AUTHOR NOTE (verify live): confirm the filename is SKILL.md inside the skill's directory; the file may be named README.md, procedure.md, or another name depending on the mindifact schema.
 +
 The SKILL.md contains the procedure the agent applied: the severity classification rubric, the section headings, the investigation sequence. Compare it to the agent's reply — the structure in Mattermost is the procedure in this file, applied to the incident report you gave it.
+
+// AUTHOR NOTE (verify live): confirm the section correspondence between the live SKILL.md and a real agent reply; rewrite the comparison instruction to name the actual headings once the pack exists.
 
 . Read the version pinning from the running manifest:
 +

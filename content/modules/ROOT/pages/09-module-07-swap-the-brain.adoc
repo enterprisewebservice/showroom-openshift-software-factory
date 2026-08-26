@@ -9,7 +9,7 @@ include::partial$_attributes.adoc[]
 
 The model is one field in the agent's manifest. Everything the agent is — its purpose, its skills, its governed tools, its git repository, its Mattermost channel — is unchanged by a model swap. Only the inference endpoint changes.
 
-This module makes that concrete. You will edit the model reference from the frontier endpoint to a sovereign in-cluster vLLM served by OpenShift AI, watch OpenShift GitOps propagate the change, confirm the agent still performs the same way, and swap back. The mechanics are Module 2's edit loop: a commit to the agent's gitops repository, a pull request, a merge.
+This module makes that concrete. You will edit the model reference from the frontier endpoint to a sovereign in-cluster vLLM inference server, served by OpenShift AI, watch OpenShift GitOps propagate the change, confirm the agent still performs the same way, and swap back. The mechanics are Module 2's edit loop: a commit to the agent's gitops repository, a pull request, a merge.
 
 Plan on 20 minutes.
 
@@ -54,12 +54,6 @@ The output names the current inference endpoint. It is a reference brokered thro
 
 . Open the agent's repository — use the Source link in the Developer Hub catalog entry for `{user}-assistant`, as you did in Module 2. Navigate to `base/agentworkstation.yaml` and find the model field.
 +
-// AUTHOR NOTE (verify live): confirm the YAML field name and shape against a live deployed agent before publishing. The field is expected to be something like:
-//   spec:
-//     model:
-//       endpoint: <maas-frontier-url>
-//       modelId: <model-id>
-+
 NOTE: The model reference here and the gateway reference in Module 3 follow the same pattern: the manifest names the endpoint, MaaS or the gateway holds the credential, and the agent carries a reference. Swapping the model is changing the reference.
 
 === Verify
@@ -73,21 +67,20 @@ The sovereign endpoint is an in-cluster vLLM instance served by OpenShift AI and
 
 . In the agent's repository web UI, navigate to `base/agentworkstation.yaml` and click the edit icon.
 
-. Find the model field and update its endpoint to the sovereign vLLM endpoint:
+. Find the model field and update `provider` and `modelName` to the sovereign vLLM values:
 +
-// AUTHOR NOTE (verify live): confirm the exact field path and supply the sovereign endpoint URL and model ID from the lab deployer's output before publishing. The in-cluster vLLM is registered into MaaS during the software-factory-deployer setup phase. Consider surfacing the endpoint value as a lab attribute or info-panel entry so attendees have a concrete value to copy here.
+// AUTHOR NOTE (verify live): supply the sovereign provider and modelName values from the lab deployer's output before publishing (the in-cluster vLLM is registered into MaaS during the software-factory-deployer setup phase). Consider surfacing them as lab attributes so attendees have concrete values to copy here.
 +
 [source,yaml]
 ----
-# In base/agentworkstation.yaml, locate the model field and update it.
-# The structure looks similar to:
+# In base/agentworkstation.yaml, locate the model field (verified shape):
 #
 #   spec:
 #     model:
-#       endpoint: <sovereign-vllm-maas-url>
-#       modelId: <model-id>
+#       provider: <sovereign-provider>
+#       modelName: <sovereign-model-name>
 #
-# Update only the endpoint (and modelId if it is a separate field).
+# Update only provider and modelName.
 # Leave every other field in the manifest exactly as it is.
 ----
 +
@@ -109,8 +102,6 @@ The sync completes within seconds — by the time you switch tabs it may already
 ----
 oc get pods -n {user}-agent-workspace
 ----
-+
-// AUTHOR NOTE (verify live): confirm the jsonpath field path matches the live CRD before publishing.
 +
 [source,bash,role="execute",subs="attributes"]
 ----
@@ -180,15 +171,22 @@ git push origin main
 
 . Read the model reference from the cluster:
 +
-// AUTHOR NOTE (verify live): confirm jsonpath field path before publishing.
-+
 [source,bash,role="execute",subs="attributes"]
 ----
 oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
   -o jsonpath='{.spec.model}'
 ----
 +
-The frontier endpoint is back.
+The frontier values are back.
+
+. Confirm the runtime never moved:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc get pods -n {user}-agent-workspace
+----
++
+Same pod, same restart count as before the swap — both changes re-rendered the agent in place.
 
 . Open link:{mattermost_url}[Mattermost^] and type `/new` in the `{user}-assistant` channel, then send the same task:
 +
