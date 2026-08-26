@@ -168,7 +168,7 @@ Plan for a half day: about 3.5 hours of focused hands-on work. Treat the module 
 |1. Hire an agent |~30 min
 |2. The agent is in git |~25 min
 |3. Governed tools |~30 min
-|4. Teach with a mindifact |~30 min
+|4. Teach with a skill artifact |~30 min
 |5. Headless agent in the pipeline |~30 min
 |6. Ship to production (capstone) |~60 min
 |7. Swap the brain |~20 min

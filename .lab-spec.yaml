@@ -14,7 +14,7 @@ ph_payload:
     learning_objectives:
       - Provision a governed AI agent from a Developer Hub template and trace everything it created in git
       - Govern agent tool access through an MCP gateway with per-call authorization and a full audit trail
-      - Deliver versioned know-how to an agent as a mindifact pack and watch behavior change
+      - Deliver know-how to an agent as a versioned skill artifact and watch behavior change
       - Run a headless agent inside a Tekton pipeline with autonomy set by gateway profile
       - Ship a microservice to production through the agent-driven supply chain (build, sign, scan, promote) and watch the requesting agent consume it as a new governed tool
       - Swap the agent's model between a frontier endpoint and a sovereign in-cluster vLLM without touching anything else
@@ -28,7 +28,7 @@ ph_payload:
       Module 1 (~30 min): Hire an agent — one sentence in the Dev Hub template; review the wiring (skills, tools, gateway, brain); agent live in ~2 minutes. [AgentWorks: hosted-agent onboarding]
       Module 2 (~25 min): The agent is in git — edit the agent's prompt via PR, watch OpenShift GitOps reconcile, roll it back. [AgentWorks: where does the hosted agent live?]
       Module 3 (~30 min): Governed tools — call a tool through the MCP gateway as the agent; hunt the credentials (two classes: gateway-injected tools have none anywhere in the namespace; pass-through tools carry a platform-minted per-seat Secret the RUNTIME holds but the agent's shell-less tool list can never read); read the audit line. [AgentWorks: connectors, with enterprise trust]
-      Module 4 (~30 min): Teach with a mindifact — install a versioned skill pack; re-run the task; the agent now follows the procedure. [AgentWorks: skills/harness, supply-chain graded]
+      Module 4 (~30 min): Teach with a skill artifact — install a versioned skill pack; re-run the task; the agent now follows the procedure. [AgentWorks: skills/harness, supply-chain graded]
       Module 5 (~30 min): Headless agent in the pipeline — trigger a Tekton PipelineRun with an agent task; autonomy tier is the gateway profile bound to the run. [AgentWorks: the headless runner + autonomy levels]
       Module 6 (~60 min, capstone): Ship to production AND close the loop — file an intent with the ops manager; a dev agent scaffolds the microservice from a golden-path template; the supply-chain pipeline builds, signs and scans; GitOps promotes; then the beat that makes it Morgan's Monday: the shipped service is registered behind the MCP gateway (MCPServerRegistration) and the REQUESTING agent calls it as a governed tool to complete the original intent, posting the business result in Mattermost. The attendee reads the gateway audit line for that call. The factory's output became the factory's new capability — AgentWorks ships a fixed connector catalog; this factory grows its own. [AgentWorks: the software factory + connectors, with SLSA provenance]
       Module 7 (~20 min): Swap the brain — change the model reference frontier ↔ sovereign vLLM; re-run Module 4's task; nothing else changed. [AgentWorks: model independence, plus the part a SaaS cannot do — you RUN the model]

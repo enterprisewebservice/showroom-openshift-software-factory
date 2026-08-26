@@ -14,7 +14,7 @@ In this workshop, you will:
 
 * Provision a governed AI agent from a Red Hat Developer Hub template and trace everything it created in git
 * Govern agent tool access through an MCP gateway with per-call authorization and a full audit trail
-* Deliver versioned know-how to an agent as a mindifact pack and watch its behavior change
+* Deliver know-how to an agent as a versioned skill artifact and watch its behavior change
 * Run a headless agent inside a Tekton pipeline with autonomy set by gateway profile
 * Ship a microservice to production through the agent-driven supply chain (build, sign, scan, promote)
 * Swap the agent's model between a frontier endpoint and a sovereign in-cluster vLLM without touching anything else
@@ -39,7 +39,7 @@ The workshop runs as 8 modules, each anchored to something you do in the environ
 |Call a tool through the MCP gateway as the agent. Confirm the credential is not in the agent's environment, then read the audit line for your call.
 |~30 min
 
-|4. Teach with a mindifact
+|4. Teach with a skill artifact
 |Install a versioned skill pack on the agent. Re-run a task and watch the agent follow the procedure it just learned.
 |~30 min
 

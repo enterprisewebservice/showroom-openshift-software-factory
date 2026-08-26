@@ -71,7 +71,7 @@ By the end of this workshop you can:
 
 * Provision a governed agent from a Red Hat Developer Hub template → 1 sentence of intent becomes a repo, a GitOps application, and a running agent you can trace end to end in git
 * Govern agent tool access through an MCP gateway → per-call authorization and an audit line for every tool call, with credentials injected at the gateway so the agent never holds a key
-* Deliver versioned know-how as a mindifact pack → the agent's behavior changes because a dependency arrived, not because someone hand-edited a prompt
+* Deliver know-how as a versioned skill artifact → the agent's behavior changes because a dependency arrived, not because someone hand-edited a prompt
 * Run a headless agent inside an OpenShift Pipelines run → delegation in CI, with autonomy set by a gateway profile enforced outside the agent process
 * Ship a microservice through the agent-driven supply chain → build, sign, scan, and promote with evidence a security team can gate on
 * Swap the agent's model between a frontier endpoint and in-cluster vLLM → same agent, same tools, same governance; only the brain changed
@@ -118,7 +118,7 @@ Environment access, URLs, and credentials are on the next page.
 An agent here is a workload, not a SaaS seat. 4 flows carry the whole architecture:
 
 . **Hire**: a sentence typed into Red Hat Developer Hub renders a git repo and a set of custom resources; an operator turns them into a running agent with a persistent workspace.
-. **Work**: the agent does its work in its own workstation pod, using know-how installed from versioned mindifact packs.
+. **Work**: the agent does its work in its own workstation pod, using know-how installed from versioned skill artifacts.
 . **Tool call**: every tool call passes through the MCP gateway: authorize the call, inject the credential, write the audit line. The agent never sees a key.
 . **Ship**: the agent's commits ride the supply chain: build, sign, scan, and promote through OpenShift GitOps. The agent's own definition changes through the same gates.
 
@@ -146,7 +146,7 @@ The hands-on core runs about 3.5 hours. The estimates below include reading and 
 |Call tools through the MCP gateway as the agent. Read the per-call authorization decisions and the audit log. Search the agent's environment for credentials, and find none.
 |~30 min
 
-|4. Teach with a mindifact
+|4. Teach with a skill artifact
 |Install a versioned know-how pack on your agent. Re-run the same task and compare its behavior before and after.
 |~30 min
 
@@ -191,4 +191,4 @@ None of it required a second platform. The pattern is made of OpenShift, so it g
 → Yes, through the same gates a human commit rides: build, sign, scan, and promote. Module 6 ends with you loading the live route and walking the audit trail behind it.
 
 **"How much of this is supported product versus reference build?"**
-→ The governance surfaces (Red Hat Developer Hub, OpenShift Pipelines, OpenShift GitOps, Red Hat Connectivity Link) are supported products. The agent operator and the mindifact registry are reference builds running in your environment. Module 8's gap map labels every component, so you leave knowing which is which.
+→ The governance surfaces (Red Hat Developer Hub, OpenShift Pipelines, OpenShift GitOps, Red Hat Connectivity Link) are supported products. The agent operator and the platform's skill registry are reference builds running in your environment. Module 8's gap map labels every component, so you leave knowing which is which.

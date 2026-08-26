@@ -1,10 +1,12 @@
-= Module 4: Teach with a mindifact
+= Module 4: Teach with a skill artifact
 
 include::partial$_attributes.adoc[]
 
 Your agent arrived knowing how to investigate and document. It did not arrive knowing your organization's procedures. On commercial agent platforms, the AgentWorks pitch for this capability is "skills/harness, supply-chain graded" — skill packs from the vendor's catalog, versioned however the vendor tracks them, installed on the vendor's timeline.
 
-On this platform, know-how ships the way software ships. A *mindifact* is a versioned artifact in a registry: it has coordinates (`namespace/name:version`), a manifest, declared dependencies, and a content hash — and installing one is a declarative act your platform records. In this module you watch your agent fail at a task it was never taught, install a versioned pack that teaches it, and then trace the artifact's supply chain from registry coordinate to the running agent.
+On this platform, know-how ships the way software ships. The platform packages each skill as a *versioned artifact* in a registry: it has coordinates (`namespace/name:version`), a manifest, declared dependencies, and a content hash — and installing one is a declarative act your platform records. In this module you watch your agent fail at a task it was never taught, install a versioned pack that teaches it, and then trace the artifact's supply chain from registry coordinate to the running agent.
+
+The format inside the pack is deliberately not proprietary. A skill's body is a `SKILL.md` — the open Agent Skills format (Markdown with YAML frontmatter) that most agent runtimes now read. What the platform adds is everything *around* the file, the part the open format leaves to you: versioned distribution, declared dependencies, content hashing, and Kubernetes-native delivery. Portable know-how, governed delivery.
 
 Plan on about 30 minutes.
 
@@ -13,7 +15,7 @@ Plan on about 30 minutes.
 By the end of this module, you'll be able to:
 
 * Show that an agent's know-how is a defined, inspectable set — a pinned golden catalog plus whatever its namespace declares
-* Install a versioned mindifact into your own workspace as a declarative resource and watch the agent learn it hands-free
+* Install a versioned skill artifact into your own workspace as a declarative resource and watch the agent learn it hands-free
 * Verify the artifact's supply chain: registry coordinate, version, content hash, and declared dependencies
 * Explain what separates a versioned, dependency-declared know-how artifact from a folder of markdown files
 
@@ -34,7 +36,7 @@ oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw --
   ls /home/node/.openclaw/workspaces/{user}-assistant/skills/
 ----
 +
-Eight skills, identical for every agent on this platform, pinned by digest in a lockfile you will read in Exercise 4.
+The same set for every agent on this platform, pinned by digest in a lockfile you will read in Exercise 4.
 
 . Now give the agent a task it was never taught. In link:{mattermost_url}[Mattermost^], type `/new` in the `{user}-assistant` channel (a clean session, so this module's before-and-after is honest), then send:
 +
@@ -43,7 +45,7 @@ Eight skills, identical for every agent on this platform, pinned by digest in a 
 Incident report: users say the orders API is returning 500s since about 10 minutes ago. Production. Triage this.
 ----
 
-. Read the reply. It is a reasonable improvisation — the agent investigates because investigating is its job. What it lacks is *your organization's procedure*: no severity classification, no fixed investigation order, no consistent structure another engineer could pick up. That gap is what a mindifact carries.
+. Read the reply. It is a reasonable improvisation — the agent investigates because investigating is its job. What it lacks is *your organization's procedure*: no severity classification, no fixed investigation order, no consistent structure another engineer could pick up. That gap is what a skill artifact carries.
 
 === Verify
 
@@ -92,7 +94,7 @@ curl -s https://mindifact.ai/v1/platform-incident-triage/metadata.json
 
 == Exercise 3: Install it into your workspace
 
-Installing a mindifact is declarative: a `Skill` resource in your namespace, carrying the artifact's full provenance — its registry, its coordinates, its content. Your agent's operator watches for exactly this.
+Installing a skill artifact is declarative: a `Skill` resource in your namespace, carrying the artifact's full provenance — its registry, its coordinates, its content. Your agent's operator watches for exactly this.
 
 . Apply the rendered artifact into your own workspace:
 +
@@ -105,7 +107,7 @@ metadata:
   name: platform-incident-triage
   labels:
     app.kubernetes.io/managed-by: agent-office
-    agentoffice.ai/skill-tier: mindifact
+    agentoffice.ai/skill-tier: registry
   annotations:
     agentoffice.ai/registry: mindifact.ai
     agentoffice.ai/pack-ref: agent-office/platform-incident-triage:1.0.0
