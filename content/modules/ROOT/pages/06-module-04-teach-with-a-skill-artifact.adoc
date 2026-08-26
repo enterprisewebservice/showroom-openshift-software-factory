@@ -37,6 +37,8 @@ oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw --
 ----
 +
 The same set for every agent on this platform, pinned by digest in a lockfile you will read in Exercise 4.
++
+Look at where that set comes from. Most of these are official published skills: five imported from Red Hat's link:https://github.com/openshift/agentic-skills[openshift/agentic-skills^] repository — the same content behind the Ecosystem Catalog's agentic skill pack for OpenShift — and two from the upstream Agent Skills project. Red Hat publishes those packs as SKILL.md files you download by hand; this platform imports them with source provenance, repackages each as a digest-pinned versioned artifact, and delivers them to every agent through the operator. Red Hat publishes the know-how; the platform ships it like software.
 
 . Now give the agent a task it was never taught. In link:{mattermost_url}[Mattermost^], type `/new` in the `{user}-assistant` channel (a clean session, so this module's before-and-after is honest), then send:
 +
