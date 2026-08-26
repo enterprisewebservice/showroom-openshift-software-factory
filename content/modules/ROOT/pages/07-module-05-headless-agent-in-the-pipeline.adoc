@@ -70,7 +70,7 @@ The `gatewayRef` field names both the gateway and the profile the agent was hire
 
 == Exercise 2: Trigger a headless PipelineRun
 
-A headless agent run is a standard Tekton PipelineRun with one task: send a prompt to the agent via the gateway's headless endpoint, wait for the reply, and write the reply to a Tekton result. The PipelineRun runs in your namespace. The agent gateway service is already running there — the same gateway that handled the governed tool calls in Module 3.
+A headless agent run is a standard Tekton PipelineRun with 1 task: send a prompt to the agent via the gateway's headless endpoint, wait for the reply, and write the reply to a Tekton result. The PipelineRun runs in your namespace. The agent gateway service is already running there — the same gateway that handled the governed tool calls in Module 3.
 
 The manifest below is self-contained: it defines the pipeline spec and the agent task inline. No pre-existing Pipeline or Task resource is required.
 
@@ -117,13 +117,17 @@ Reply in exactly 3 bullets. No preamble. No sign-off."
                   -H "Content-Type: application/json" \
                   -d "{\"prompt\":\"${PROMPT}\",\"agent\":\"{user}-assistant\"}" \
                   | python3 -c \
-                  "import sys,json; d=json.load(sys.stdin); print(d.get('reply',d.get('content','(no reply field)')))")
+                  "import sys,json; d=json.load(sys.stdin); print(d.get('reply',d.get('content','')))")
+                # An empty reply means the response schema did not match —
+                # fail the run loudly rather than reporting Succeeded with
+                # nothing in the result.
+                [ -n "${REPLY}" ] || { echo "ERROR: gateway returned no recognisable reply field"; exit 1; }
                 printf '%s' "${REPLY}" > $(results.reply.path)
 MANIFEST
 echo "Manifest written."
 ----
 +
-// AUTHOR NOTE (verify live): confirm the gateway service name (`{user}-assistant-gateway`), the port (8080), and the headless endpoint path (`/v1/headless/invoke`). Verify the request body fields (`prompt`, `agent`) and the response field (`reply` / `content`) against the openclaw gateway's actual headless API. Confirm `ubi9/ubi9:latest` is pullable from the cluster's registry and includes curl and python3; if not, substitute an appropriate image (e.g., `registry.access.redhat.com/ubi9/python-311:latest` with curl added, or a lab-provided toolbox image).
+// AUTHOR NOTE (verify live): confirm the gateway service name (`{user}-assistant-gateway`), the port (8080), and the headless endpoint path (`/v1/headless/invoke`). Verify the request body fields (`prompt`, `agent`) and the response field (`reply` / `content`) against the openclaw gateway's actual headless API. Confirm `ubi9/ubi9:latest` is pullable from the cluster's registry and includes curl and python3; if not, substitute an appropriate image (e.g., `registry.access.redhat.com/ubi9/python-311:latest` with curl added, or a lab-provided toolbox image). Also note: the JSON body embeds ${PROMPT} by shell interpolation — safe for the literal prompt above, but prefer jq -n --arg construction if the prompt ever carries quotes; do not teach string-interpolated JSON as a production pattern.
 
 . Apply the manifest and capture the generated name:
 +
@@ -215,7 +219,7 @@ The same agent, the same gateway, the same model — but no human in the loop an
 
 The AgentWorks headless runner gives the autonomy decision to the caller: pass a flag, choose a behavior. What you built here puts the autonomy decision in a different place: a gateway profile that a platform administrator declared, that the pipeline's caller was bound to, and that the agent cannot change. The agent ran within the boundary the platform set, and the boundary is a piece of declared configuration — not a flag the agent observed and chose to respect.
 
-That distinction matters at scale. A hundred pipeline runs in a hundred namespaces, each bounded by its declared profile, all routed through the same gateway binary. The platform team can narrow a profile for every run with one manifest change, revoke a tool by editing one policy resource, and audit every governed call without visiting a vendor dashboard. The agent's footprint is what the platform allows, not what the agent requests.
+That distinction matters at scale. A hundred pipeline runs in a hundred namespaces, each bounded by its declared profile, all routed through the same gateway binary. The platform team can narrow a profile for every run with 1 manifest change, revoke a tool by editing 1 policy resource, and audit every governed call without visiting a vendor dashboard. The agent's footprint is what the platform allows, not what the agent requests.
 
 The next module takes this pattern the rest of the way. The headless run becomes a production pipeline: the agent scaffolds a microservice, the supply chain builds and signs it, GitOps promotes it, and the requesting agent calls the shipped service as a new governed tool. The factory's output becomes the factory's new capability.
 
