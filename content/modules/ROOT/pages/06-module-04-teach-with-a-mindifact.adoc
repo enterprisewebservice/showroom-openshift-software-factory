@@ -1,72 +1,32 @@
 = Module 4: Teach with a mindifact
+
 include::partial$_attributes.adoc[]
-:source-highlighter: rouge
-:toc: macro
-:toclevels: 1
 
-// Attributes used by this module (injected by Showroom from lab user data):
-// {user}, {password}, {ocp_version}, {devhub_url}, {gitops_url}, {mattermost_url}
+Your agent arrived knowing how to investigate and document. It did not arrive knowing your organization's procedures. On commercial agent platforms, the AgentWorks pitch for this capability is "skills/harness, supply-chain graded" — skill packs from the vendor's catalog, versioned however the vendor tracks them, installed on the vendor's timeline.
 
-The AgentWorks pitch for this module is "skills/harness, supply-chain graded." On a vendor platform, a skill pack ships from the vendor's catalog, versioned however the vendor tracks it, installed on a timeline the vendor controls. The version the agent runs is whatever the platform last deployed.
+On this platform, know-how ships the way software ships. A *mindifact* is a versioned artifact in a registry: it has coordinates (`namespace/name:version`), a manifest, declared dependencies, and a content hash — and installing one is a declarative act your platform records. In this module you watch your agent fail at a task it was never taught, install a versioned pack that teaches it, and then trace the artifact's supply chain from registry coordinate to the running agent.
 
-On this platform, a skill is a mindifact: a versioned Open Container Initiative (OCI) artifact published through the same supply chain as every other piece of software ACME governs. Every mindifact carries a content digest. The agent's declaration pins that digest. The cluster catalog checks it at runtime, and a skill that does not match its published artifact does not install.
-
-In this module you give your agent a task it handles without a defined procedure, install a versioned mindifact through the Developer Hub Bindings card, and re-run the same task. The agent follows a procedure now. You will read that procedure in the workspace and trace the version pin back to its OCI artifact.
-
-Plan on 30 minutes: establish a baseline, install the skill pack, confirm the behavior change, then inspect the artifact.
-
-////
-LIVE-PASS FINDINGS (2026-08-25, fold into the rewrite):
-1. The AgentWorkstation spec carries NO skills field — workspace skills are
-   operator-materialized per agent (verified: /home/node/.openclaw/workspaces/
-   <agent>/skills/<name>/SKILL.md, 8 present on the seat agent). The attendee-
-   facing INSTALL path (binder card -> SkillBinding? registry install API?)
-   must be confirmed live before this module's mechanics are trusted.
-2. The registry's installable packs are all unrelated project content
-   (newsroom/parkforge). A WORKSHOP-APPROPRIATE teachable pack does not exist
-   yet — authoring and publishing one (small, demonstrable behavior change)
-   is this module's main prep item.
-////
+Plan on about 30 minutes.
 
 == Learning objectives
 
 By the end of this module, you'll be able to:
 
-* Confirm which skill packs are currently bound to your agent and explain what the workspace looks like before a new pack lands
-* Install a versioned mindifact through the Developer Hub Bindings card and trace the resulting pull request through OpenShift GitOps to the agent's workspace
-* Run the same task before and after a skill install and identify exactly where the agent's changed behavior comes from
-* Read the skill's OCI digest in the agent's workspace and explain why version pinning makes know-how supply-chain graded
+* Show that an agent's know-how is a defined, inspectable set — a pinned golden catalog plus whatever its namespace declares
+* Install a versioned mindifact into your own workspace as a declarative resource and watch the agent learn it hands-free
+* Verify the artifact's supply chain: registry coordinate, version, content hash, and declared dependencies
+* Explain what separates a versioned, dependency-declared know-how artifact from a folder of markdown files
 
-== Exercise 1: Establish a baseline
+== Exercise 1: Establish what the agent does not know
 
-Before installing anything, give the agent a task that benefits from a structured procedure. The agent produces output — but on its own terms, without a defined method. That is the before state.
-
-. Open link:{mattermost_url}[Mattermost^] and sign in as `{user}` with password `{password}`.
-
-. Navigate to the `#{user}-assistant` channel.
-
-. Send this message:
-+
-[source,text]
-----
-Draft an incident investigation summary for this report: "Worker nodes are showing elevated memory pressure and API server response times have increased over the last 30 minutes." Include severity classification, affected components, investigation steps in order, and a root cause hypothesis.
-----
-
-. Read the reply. The agent produces something useful — a list, a paragraph, maybe a reasonable structure — but it is composing the format from general knowledge. Notice whether it applies a consistent severity scale, uses defined section headings, or follows a reproducible investigation sequence. It does not, because none of that is declared anywhere the agent can see.
-
-. In the terminal, list the skill packs currently bound to your agent:
+. Your agent's teachable knowledge is a resource type. List it:
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
-  -o jsonpath='{.spec.skills[*].pack}' && echo
+oc get skills -n {user}-agent-workspace
 ----
 +
-// AUTHOR NOTE (verify live): confirm the jsonpath field name .spec.skills[*].pack matches the live AgentWorkstation CRD; if the field is .spec.skillPacks or another variant, update this command and the one in Exercise 2 to match.
-+
-The output lists the skill packs the agent was hired with. `platform-incident-triage` is not in that list.
-
-. Confirm the skills directory in the agent's workspace:
+`No resources found`. Your agent is running entirely on the platform's *baked golden set* — a pinned catalog image every gateway mounts. See it:
 +
 [source,bash,role="execute",subs="attributes"]
 ----
@@ -74,204 +34,245 @@ oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw --
   ls /home/node/.openclaw/workspaces/{user}-assistant/skills/
 ----
 +
-// AUTHOR NOTE (verify live): confirm the deploy name {user}-assistant-gateway, container name openclaw, and workspace skills path are correct against the live environment; adjust if the operator names the deployment or mounts the path differently.
-+
-No `platform-incident-triage` directory is present. The agent's workspace reflects what the manifest declares — and the manifest does not yet declare this skill.
+Eight skills, identical for every agent on this platform, pinned by digest in a lockfile you will read in Exercise 4.
 
-// TODO screenshot (capture during the live walkthrough, then restore):
-// image::module-04-baseline-reply.png[Mattermost channel showing the agent's unstructured incident summary before any skill pack is installed,link=self,window=blank,width=700]
-
-=== Verify
-
-* The agent responded to the incident summary task with some output
-* `platform-incident-triage` does not appear in the skills jsonpath output
-* The agent's workspace skills directory does not contain a `platform-incident-triage` entry
-
-== Exercise 2: Install the versioned skill pack
-
-A mindifact install is not a toggle in a vendor dashboard. It is a change to the agent's gitops repository — a pull request the Developer Hub Bindings card composes, that you review before it reaches the cluster.
-
-. Open link:{devhub_url}[Red Hat Developer Hub^] and sign in as `{user}` with password `{password}`.
-
-. In the left navigation, click *Catalog* and search for `{user}-assistant`. Open the catalog entry for your agent.
-
-. On the component overview page, find the *Bindings* card.
-+
-// AUTHOR NOTE (verify live): confirm the exact card label in the deployed Developer Hub plugin; the card may be labelled "Skill Bindings," "Skills," or a platform-specific label. Update this step to match the live label.
-+
-This card shows the skill packs currently bound to your agent and provides a way to browse the cluster's catalog of published mindifacts.
-
-. In the Bindings card, click *Browse available packs* (or the equivalent control the card provides).
-+
-// AUTHOR NOTE (verify live): confirm the browse control label on the live Bindings card and update to match.
-
-. Locate the `platform-incident-triage` pack in the catalog. Review the pack metadata before selecting it:
-+
---
-* The pack description — what procedure it delivers and to whom
-* The published version (for example, `1.2.0`)
-* The OCI digest that pins this exact version of the artifact
---
-+
-// AUTHOR NOTE (verify live): confirm the pack exists in the cluster catalog under the name platform-incident-triage; if the name differs during the session, substitute the actual pack name used and update all references throughout this module.
-
-. Select `platform-incident-triage` and click *Install* (or the equivalent action in the card).
-+
-Developer Hub composes a pull request against your agent's gitops repository. The PR adds the skill pack reference — pack name, version, and digest — to the `spec.skills` list in `base/agentworkstation.yaml`.
-
-. The Bindings card either shows the PR it opened or links you to it. Open the pull request in the repository web UI.
-
-. Read the diff before merging. The change is a single block added to the YAML manifest: the pack name, its version, and its OCI digest. This is the complete declaration that will teach your agent a new procedure.
-+
-NOTE: On a real team, a reviewer confirms here that the version being installed matches what the platform team published — the digest is the check. If the digest in the PR does not match the catalog's record, the install fails closed. You are reviewing the same artifact the platform already verified.
-
-. Merge the pull request.
-+
-OpenShift GitOps detects the new commit on the main branch and begins syncing. You do not need to trigger anything manually.
-
-. Open link:{gitops_url}[OpenShift GitOps^] and sign in with `{user}` / `{password}`.
-
-. Find the Application named `{user}-assistant` (or `{user}-agents-{user}-assistant-agent`) and check its *History*. Wait for the sync against your merge commit to complete and the Application to report *Synced* and *Healthy*.
-
-. Confirm the manifest now declares the new skill:
-+
-[source,bash,role="execute",subs="attributes"]
-----
-oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
-  -o jsonpath='{.spec.skills[*].pack}' && echo
-----
-+
-`platform-incident-triage` now appears in the output.
-+
-// AUTHOR NOTE (verify live): list the pack names that appear alongside platform-incident-triage in the live output and name them here so attendees can confirm the exact set.
-
-. Confirm the skill landed in the agent's workspace:
-+
-[source,bash,role="execute",subs="attributes"]
-----
-oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw -- \
-  ls /home/node/.openclaw/workspaces/{user}-assistant/skills/
-----
-+
-A `platform-incident-triage` directory is now present. The workspace reflects the current manifest, applied by the operator when GitOps landed the commit.
-
-// TODO screenshot (capture during the live walkthrough, then restore):
-// image::module-04-bindings-card.png[Developer Hub Bindings card on the agent's Component page showing the available packs catalog with platform-incident-triage highlighted,link=self,window=blank,width=700]
-
-// TODO screenshot (capture during the live walkthrough, then restore):
-// image::module-04-pr-diff.png[Pull request diff showing the skill pack entry added to spec.skills in base/agentworkstation.yaml with pack name, version, and digest fields,link=self,window=blank,width=700]
-
-=== Verify
-
-* The pull request opened by the Bindings card contains a diff that adds the `platform-incident-triage` entry to the agent's manifest, including version and digest fields
-* The PR merged successfully and the main branch contains the new skill reference
-* The OpenShift GitOps Application for `{user}-assistant` reports *Synced* and *Healthy*
-* The skills jsonpath command now includes `platform-incident-triage` in its output
-* The `platform-incident-triage` directory is present in the agent's workspace skills folder
-
-== Exercise 3: Re-run the task and inspect the skill
-
-The manifest changed. The workspace changed. Now verify the behavior changed with them — and trace exactly where the new procedure came from.
-
-. In link:{mattermost_url}[Mattermost^], navigate to `#{user}-assistant` and send the same message from Exercise 1:
+. Now give the agent a task it was never taught. In link:{mattermost_url}[Mattermost^], type `/new` in the `{user}-assistant` channel (a clean session, so this module's before-and-after is honest), then send:
 +
 [source,text]
 ----
-Draft an incident investigation summary for this report: "Worker nodes are showing elevated memory pressure and API server response times have increased over the last 30 minutes." Include severity classification, affected components, investigation steps in order, and a root cause hypothesis.
+Incident report: users say the orders API is returning 500s since about 10 minutes ago. Production. Triage this.
 ----
 
-. Read the reply. The structure is different now: consistent section headings, a defined severity scale, a reproducible investigation sequence. The agent did not choose this format — it followed the `platform-incident-triage` skill's declared procedure.
-+
-// AUTHOR NOTE (verify live): confirm the agent reply follows the section headings, severity scale, and investigation sequence declared in the pack's SKILL.md; update this step's description to match the actual structure the agent produces.
-
-. Read the procedure the agent followed:
-+
-[source,bash,role="execute",subs="attributes"]
-----
-oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw -- \
-  cat /home/node/.openclaw/workspaces/{user}-assistant/skills/platform-incident-triage/SKILL.md
-----
-+
-// AUTHOR NOTE (verify live): confirm the filename is SKILL.md inside the skill's directory; the file may be named README.md, procedure.md, or another name depending on the mindifact schema.
-+
-The SKILL.md contains the procedure the agent applied: the severity classification rubric, the section headings, the investigation sequence. Compare it to the agent's reply — the structure in Mattermost is the procedure in this file, applied to the incident report you gave it.
-
-// AUTHOR NOTE (verify live): confirm the section correspondence between the live SKILL.md and a real agent reply; rewrite the comparison instruction to name the actual headings once the pack exists.
-
-. Read the version pinning from the running manifest:
-+
-[source,bash,role="execute",subs="attributes"]
-----
-oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
-  -o jsonpath='{.spec.skills}' | python3 -m json.tool
-----
-+
-// AUTHOR NOTE (verify live): confirm the output includes version and digest fields alongside the pack name; adjust the description below if the schema differs.
-+
-Each skill entry carries a `version` field and a `digest` field. The digest is the OCI content hash for the artifact the catalog published. The cluster checked that hash when the skill installed. An agent cannot run a skill pack whose artifact does not match the declared digest.
-
-. Cross-check the version in the workspace against the manifest:
-+
-[source,bash,role="execute",subs="attributes"]
-----
-oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw -- \
-  cat /home/node/.openclaw/workspaces/{user}-assistant/skills/platform-incident-triage/pack.json
-----
-+
-// AUTHOR NOTE (verify live): confirm the workspace metadata filename (pack.json, manifest.json, or skill.json) and that it contains version and digest fields; update the command and surrounding text to match the live schema.
-+
-The version and digest here match what the manifest declares. The procedure running inside the agent is the procedure the platform published, at the version you selected, verified by the digest at install time. Nothing swapped it out silently. The version in git is the version in the workspace.
-
-// TODO screenshot (capture during the live walkthrough, then restore):
-// image::module-04-after-reply.png[Mattermost channel showing the agent's structured incident summary following the platform-incident-triage procedure with consistent severity and section headings,link=self,window=blank,width=700]
-
-// TODO screenshot (capture during the live walkthrough, then restore):
-// image::module-04-skill-md.png[Terminal output showing the SKILL.md procedure file contents including the severity classification rubric and investigation sequence,link=self,window=blank,width=700]
+. Read the reply. It is a reasonable improvisation — the agent investigates because investigating is its job. What it lacks is *your organization's procedure*: no severity classification, no fixed investigation order, no consistent structure another engineer could pick up. That gap is what a mindifact carries.
 
 === Verify
 
-* The agent's reply to the incident summary task now follows a structured procedure with consistent section headings and a defined severity scale
-* The SKILL.md in the workspace contains the procedure the agent followed — the sections in the reply trace directly to sections in the file
-* The agentworkstation spec shows `platform-incident-triage` with both a `version` field and a `digest` field
-* The version and digest in the workspace metadata file match the values in the spec
+* `oc get skills -n {user}-agent-workspace` returns `No resources found`
+* The workspace skills listing shows the baked set only
+* The agent's triage reply has no consistent severity rubric or section structure
+
+== Exercise 2: Inspect the artifact in the registry
+
+The pack you are about to install exists as a published artifact in the platform's know-how registry — public, versioned, inspectable before you trust it.
+
+. Read its registry index entry:
++
+[source,bash,role="execute"]
+----
+curl -s https://mindifact.ai/v1/index.json | python3 -c "
+import sys, json
+for a in json.load(sys.stdin)['artifacts']:
+    if a['name'] == 'platform-incident-triage':
+        print(json.dumps(a, indent=2))"
+----
++
+Coordinates `agent-office/platform-incident-triage:1.0.0`, kind `skill`, a declared dependency (`mcpServer: ops-metrics`), and a declared capability (`ops.incident-triage`). Dependencies are *declared in the artifact*, not discovered by trial at runtime.
+
+. Read the versioned content itself — the exact procedure your agent will follow:
++
+[source,bash,role="execute"]
+----
+curl -s https://mindifact.ai/v1/platform-incident-triage/1.0.0/skills/platform-incident-triage.md
+----
++
+A fixed four-section reply structure, a P1–P4 severity rubric, a numbered investigation sequence. This URL is version-pinned: `1.0.0` in the path means this content, forever.
+
+. Check the version history exists as a first-class record:
++
+[source,bash,role="execute"]
+----
+curl -s https://mindifact.ai/v1/platform-incident-triage/metadata.json
+----
+
+=== Verify
+
+* The index entry shows kind `skill`, version `1.0.0`, and the `ops-metrics` dependency
+* The versioned content URL serves the SKILL.md
+* `metadata.json` lists `1.0.0` under `versions`
+
+== Exercise 3: Install it into your workspace
+
+Installing a mindifact is declarative: a `Skill` resource in your namespace, carrying the artifact's full provenance — its registry, its coordinates, its content. Your agent's operator watches for exactly this.
+
+. Apply the rendered artifact into your own workspace:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc apply -n {user}-agent-workspace -f - <<'SKILL_EOF'
+apiVersion: agentoffice.ai/v1alpha1
+kind: Skill
+metadata:
+  name: platform-incident-triage
+  labels:
+    app.kubernetes.io/managed-by: agent-office
+    agentoffice.ai/skill-tier: mindifact
+  annotations:
+    agentoffice.ai/registry: mindifact.ai
+    agentoffice.ai/pack-ref: agent-office/platform-incident-triage:1.0.0
+    agentoffice.ai/manifest: https://mindifact.ai/v1/platform-incident-triage/1.0.0/mindifact.json
+    agentoffice.ai/content-url: https://mindifact.ai/v1/platform-incident-triage/1.0.0/skills/platform-incident-triage.md
+spec:
+  displayName: "Platform Incident Triage"
+  description: "Triage a reported platform incident with a fixed severity rubric and a reproducible investigation sequence. Use whenever a user reports an outage, degradation, error, or \"something is broken\" on the cluster."
+  version: "1.0.0"
+  dependencies:
+    - kind: mcpServer
+      name: ops-metrics
+  source:
+    inline: |
+      ---
+      name: platform-incident-triage
+      description: Triage a reported platform incident with a fixed severity rubric and a reproducible investigation sequence. Use whenever a user reports an outage, degradation, error, or "something is broken" on the cluster.
+      ---
+      # Platform incident triage
+      
+      When a user reports a platform incident, ALWAYS structure the reply with
+      exactly these four sections, in this order, using these exact headings:
+      
+      ## Severity
+      Classify using this rubric and state the classification with one
+      sentence of justification:
+      - **P1** — production service down or data loss in progress
+      - **P2** — production degraded, or a non-production blocker with a deadline
+      - **P3** — degraded with a workaround available
+      - **P4** — cosmetic, informational, or a question
+      
+      ## What we know
+      Bullet only the facts stated in the report or verified with tools.
+      Never speculate here. If a fact is unverified, it does not belong in
+      this section.
+      
+      ## Investigation sequence
+      A numbered list, always in this order, scoped to the affected
+      namespace: 1. pod status, 2. recent events, 3. logs of the failing
+      workload, 4. recent changes (deployments, config, secrets). Name the
+      exact command for each step. Run them through governed tools when
+      available; otherwise name the command for the human.
+      
+      ## Next actions
+      At most three bullets: the single most valuable next step first,
+      who acts (agent or human), and what evidence would raise or lower
+      the severity.
+      
+      Keep the whole reply under 250 words. No preamble before the first
+      heading. Never fabricate command output: if a tool cannot answer,
+      write "unverified" in What we know.
+SKILL_EOF
+----
++
+NOTE: This YAML was rendered from the registry row — every annotation on it points back at the live artifact, which you can verify in Exercise 4. Rendering-and-applying is the client-side form of the platform's `/catalog/install`; a server-side install that targets your namespace directly is a named roadmap item.
+
+. The resource is now part of your workspace's declared state:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc get skills -n {user}-agent-workspace
+----
++
+One skill, with its VERSION column — `1.0.0` — straight from the artifact.
+
+=== Verify
+
+* `oc get skills -n {user}-agent-workspace` shows `platform-incident-triage` at version `1.0.0`
+
+== Exercise 4: Watch the agent learn, then audit the supply chain
+
+. The operator noticed your Skill the moment it landed and re-seeded the agent's workspace — no restart, no redeploy. Confirm:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw -- \
+  ls /home/node/.openclaw/workspaces/{user}-assistant/skills/ | grep incident
+----
++
+And read the seed's own accounting in the gateway log:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc logs deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw --since=10m | grep -i seeded | tail -1
+----
++
+// AUTHOR NOTE (verify live): confirm the exact SEEDED log line shape; expected to include skillSrc=image+1-cluster — the pinned golden set plus exactly one thing this attendee installed.
++
+The union rule in one line: the baked image is the floor, your namespace's declared skills stack on top, and a name collision goes to the pinned image — the platform's set cannot be silently overridden.
+
+. Now audit what you installed — four commands, each answering a question a supply-chain reviewer would ask:
++
+*Where did this come from?*
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc get skill platform-incident-triage -n {user}-agent-workspace \
+  -o jsonpath='{.metadata.annotations.agentoffice\.ai/pack-ref}'
+----
++
+*Is the content what the registry published?*
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc get skill platform-incident-triage -n {user}-agent-workspace \
+  -o jsonpath='{.status.contentSha256}'; echo
+curl -s "$(oc get skill platform-incident-triage -n {user}-agent-workspace \
+  -o jsonpath='{.metadata.annotations.agentoffice\.ai/content-url}')" | shasum -a 256
+----
++
+// AUTHOR NOTE (verify live): confirm status.contentSha256 is populated for a hand-applied CR (it may be written by the operator on resolve); if empty, compute both sides from the content-url and spec.source.inline instead.
++
+*What does it need?*
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc get skill platform-incident-triage -n {user}-agent-workspace \
+  -o jsonpath='{.spec.dependencies}'
+----
++
+*And the golden set itself — who pins it?* Read the platform's lockfile: one entry per baked skill, each with an exact digest, closed by the digest of the composed catalog image. The compose run that builds it refuses to push unless the result is file-for-file identical to what shipped before — an equivalence gate.
++
+[source,bash,role="execute"]
+----
+curl -s https://raw.githubusercontent.com/enterprisewebservice/agent-office/main/skills-image/skills-lock.yaml | head -20
+----
+
+=== Verify
+
+* The workspace skills directory now contains `platform-incident-triage`
+* `pack-ref` reads `agent-office/platform-incident-triage:1.0.0`
+* `spec.dependencies` declares the `ops-metrics` mcpServer
+* The lockfile shows per-skill digests and a composed-image digest
+
+== Exercise 5: The behavior change
+
+. Back in link:{mattermost_url}[Mattermost^], type `/new` in the `{user}-assistant` channel, then send the *same* incident report from Exercise 1:
++
+[source,text]
+----
+Incident report: users say the orders API is returning 500s since about 10 minutes ago. Production. Triage this.
+----
+
+. Read the reply against the procedure you read in the registry: a *Severity* section with a P1–P4 classification and one-sentence justification, *What we know* holding only stated or verified facts, an *Investigation sequence* in the pack's fixed order, and *Next actions* capped at three bullets.
++
+// AUTHOR NOTE (verify live): run this beat and confirm the reply follows the four-heading structure; tune the pack's SKILL.md wording if the model drifts, and re-publish as 1.0.1 — which is itself a demonstration of versioned know-how.
++
+Same agent. Same model. Same tools. The difference arrived as a versioned dependency, and everything about it — where it came from, what it contains, what it needs — is written down where your platform can read it.
+
+=== Verify
+
+* The triage reply now opens with a `Severity` section and follows the pack's four-section structure
+* Nothing about the agent changed except the skill: same pod, same model, same identity
 
 == What just happened
 
-The AgentWorks pitch for this module is "skills/harness, supply-chain graded." On a vendor platform that phrase describes the vendor's catalog, the vendor's versioning, and the vendor's audit. Every part of the decision about what procedure an agent follows lives in the vendor's control plane.
+The AgentWorks pitch this module answers is "skills/harness, supply-chain graded." On commercial platforms of this class, a skill is a folder of instructions: you get whatever the marketplace serves today, with no version history you control, no content hash, no dependency declaration, and no way to pin what your agents run.
 
-What you did here is different at every step:
+What you just did instead:
 
-* *The mindifact is an OCI artifact.* It lives in the same registry as ACME's container images. The tooling that signs and scans a container image can sign and scan a skill pack. The policies that gate a container's promotion through environments can gate a skill's promotion through the same pipeline.
+* *Published know-how as an artifact* — coordinates, version, manifest, declared dependencies, in a registry your platform federates
+* *Installed it declaratively* — a resource in your namespace, carrying full provenance, applied with the same tool as any other platform change
+* *Watched the operator deliver it* — hands-free re-seed, union over a digest-pinned golden set that an equivalence gate keeps honest
+* *Audited the whole chain* — coordinate, content hash, dependencies, lockfile — with four commands
 
-* *The install was a pull request.* A reviewer saw the diff before the agent's behavior changed. The diff was readable: pack name, version, digest. Merging was the moment of record — the same kind of moment as any other configuration change at ACME.
-
-* *OpenShift GitOps enforced it.* The reconciliation loop that enforces ACME's application workloads enforced the skill install. Skill packs are not a separate concern from the cluster's declared state — they are part of it.
-
-* *The version pin is mechanical, not documentary.* The digest in the manifest is not a note. The cluster checked it when the skill landed. A different artifact carrying the same pack name and version would not have installed. The procedure the agent followed is exactly the procedure that was published, at the declared version, verified at deployment time.
-
-The gap with AgentWorks is not the behavior change itself — both platforms deliver that. The gap is the evidence trail: a PR with a readable diff, a merge commit with a named author, a GitOps sync against that commit, a digest check at install time. Everything ACME's platform and security teams need to answer "what procedure are our agents following, and when did that change."
-
-== Learning outcomes
-
-By completing this module, you should now understand:
-
-* ✓ How to check which skill packs are bound to an agent and what the workspace shows before and after a pack lands
-* ✓ How the Developer Hub Bindings card composes a pull request that adds a versioned, digest-pinned mindifact to the agent's manifest
-* ✓ Why the agent's behavior changed after the install, and where in the workspace to find the procedure it followed
-* ✓ What the skill's OCI digest guarantees about the procedure the running agent is executing
+Know-how that ships like software can be reviewed like software, pinned like software, and rolled back like software. That is the supply-chain grade.
 
 == Module summary
 
-A mindifact is not a settings toggle. It is an OCI artifact, versioned in a registry, installed through a pull request, enforced by a digest check at deploy time. The agent's behavior changed because the manifest changed. The manifest changed because a PR merged. The PR merged because a person reviewed the diff.
-
-Module 5 takes the agent out of the chat channel and into the pipeline. You will trigger a Tekton PipelineRun with an agent task and observe the same governed tool surface apply in a headless automated run — with the autonomy level set by the gateway profile bound to that pipeline.
-
-////
-Assets needed (capture against the live environment):
-
-. content/modules/ROOT/assets/images/module-04-baseline-reply.png — Mattermost channel showing the agent's unstructured incident summary before the skill pack is installed; capture the full reply to contrast with the structured post-install reply
-. content/modules/ROOT/assets/images/module-04-bindings-card.png — Developer Hub Bindings card on the agent's Component overview page, showing the available packs catalog with platform-incident-triage selected and its version/digest metadata visible
-. content/modules/ROOT/assets/images/module-04-pr-diff.png — Pull request diff showing the spec.skills block added to base/agentworkstation.yaml with pack name, version, and digest fields
-. content/modules/ROOT/assets/images/module-04-after-reply.png — Mattermost channel showing the structured incident summary after the skill install; confirm section headings and severity language match the SKILL.md
-. content/modules/ROOT/assets/images/module-04-skill-md.png — Terminal output of cat SKILL.md showing the severity classification rubric and investigation sequence that matches the agent's Mattermost reply
-////
+You taught your agent a procedure by installing a versioned artifact, and you can prove what was installed, where it came from, and what it depends on. Module 5 takes the same agent out of the chat window entirely: headless, inside a pipeline, with its autonomy set by platform policy.
