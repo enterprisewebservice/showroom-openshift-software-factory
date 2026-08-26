@@ -119,7 +119,7 @@ for a in json.load(sys.stdin)['artifacts']:
 
 == Exercise 3: Install it into your workspace
 
-Installing a skill artifact is declarative: a `Skill` resource in your namespace, carrying the artifact's full provenance — its registry, its coordinates, its content. Your agent's operator watches for exactly this.
+Installing a skill artifact is declarative — and it is a *reference, not a copy*. The `Skill` resource you are about to apply carries no skill content at all: it pins a coordinate and a content digest, and the operator fetches the body from the registry, verifies the digest, and refuses delivery if the content has drifted. This is the same shape as the golden set's lockfile — a pinned reference, with the operator doing the fetching — applied at namespace scope.
 
 . Apply the rendered artifact into your own workspace:
 +
@@ -146,61 +146,14 @@ spec:
     - kind: mcpServer
       name: ops-metrics
   source:
-    inline: |
-      ---
-      name: platform-incident-triage
-      description: Triage a reported platform incident with a fixed severity rubric and a reproducible investigation sequence. Use whenever a user reports an outage, degradation, error, or "something is broken" on the cluster.
-      ---
-      # Platform incident triage
-      
-      When a user reports a platform incident, ALWAYS structure the reply with
-      exactly these four sections, in this order, using these exact headings:
-      
-      ## Severity
-      Classify using this rubric and state the classification with one
-      sentence of justification:
-      - **P1** — production service down or data loss in progress
-      - **P2** — production degraded, or a non-production blocker with a deadline
-      - **P3** — degraded with a workaround available
-      - **P4** — cosmetic, informational, or a question
-      
-      Classify from the facts as stated, at the worst credible reading. If
-      measured data contradicts the report, keep the classification
-      provisional and say what would settle it.
-      
-      ## What we know
-      Bullet only the facts stated in the report or verified with tools.
-      Output from a governed tool call counts as verified — cite the tool
-      name and the number it returned. Never speculate here. If a fact is
-      unverified, it does not belong in this section.
-      
-      ## Investigation sequence
-      A numbered list, always in this order:
-      1. Business impact now, through the governed metrics tools
-         (`metrics_stuck_orders`, `metrics_weekly_summary`) — run them and
-         cite the numbers before anything else.
-      2. Pod status in the affected namespace.
-      3. Recent events.
-      4. Logs of the failing workload.
-      5. Recent changes (deployments, config, secrets).
-      Run every step through governed tools when available. Where direct
-      access is denied (for example a 403 from the cluster API), do not
-      stop and do not ask permission to continue: mark that step
-      "blocked — needs access", name the exact command for the human, and
-      move on to the next step.
-      
-      ## Next actions
-      At most three bullets: the single most valuable next step first,
-      who acts (agent or human), and what evidence would raise or lower
-      the severity.
-      
-      Keep the whole reply under 250 words. No preamble before the first
-      heading. Never fabricate command output: if a tool cannot answer,
-      write "unverified" in What we know.
+    packageRef:
+      ref: platform-incident-triage:1.1.0
+      digest: 2b0e2b9c91a33eb99f71e0d72ee346d721f5d434882b7a3d49314b3676e6d126
+      registry: https://mindifact.ai/v1
 SKILL_EOF
 ----
 +
-NOTE: This YAML was rendered from the registry row — every annotation on it points back at the live artifact, which you can verify in Exercise 4. Rendering-and-applying is the client-side form of the platform's `/catalog/install`; a server-side install that targets your namespace directly is a named roadmap item.
+NOTE: This YAML was rendered from the registry row — the `digest` is the SHA-256 of the published content, computed at render time, and every annotation points back at the live artifact. Rendering-and-applying is the client-side form of the platform's `/catalog/install`; a server-side install that targets your namespace directly is a named roadmap item.
 
 . The resource is now part of your workspace's declared state:
 +
@@ -247,15 +200,17 @@ oc get skill platform-incident-triage -n {user}-agent-workspace \
   -o jsonpath='{.metadata.annotations.agentoffice\.ai/pack-ref}'
 ----
 +
-*Is the content what the registry published?*
+*Is the content what the registry published?* Three hashes, three parties: what you pinned in the spec, what the operator resolved and delivered, and what the registry serves right now:
 +
 [source,bash,role="execute",subs="attributes"]
 ----
 oc get skill platform-incident-triage -n {user}-agent-workspace \
-  -o jsonpath='{.status.contentSha256}'; echo
+  -o jsonpath='pinned:    {.spec.source.packageRef.digest}{"\n"}delivered: {.status.contentSha256}{"\n"}'
 curl -s "$(oc get skill platform-incident-triage -n {user}-agent-workspace \
-  -o jsonpath='{.metadata.annotations.agentoffice\.ai/content-url}')" | shasum -a 256
+  -o jsonpath='{.metadata.annotations.agentoffice\.ai/content-url}')" | shasum -a 256 | sed 's/^/registry:  /'
 ----
++
+All three match. And the pin has teeth: if the registry ever served different bytes for this version, the operator would refuse to deliver them — the Skill's `ContentResolved` condition goes false instead of the agent silently learning something you never reviewed.
 +
 // VERIFIED LIVE 2026-08-26 (v1.1.0): the operator populates status.contentSha256 on resolve for hand-applied CRs; both sides matched exactly (2b0e2b9c…) on the first live run.
 +
@@ -311,7 +266,7 @@ The AgentWorks pitch this module answers is "skills/harness, supply-chain graded
 What you just did instead:
 
 * *Published know-how as an artifact* — coordinates, version, manifest, declared dependencies, in a registry your platform federates alongside governed tool definitions and capability packs that bundle skill and tool as one installable unit
-* *Installed it declaratively* — a resource in your namespace, carrying full provenance, applied with the same tool as any other platform change
+* *Installed it declaratively, by reference* — a resource in your namespace pinning coordinate and digest, the operator fetching and verifying, applied with the same tool as any other platform change
 * *Watched the operator deliver it* — hands-free re-seed, union over a digest-pinned golden set that an equivalence gate keeps honest
 * *Audited the whole chain* — coordinate, content hash, dependencies, lockfile — with four commands
 
