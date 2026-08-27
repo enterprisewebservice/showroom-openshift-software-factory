@@ -77,7 +77,7 @@ tok() { curl -sk "https://$QUAY/v2/auth?service=$QUAY&scope=repository:deanpeter
 ----
 REPO=deanpeterson/agent-office-skill-platform-incident-triage
 T=$(tok agent-office-skill-platform-incident-triage)
-curl -sk "https://$QUAY/v2/$REPO/manifests/1.1.0" \
+curl -sk "https://$QUAY/v2/$REPO/manifests/1.1.1" \
   -H "Authorization: Bearer $T" \
   -H "Accept: application/vnd.oci.image.manifest.v1+json" | python3 -m json.tool
 ----
@@ -88,7 +88,7 @@ One config blob and one content layer, each pinned by digest — a skill package
 +
 [source,bash,role="execute"]
 ----
-CFGD=$(curl -sk "https://$QUAY/v2/$REPO/manifests/1.1.0" -H "Authorization: Bearer $T" \
+CFGD=$(curl -sk "https://$QUAY/v2/$REPO/manifests/1.1.1" -H "Authorization: Bearer $T" \
   -H "Accept: application/vnd.oci.image.manifest.v1+json" | python3 -c "import sys,json;print(json.load(sys.stdin)['config']['digest'])")
 curl -skL "https://$QUAY/v2/$REPO/blobs/$CFGD" -H "Authorization: Bearer $T" | python3 -m json.tool
 ----
@@ -99,12 +99,12 @@ Name, version, a declared dependency (`mcpServer: ops-metrics`), a declared capa
 +
 [source,bash,role="execute"]
 ----
-LAYERD=$(curl -sk "https://$QUAY/v2/$REPO/manifests/1.1.0" -H "Authorization: Bearer $T" \
+LAYERD=$(curl -sk "https://$QUAY/v2/$REPO/manifests/1.1.1" -H "Authorization: Bearer $T" \
   -H "Accept: application/vnd.oci.image.manifest.v1+json" | python3 -c "import sys,json;print(json.load(sys.stdin)['layers'][0]['digest'])")
 curl -skL "https://$QUAY/v2/$REPO/blobs/$LAYERD" -H "Authorization: Bearer $T" | tar -xzO SKILL.md
 ----
 +
-A fixed four-section reply structure, a P1–P4 severity rubric, an investigation sequence whose first step is a governed tool call — business impact through `metrics_stuck_orders` and `metrics_weekly_summary`, cited by name and number — and an explicit rule that a denied step is marked "blocked — needs access" and handed to the human instead of stopping the triage.
+A fixed four-section reply structure, a P1–P4 severity rubric, an investigation sequence whose first step is a governed tool call — business impact through `metrics_stuck_orders` and `metrics_weekly_summary`, cited by name and number — an explicit rule that a denied step is marked "blocked — needs access" and handed to the human instead of stopping the triage — and an environment fact: this workstation carries no cluster CLI, so cluster commands are *written* for the human, never attempted. Institutional knowledge includes knowing where you are standing.
 
 . Version history is the repository's tag list — a first-class record:
 +
@@ -127,9 +127,9 @@ Two members — a `skill` and a `tool` — each referenced by digest, and the de
 === Verify
 
 * The artifact manifest shows one config blob and one content layer, both digest-pinned
-* The config blob declares version `1.1.0`, the `ops-metrics` dependency, and `contentSha256`
+* The config blob declares version `1.1.1`, the `ops-metrics` dependency, and `contentSha256`
 * The layer serves the SKILL.md with the four-section procedure
-* `tags/list` shows both `1.0.0` and `1.1.0`
+* `tags/list` shows all three versions — `1.0.0`, `1.1.0`, `1.1.1`
 * The pack index lists a `skill` member and a `tool` member by digest
 
 == Exercise 3: Install it into your workspace
@@ -150,18 +150,18 @@ metadata:
     agentoffice.ai/skill-tier: registry
   annotations:
     agentoffice.ai/registry: quay-quay-quay-test.apps.salamander.aimlworkbench.com
-    agentoffice.ai/pack-ref: agent-office/platform-incident-triage:1.1.0
+    agentoffice.ai/pack-ref: agent-office/platform-incident-triage:1.1.1
 spec:
   displayName: "Platform Incident Triage"
   description: "Triage a reported platform incident with a fixed severity rubric and a reproducible investigation sequence. Use whenever a user reports an outage, degradation, error, or \"something is broken\" on the cluster."
-  version: "1.1.0"
+  version: "1.1.1"
   dependencies:
     - kind: mcpServer
       name: ops-metrics
   source:
     packageRef:
-      ref: oci://quay-quay-quay-test.apps.salamander.aimlworkbench.com/deanpeterson/agent-office-skill-platform-incident-triage:1.1.0
-      digest: 2b0e2b9c91a33eb99f71e0d72ee346d721f5d434882b7a3d49314b3676e6d126
+      ref: oci://quay-quay-quay-test.apps.salamander.aimlworkbench.com/deanpeterson/agent-office-skill-platform-incident-triage:1.1.1
+      digest: 43a5c4aa250d78538e27f5bbba72b46e36c8a5742a108352d6a8a75a119d59a7
       pullSecretName: quay-pull-secret
       insecureSkipTLSVerify: true
 SKILL_EOF
@@ -176,11 +176,11 @@ NOTE: This YAML was rendered from the artifact itself — the `digest` is the `c
 oc get skills -n {user}-agent-workspace
 ----
 +
-One skill, with its VERSION column — `1.1.0` — straight from the artifact.
+One skill, with its VERSION column — `1.1.1` — straight from the artifact.
 
 === Verify
 
-* `oc get skills -n {user}-agent-workspace` shows `platform-incident-triage` at version `1.1.0`
+* `oc get skills -n {user}-agent-workspace` shows `platform-incident-triage` at version `1.1.1`
 
 == Exercise 4: Watch the agent learn, then audit the supply chain
 
@@ -221,7 +221,7 @@ oc get skill platform-incident-triage -n {user}-agent-workspace \
 oc get skill platform-incident-triage -n {user}-agent-workspace \
   -o jsonpath='pinned:    {.spec.source.packageRef.digest}{"\n"}delivered: {.status.contentSha256}{"\n"}'
 T=$(tok agent-office-skill-platform-incident-triage)
-CFGD=$(curl -sk "https://$QUAY/v2/$REPO/manifests/1.1.0" -H "Authorization: Bearer $T" \
+CFGD=$(curl -sk "https://$QUAY/v2/$REPO/manifests/1.1.1" -H "Authorization: Bearer $T" \
   -H "Accept: application/vnd.oci.image.manifest.v1+json" | python3 -c "import sys,json;print(json.load(sys.stdin)['config']['digest'])")
 curl -skL "https://$QUAY/v2/$REPO/blobs/$CFGD" -H "Authorization: Bearer $T" \
   | python3 -c "import sys,json;print('registry:  '+json.load(sys.stdin)['contentSha256'])"
@@ -229,7 +229,7 @@ curl -skL "https://$QUAY/v2/$REPO/blobs/$CFGD" -H "Authorization: Bearer $T" \
 +
 All three match. And the pin has teeth: if the registry ever served different bytes for this version, the operator would refuse to deliver them — the Skill's `ContentResolved` condition goes false instead of the agent silently learning something you never reviewed.
 +
-// VERIFIED LIVE 2026-08-26 (v1.1.0): the operator populates status.contentSha256 on resolve for hand-applied CRs; both sides matched exactly (2b0e2b9c…) on the first live run.
+// VERIFIED LIVE 2026-08-27 (v1.1.1 via oci:// packageRef): pinned, delivered, and the artifact's self-declared contentSha256 all matched (43a5c4aa…) on the first live run; a tampered digest was refused with zero files materialized.
 +
 *What does it need?*
 +
@@ -249,7 +249,7 @@ curl -s https://raw.githubusercontent.com/enterprisewebservice/agent-office/main
 === Verify
 
 * The workspace skills directory now contains `platform-incident-triage`
-* `pack-ref` reads `agent-office/platform-incident-triage:1.1.0`
+* `pack-ref` reads `agent-office/platform-incident-triage:1.1.1`
 * `spec.dependencies` declares the `ops-metrics` mcpServer
 * The lockfile shows per-skill digests and a composed-image digest
 
@@ -264,9 +264,9 @@ Incident report: users say the orders API is returning 500s since about 10 minut
 
 . Read the reply against the procedure you read in the registry: a *Severity* section with a P1–P4 classification and one-sentence justification, *What we know* holding only stated or verified facts, an *Investigation sequence* in the pack's fixed order, and *Next actions* capped at three bullets.
 +
-// VERIFIED LIVE 2026-08-26 (v1.1.0, fresh session): exactly the four headings in order; P1 (provisional) with the settle-it clause; What-we-know cited metrics_stuck_orders=73 and the weekly summary by name and number; ledger showed governed__metrics_stuck_orders and governed__metrics_weekly_summary firing; every denied step rendered as "blocked — needs access" plus the exact human command. 1.0.0 -> 1.1.0 itself demonstrates the tune-and-republish loop. If a future model drifts, publish 1.1.1.
+// VERIFIED LIVE 2026-08-27 (v1.1.1, fresh session): exactly the four headings in order; P1 (provisional); both governed metrics_* tools cited by name and number and present in the session ledger; ZERO exec attempts (1.1.0 made four — the environment-fact line eliminated them). The 1.0.0 -> 1.1.0 -> 1.1.1 tag history is itself the tune-and-republish loop, demonstrated three times. If a future model drifts, publish 1.1.2.
 +
-Look at how the reply handles what blocked the untrained run. The severity call is made from the facts as stated — not deferred until someone grants access. Business impact is cited from the governed `metrics_*` tools, by name and number: the same calls that crossed the MCP gateway in Module 3, leaving the same audit lines. And where direct cluster access is still denied, the step says "blocked — needs access" with the exact command for the human — the 403 is documented inside the procedure instead of ending it. The skill did not widen the agent's permissions by one degree; it taught the agent to use the governed path it already had.
+Look at how the reply handles what blocked the untrained run. The severity call is made from the facts as stated — not deferred until someone grants access. Business impact is cited from the governed `metrics_*` tools, by name and number: the same calls that crossed the MCP gateway in Module 3, leaving the same audit lines. And where the procedure needs cluster access the agent does not have, the step says "blocked — needs access" with the exact command for the human — written, not attempted: the pack carries the environment fact that this workstation has no cluster CLI, so the run wastes no attempts on commands that cannot work. The skill did not widen the agent's permissions by one degree; it taught the agent to use the governed path it already had.
 +
 Same agent. Same model. Same tools. The difference arrived as a versioned dependency, and everything about it — where it came from, what it contains, what it needs — is written down where your platform can read it.
 
