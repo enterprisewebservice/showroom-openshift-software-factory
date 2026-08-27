@@ -115,7 +115,13 @@ notes:
     consistently across all verified modules); reviewers should not flag
     them. Numerals for 0-9 per Red Hat style otherwise applies.
   capstone_source: >-
-    Module 6 is the ops-manager production story from the Agents as Staff series: dev agent
-    generates a microservice via the golden-path template, Tekton/TSSC builds signed artifacts,
-    GitOps promotes to production. Environment reset uses the genesis teardown plus
-    cleanup-agent.sh (removes the RHDH catalog Location).
+    Module 6 is the CANONICAL supply-chain-demo story (genesis-demo-recording/
+    SCENARIO-SUPPLY-CHAIN.md): Morgan the spreadsheet-bound ops manager; orders-api
+    (live scenery, agent-office ns, /meta + /orders?status=...) is the system that exists;
+    the intent builds order-metrics — the seat's own copy of the platform's ops-metrics
+    FastMCP service (metrics_stuck_orders(threshold_days), metrics_weekly_summary(), /mcp,
+    /healthz) — closing the arc: the tool modules 4/5 already called was born this way
+    ("the agents pave the road they run on"). Before-state beat: exec-curl the raw orders-api
+    exports (verified reachable from seat gateway pods); spreadsheet screenshot is a TODO
+    asset. Per-seat registration: {user}-order-metrics, toolPrefix orders. Environment reset
+    uses the genesis teardown plus cleanup-agent.sh (removes the RHDH catalog Location).

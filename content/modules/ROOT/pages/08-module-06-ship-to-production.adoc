@@ -9,7 +9,11 @@ include::partial$_attributes.adoc[]
 
 The factory has been running since Module 1. You governed its tool calls in Module 3, taught it in Module 4, and ran it headless in a pipeline in Module 5. This module turns all of that into output: a shipped microservice, promoted to production, consumed as a new governed tool by the agent that originally asked for it.
 
-The request comes from Morgan, ACME Financial's ops manager. Morgan needs a greeting-style lookup service. Old process: file a ticket, wait two weeks, follow up, wait more. Today's process: file an intent in Mattermost to a dev agent, watch the governed tool calls scaffold the service and open a pull request, merge it, and let the supply chain do the rest. The move that makes it Morgan's Monday: once the service is promoted to production, you register it behind the MCP gateway so the assistant agent Morgan already talks to can call it as a new governed tool, complete the original intent, and post the answer — all in Mattermost, all with an audit entry for every call.
+The request comes from Morgan, ACME Financial's ops manager — and it is the most universal request in the enterprise. Every Monday, Morgan runs the week out of a spreadsheet: export order data from `orders-api` (a system IT exposed years ago), stitch the exports together with VLOOKUPs, eyeball which orders are stuck, hand-build a weekly summary, paste it into chat. The data exists behind endpoints; the *answers* don't. The old fix — "just give me a summary endpoint" — sits in IT's backlog measured in quarters.
+
+Today's process: file the intent in Mattermost to a dev agent, watch its governed tool calls scaffold the service and open a pull request, merge it, and let the supply chain build, sign, scan, and promote. Then the move that makes it Morgan's Monday: register the shipped service behind the MCP gateway, and the assistant Morgan already talks to answers the Monday question with a governed tool call — numbers, not VLOOKUPs, with an audit entry for every step.
+
+One more thing, and it is the point of the whole lab: you have already *used* this capability. The `metrics_stuck_orders` tool your skill declared in Module 4 and your pipeline called in Module 5 is the platform's own copy of exactly this service, built exactly this way. In this module you build yours — and watch the factory pave the road it runs on.
 
 5 exercises, about 60 minutes total. Each has a clean stopping point.
 
@@ -83,7 +87,24 @@ Expected: both `{user}-assistant` and `{user}-dev` pods appear with `Running` st
 
 == Exercise 2: Commission the microservice
 
-The dev agent is live. Give it a job. You will open the dev agent's Mattermost channel and describe the service you want built. The agent will use its governed Gitea tools to scaffold the service, commit the files to your org, and open a pull request.
+The dev agent is live. Before you give it the job, look at the job as Morgan lives it today.
+
+. Morgan's Monday, unautomated — pull the raw exports the spreadsheet is built from:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw -- \
+  curl -s http://orders-api.agent-office.svc.cluster.local:8080/meta
+oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw -- \
+  curl -s "http://orders-api.agent-office.svc.cluster.local:8080/orders?status=processing" | head -c 400; echo
+----
++
+Two thousand orders, five statuses, five regions — and a raw list of everything sitting in `processing`. This is what Morgan exports every Monday, three filters at a time, into a spreadsheet where VLOOKUPs decide which orders count as stuck and a summary gets typed by hand. The endpoints exist; the answers don't. That gap is the intent.
++
+// TODO screenshot (capture during the live walkthrough, then restore):
+// image::module-06-morgans-spreadsheet.png[Morgan's Monday spreadsheet: exported order rows, a VLOOKUP column marking stuck orders, and a hand-typed weekly summary block,link=self,window=blank,width=700]
+
+Now commission the fix. You will open the dev agent's Mattermost channel and describe the service you want built. The agent will use its governed Gitea tools to scaffold the service, commit the files to your org, and open a pull request.
 
 . Open link:{mattermost_url}[Mattermost^] and sign in as `{user}` with password `{password}`.
 
@@ -95,7 +116,7 @@ The dev agent is live. Give it a job. You will open the dev agent's Mattermost c
 +
 [source,text]
 ----
-Please build a service called hello-service: a single REST endpoint GET /hello?name=<name> that returns a JSON greeting like {"hello": "<name>"}. Use the golden-path template and open a pull request to my Gitea org for review.
+Please build a service called order-metrics. It reads the existing orders API at http://orders-api.agent-office.svc.cluster.local:8080 (GET /orders with status/region/date filters, GET /meta) and turns Morgan's weekly ops questions into MCP tools served on an HTTP /mcp endpoint: metrics_stuck_orders(threshold_days=7) returns the count and list of orders in processing longer than the threshold, and metrics_weekly_summary() returns order counts by status for the last 7 days. "Stuck" means more than 7 days in processing. Also expose GET /healthz returning {"ok": true}. Use the golden-path template and open a pull request to my Gitea org for review.
 ----
 +
 // AUTHOR NOTE (verify live): confirm this level of prompt specificity is sufficient for the dev agent to invoke the scaffold skill and the gitea_* tools without asking for clarification. If the agent requests additional detail, note what it needed and revise the intent text here.
@@ -104,7 +125,7 @@ Please build a service called hello-service: a single REST endpoint GET /hello?n
 +
 // AUTHOR NOTE (verify live): note which gitea_* tools appear in the agent's reply or in the tool-call ledger. Expected: gitea_create_repo, gitea_create_file (or batch equivalent), gitea_create_pull_request. If the scaffold skill itself wraps the Gitea calls, note whether the individual tool names are surfaced in the reply.
 
-. Open your Gitea org at the URL the agent posts in its reply. Find the new `hello-service` repository in the `{user}-agents` org.
+. Open your Gitea org at the URL the agent posts in its reply. Find the new `order-metrics` repository in the `{user}-agents` org.
 +
 // AUTHOR NOTE (verify live): confirm the Gitea org URL and that the repository appears under `{user}-agents` after the agent's tool calls complete. If the org name differs, update all subsequent references.
 
@@ -121,7 +142,7 @@ Please build a service called hello-service: a single REST endpoint GET /hello?n
 === Verify
 
 * The dev agent replied in its Mattermost channel and described the steps it took
-* A `hello-service` repository exists in your `{user}-agents` Gitea org
+* A `order-metrics` repository exists in your `{user}-agents` Gitea org
 * An open pull request in that repository contains the scaffolded service files
 
 == Exercise 3: Merge and watch the supply chain
@@ -130,7 +151,7 @@ The dev agent opened the pull request. You own the merge decision — the same p
 
 . Open the pull request in Gitea and review the diff. When you are satisfied, merge the pull request.
 +
-// AUTHOR NOTE (verify live): confirm the merge alone is sufficient to trigger the supply-chain PipelineRun (i.e., a Pipelines-as-Code EventListener or webhook is registered on the hello-service repository at scaffold time). If a webhook registration step is required first, document it here as a numbered step before the merge.
+// AUTHOR NOTE (verify live): confirm the merge alone is sufficient to trigger the supply-chain PipelineRun (i.e., a Pipelines-as-Code EventListener or webhook is registered on the order-metrics repository at scaffold time). If a webhook registration step is required first, document it here as a numbered step before the merge.
 
 . In the terminal, watch for the PipelineRun to start:
 +
@@ -160,20 +181,20 @@ The supply-chain pipeline runs three stages before promotion:
 +
 // AUTHOR NOTE (verify live): confirm whether GitOps promotion is a task inside the PipelineRun or a separate mechanism (e.g., a pipeline task commits an updated image tag to a GitOps repo, which an ArgoCD ApplicationSet then syncs), and confirm the Application name the attendee sees (their GitOps view shows only their own apps).
 
-. Open link:{gitops_url}[OpenShift GitOps^] and find the Application for `hello-service`. Wait for it to report *Synced* and *Healthy* — the promotion is GitOps reconciling what the pipeline committed, the same loop you watched carry your directive change in Module 2.
+. Open link:{gitops_url}[OpenShift GitOps^] and find the Application for `order-metrics`. Wait for it to report *Synced* and *Healthy* — the promotion is GitOps reconciling what the pipeline committed, the same loop you watched carry your directive change in Module 2.
 +
-// AUTHOR NOTE (verify live): confirm the hello-service Application name matches the {user}-agents-* pattern the attendee's GitOps visibility rows cover.
+// AUTHOR NOTE (verify live): confirm the order-metrics Application name matches the {user}-agents-* pattern the attendee's GitOps visibility rows cover.
 
 . When all stages complete, verify the service is running:
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-oc get pods -n {user}-agent-workspace -l app=hello-service
+oc get pods -n {user}-agent-workspace -l app=order-metrics
 ----
 +
-// AUTHOR NOTE (verify live): confirm the deployed service namespace and the label selector. GitOps may promote hello-service into a separate production namespace (e.g., {user}-app-prod). Update the namespace and label selector here to match the live promotion target.
+// AUTHOR NOTE (verify live): confirm the deployed service namespace and the label selector. GitOps may promote order-metrics into a separate production namespace (e.g., {user}-app-prod). Update the namespace and label selector here to match the live promotion target.
 +
-Expected: a pod with `hello-service` in the name at `Running` status.
+Expected: a pod with `order-metrics` in the name at `Running` status.
 
 . Confirm the service responds:
 +
@@ -182,26 +203,26 @@ Expected: a pod with `hello-service` in the name at `Running` status.
 oc exec -n {user}-agent-workspace \
   $(oc get pods -n {user}-agent-workspace -o name | grep {user}-assistant | head -1) \
   -c openclaw -- \
-  curl -s "http://hello-service.{user}-agent-workspace.svc.cluster.local:8080/hello?name=Morgan"
+  curl -s "http://order-metrics.{user}-agent-workspace.svc.cluster.local:8080/healthz"
 ----
 +
 // AUTHOR NOTE (verify live): confirm the service DNS name, namespace, and port (port may differ from 8080). Update the namespace in the URL to match the promotion target from the previous step. If the assistant-gateway pod does not have curl, substitute any pod in {user}-agent-workspace that does (e.g., oc run curl-test --image=registry.access.redhat.com/ubi9/ubi-minimal:latest --rm -it --restart=Never -- curl -s "<url>").
 +
-Expected: a JSON response like `{"hello": "Morgan"}`.
+Expected: `{"ok": true}` — the service is up; its real interface is the `/mcp` endpoint the next exercise registers.
 
 // TODO screenshot (capture during the live walkthrough, then restore):
 // image::module-06-pipeline-stages.png[OpenShift Console PipelineRun task graph showing build, sign, and scan tasks in Succeeded status,link=self,window=blank,width=700]
 
 // TODO screenshot (capture during the live walkthrough, then restore):
-// image::module-06-service-running.png[Terminal showing hello-service pod at Running status and curl returning a JSON greeting,link=self,window=blank,width=700]
+// image::module-06-service-running.png[Terminal showing order-metrics pod at Running status and curl returning a JSON greeting,link=self,window=blank,width=700]
 
 === Verify
 
 * The pull request merged successfully
 * A PipelineRun started in response to the merge
 * The PipelineRun completed with all three stages (build, sign, scan) at *Succeeded* status
-* The hello-service pod is in `Running` status
-* A `curl` to the service endpoint returns a JSON greeting
+* The order-metrics pod is in `Running` status
+* A `curl` to `/healthz` returns `{"ok": true}`
 
 == Exercise 4: Register the service behind the gateway
 
@@ -215,18 +236,18 @@ cat <<'EOF' | oc apply -n {user}-agent-workspace -f -
 apiVersion: openclaw.io/v1alpha1
 kind: MCPServerRegistration
 metadata:
-  name: {user}-hello-service
+  name: {user}-order-metrics
 spec:
   endpoint:
-    url: http://hello-service.{user}-agent-workspace.svc.cluster.local:8080/mcp
-  toolPrefix: hello
+    url: http://order-metrics.{user}-agent-workspace.svc.cluster.local:8080/mcp
+  toolPrefix: orders
   gatewayRef:
     name: data-science-gateway-class
     namespace: agent-office
 EOF
 ----
 +
-// AUTHOR NOTE (verify live): confirm the MCPServerRegistration CRD API version (openclaw.io/v1alpha1 or a newer version) and the exact spec field names (endpoint.url, toolPrefix, gatewayRef). Update the namespace in the URL to match where GitOps promoted hello-service. Confirm whether hello-service exposes a /mcp endpoint natively or requires a sidecar MCP adapter to be declared in the spec.
+// AUTHOR NOTE (verify live): confirm the MCPServerRegistration CRD API version (openclaw.io/v1alpha1 or a newer version) and the exact spec field names (endpoint.url, toolPrefix, gatewayRef). Update the namespace in the URL to match where GitOps promoted order-metrics. Confirm whether order-metrics exposes a /mcp endpoint natively or requires a sidecar MCP adapter to be declared in the spec.
 +
 // AUTHOR NOTE (verify live): confirm the gatewayRef name (data-science-gateway-class is the current gateway class name — verify it has not changed since Module 3).
 
@@ -234,7 +255,7 @@ EOF
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-oc get mcpserverregistration {user}-hello-service -n {user}-agent-workspace
+oc get mcpserverregistration {user}-order-metrics -n {user}-agent-workspace
 ----
 +
 // AUTHOR NOTE (verify live): confirm the status field name the operator sets when the gateway accepts a registration (expected: a READY column or a status condition of type Ready). Note the verified field name here.
@@ -245,18 +266,18 @@ Expected: a status indicating the registration is active.
 +
 [source,text]
 ----
-List the governed tools available to you. Do any of them start with "hello"?
+List the governed tools available to you. Do any of them start with "orders"?
 ----
 +
-// AUTHOR NOTE (verify live): confirm the tool name the gateway exposes for the registered service. The toolPrefix "hello" means the exposed tool name is likely "hello_greet" or "hello_hello" depending on the MCP server's tool manifest. Note the verified tool name here and update the closing-loop prompt in Exercise 5 to name it explicitly.
+// AUTHOR NOTE (verify live): confirm the tool name the gateway exposes for the registered service. The toolPrefix "orders" means the exposed tool name is likely "orders_metrics_stuck_orders" depending on the MCP server's tool manifest. Note the verified tool name here and update the closing-loop prompt in Exercise 5 to name it explicitly.
 
 // TODO screenshot (capture during the live walkthrough, then restore):
-// image::module-06-mcp-registration.png[Terminal showing MCPServerRegistration in Ready status, and Mattermost reply from the assistant confirming a hello tool is available,link=self,window=blank,width=700]
+// image::module-06-mcp-registration.png[Terminal showing MCPServerRegistration in Ready status, and Mattermost reply from the assistant confirming the orders tools are available,link=self,window=blank,width=700]
 
 === Verify
 
-* `oc get mcpserverregistration {user}-hello-service -n {user}-agent-workspace` shows a Ready status
-* The assistant agent reports a governed tool matching the `hello` prefix in its Mattermost reply
+* `oc get mcpserverregistration {user}-order-metrics -n {user}-agent-workspace` shows a Ready status
+* The assistant agent reports a governed tool matching the `orders` prefix in its Mattermost reply
 
 == Exercise 5: Close the loop
 
@@ -270,12 +291,12 @@ This is the beat that makes it Morgan's Monday. Morgan had a request. The factor
 +
 [source,text]
 ----
-Please call the hello-service tool and get a greeting for Morgan. Post the result here.
+It's Monday. Using your new orders tools: how many orders are stuck in processing (stuck = more than 7 days), and what does the weekly summary look like? Post the numbers here.
 ----
 +
-// AUTHOR NOTE (verify live): replace "hello-service tool" in the prompt with the exact tool name verified in Exercise 4 step 3. The assistant recognizes the name more reliably when the prompt matches the gateway-exposed name precisely.
+// AUTHOR NOTE (verify live): replace "order-metrics tool" in the prompt with the exact tool name verified in Exercise 4 step 3. The assistant recognizes the name more reliably when the prompt matches the gateway-exposed name precisely.
 
-. Read the agent's reply. It reports the greeting from hello-service, delivered through the governed gateway. The factory's output is now the factory's new capability.
+. Read the agent's reply. It reports the stuck count and the weekly summary — Morgan's Monday answers, produced by governed calls to the service the factory shipped this session. No exports, no VLOOKUPs, and an audit entry where the spreadsheet used to be.
 
 . Read your tenant-side tool-call ledger to confirm the governed call was made:
 +
@@ -290,9 +311,9 @@ oc exec $(oc get pods -n {user}-agent-workspace -o name | grep {user}-assistant 
 +
 // AUTHOR NOTE (verify live): confirm the session JSONL path inside the assistant container. This mirrors the audit command from Module 3 — if that path changed, update both modules.
 +
-The `hello_*` tool call appears in the ledger alongside the `governed__gitea_*` calls you saw in Module 3 — the factory's newest tool, already leaving the same class of record as its oldest. The ledger entry is your tenant-side receipt. Its platform-side twin — the gateway's access-log line for this call — lives in the shared stream you proved in Module 3 you cannot open, shown on the shared screen during the session, on the same cluster, under the same retention policy as every other audit artifact ACME governs.
+The `orders_*` tool call appears in the ledger alongside the `governed__gitea_*` calls you saw in Module 3 — the factory's newest tool, already leaving the same class of record as its oldest. The ledger entry is your tenant-side receipt. Its platform-side twin — the gateway's access-log line for this call — lives in the shared stream you proved in Module 3 you cannot open, shown on the shared screen during the session, on the same cluster, under the same retention policy as every other audit artifact ACME governs.
 +
-// AUTHOR NOTE (verify live): confirm the hello tool entries appear namespaced in the ledger (expected shape: a prefixed toolName matching the MCPServerRegistration prefix) and name the exact string here and in the Verify bullet.
+// AUTHOR NOTE (verify live): confirm the orders tool entries appear namespaced in the ledger (expected shape: a prefixed toolName matching the MCPServerRegistration prefix) and name the exact string here and in the Verify bullet.
 
 . Read the supply-chain attestation on the image the pipeline signed in Exercise 3:
 +
@@ -300,7 +321,7 @@ First read the image reference the pipeline produced — it is recorded on the D
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-oc get deploy hello-service -n {user}-agent-workspace \
+oc get deploy order-metrics -n {user}-agent-workspace \
   -o jsonpath='{.spec.template.spec.containers[0].image}'
 ----
 +
@@ -309,7 +330,7 @@ Then verify the signed attestation on that image:
 [source,bash,role="execute",subs="attributes"]
 ----
 cosign verify-attestation --type slsaprovenance \
-  $(oc get deploy hello-service -n {user}-agent-workspace \
+  $(oc get deploy order-metrics -n {user}-agent-workspace \
     -o jsonpath='{.spec.template.spec.containers[0].image}')
 ----
 +
@@ -318,15 +339,15 @@ cosign verify-attestation --type slsaprovenance \
 The attestation records what inputs produced what outputs: the commit hash the dev agent's PR introduced, the pipeline that signed it, and the image digest the gateway is now serving. Any operator can follow that chain from the tool call in Mattermost back to the intent Morgan posted in the dev agent's channel.
 
 // TODO screenshot (capture during the live walkthrough, then restore):
-// image::module-06-loop-closed.png[Mattermost {user}-assistant channel showing the assistant's reply with the hello-service greeting for Morgan,link=self,window=blank,width=700]
+// image::module-06-loop-closed.png[Mattermost {user}-assistant channel showing the assistant's Monday-numbers reply from the order-metrics tools,link=self,window=blank,width=700]
 
 // TODO screenshot (capture during the live walkthrough, then restore):
-// image::module-06-audit-ledger.png[Terminal tool-call ledger showing the hello governed tool call alongside the governed__gitea_* calls from Module 3,link=self,window=blank,width=700]
+// image::module-06-audit-ledger.png[Terminal tool-call ledger showing the orders governed tool calls alongside the governed__gitea_* calls from Module 3,link=self,window=blank,width=700]
 
 === Verify
 
-* The assistant agent replied in Mattermost with the greeting from hello-service
-* The tenant-side tool-call ledger shows a `hello_*` entry marked as a governed call
+* The assistant agent replied in Mattermost with the stuck count and weekly summary from order-metrics
+* The tenant-side tool-call ledger shows an `orders_*` entry marked as a governed call
 * The image attestation command returns annotation data, confirming the pipeline's signing step produced a traceable artifact
 
 == What just happened
@@ -336,6 +357,8 @@ AgentWorks ships a connector catalog. The list is fixed: the integrations the ve
 What you built here works differently. The factory consumed a natural-language intent, scaffolded a service from a governed template, built a signed and scanned image through the TSSC (Trusted Software Supply Chain) pipeline, promoted it with OpenShift GitOps, registered it behind the MCP gateway, and exposed it as a new governed tool — one that did not exist in the catalog before Morgan asked for it. The requesting agent called it the same session. The catalog grew with the work.
 
 The signed image carries an SLSA provenance attestation: the pipeline task that signed it recorded what inputs produced what outputs. Any operator can start at the tool call in Mattermost and trace back to the pull request the dev agent opened, to the scaffold skill the platform applied, to the intent Morgan posted. The supply chain is legible from end to end because every step produced an artifact on the platform ACME governs — not in a vendor's dashboard, not behind a vendor's API, not subject to a vendor's retention policy.
+
+And notice what you rebuilt: `metrics_stuck_orders` is the tool your Module 4 skill declared as its dependency and your Module 5 pipeline called headless. The platform's own copy — the one you have been calling since Module 4 — was born exactly this way, from exactly this intent. The factory does not just run on the paved road; it paves it.
 
 The MCP gateway is why the assistant agent could call a service that was not in the catalog when the lab started. The platform's trust boundary did not expand: same gateway, same authorization model, same per-call audit path. The catalog grew because you applied a resource to a namespace. On a vendor AI platform, that step is a support ticket. Here it is a `kubectl apply`.
 
@@ -362,8 +385,8 @@ Assets needed (capture against the live environment):
 . content/modules/ROOT/assets/images/module-06-dev-agent-reply.png — Mattermost channel for {user}-dev showing the agent's description of the Gitea tool calls it made and a link to the pull request it opened
 . content/modules/ROOT/assets/images/module-06-gitea-pr-diff.png — Gitea pull request diff showing the golden-path template files committed by the dev agent (Dockerfile, pipeline binding, service manifest, source skeleton)
 . content/modules/ROOT/assets/images/module-06-pipeline-stages.png — OpenShift Console PipelineRun task graph showing build, sign (cosign/SLSA), and scan tasks in Succeeded status
-. content/modules/ROOT/assets/images/module-06-service-running.png — Terminal showing hello-service pod in Running status and curl to the service endpoint returning a JSON greeting
-. content/modules/ROOT/assets/images/module-06-mcp-registration.png — Terminal showing MCPServerRegistration in Ready status; Mattermost reply from {user}-assistant confirming the hello tool is visible
-. content/modules/ROOT/assets/images/module-06-loop-closed.png — Mattermost {user}-assistant channel showing the assistant's reply with the hello-service greeting for Morgan
-. content/modules/ROOT/assets/images/module-06-audit-ledger.png — Terminal tool-call ledger showing the hello governed tool call alongside the governed__gitea_* calls from Module 3
+. content/modules/ROOT/assets/images/module-06-service-running.png — Terminal showing order-metrics pod in Running status and curl to /healthz returning ok
+. content/modules/ROOT/assets/images/module-06-mcp-registration.png — Terminal showing MCPServerRegistration in Ready status; Mattermost reply from {user}-assistant confirming the orders tools are visible
+. content/modules/ROOT/assets/images/module-06-loop-closed.png — Mattermost {user}-assistant channel showing the assistant's Monday-numbers reply from the order-metrics tools
+. content/modules/ROOT/assets/images/module-06-audit-ledger.png — Terminal tool-call ledger showing the orders governed tool calls alongside the governed__gitea_* calls from Module 3
 ////
