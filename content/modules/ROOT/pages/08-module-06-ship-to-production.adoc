@@ -291,58 +291,82 @@ oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw --
 
 == Exercise 4: Register the service behind the gateway
 
-The service is live. At this point, no agent knows it exists. To make it callable as a governed tool, you register it with an MCPServerRegistration resource. The gateway picks up the registration and exposes the service's endpoints as tool calls — routed through the same authorization, credential-injection, and audit path as every other governed tool in this lab.
+The service is live. At this point, no agent knows it exists. Making it callable as a governed tool takes two declared resources — both in *your* namespace, both within your own RBAC: an HTTPRoute that attaches the service to the shared MCP gateway, and an MCPServerRegistration that tells the gateway to discover its tools. Same authorization path, same audit line, same trust model as every governed call in this lab.
 
-. Create the registration resource:
+. Create both resources:
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-cat <<'EOF' | oc apply -n {user}-agent-workspace -f -
-apiVersion: openclaw.io/v1alpha1
+cat <<EOF | oc apply -n {user}-agent-workspace -f -
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: order-metrics-mcp-route
+spec:
+  hostnames:
+    - {user}-order-metrics.mcp.local
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: mcp-gateway
+      namespace: agent-office
+      sectionName: mcps
+  rules:
+    - backendRefs:
+        - kind: Service
+          name: order-metrics
+          port: 8080
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+---
+apiVersion: mcp.kuadrant.io/v1alpha1
 kind: MCPServerRegistration
 metadata:
   name: {user}-order-metrics
 spec:
-  endpoint:
-    url: http://order-metrics.{user}-agent-workspace.svc.cluster.local:8080/mcp
-  toolPrefix: orders
-  gatewayRef:
-    name: data-science-gateway-class
-    namespace: agent-office
+  path: /mcp
+  prefix: orders_
+  state: Enabled
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: order-metrics-mcp-route
 EOF
 ----
 +
-// AUTHOR NOTE (verify live): confirm the MCPServerRegistration CRD API version (openclaw.io/v1alpha1 or a newer version) and the exact spec field names (endpoint.url, toolPrefix, gatewayRef). Update the namespace in the URL to match where GitOps promoted order-metrics. Confirm whether order-metrics exposes a /mcp endpoint natively or requires a sidecar MCP adapter to be declared in the spec.
-+
-// AUTHOR NOTE (verify live): confirm the gatewayRef name (data-science-gateway-class is the current gateway class name — verify it has not changed since Module 3).
+Read what you just declared: the route attaches your service to the platform's `mcp-gateway` (its listeners deliberately admit routes from any namespace — attachment is the tenant's declaration, the gateway stays the platform's control point), and the registration names the route, the `/mcp` path your dev agent implemented, and the `orders_` prefix that namespaces your tools on the shared gateway.
 
-. Watch the gateway accept the registration:
+. Watch the gateway discover the tools:
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-oc get mcpserverregistration {user}-order-metrics -n {user}-agent-workspace
+oc get mcpserverregistration {user}-order-metrics -n {user}-agent-workspace \
+  -o jsonpath='{.status.conditions[0].reason}: {.status.conditions[0].message}{"\n"}'
 ----
 +
-// AUTHOR NOTE (verify live): confirm the status field name the operator sets when the gateway accepts a registration (expected: a READY column or a status condition of type Ready). Note the verified field name here.
-+
-Expected: a status indicating the registration is active.
+Within about 30 seconds: `Ready: server added successfully. Total tools added 2. Total prompts added 0` — the gateway walked your route, spoke MCP to the service the factory built, and found `metrics_stuck_orders` and `metrics_weekly_summary`.
 
-. Confirm the tool is visible to your assistant agent. Open link:{mattermost_url}[Mattermost^] and navigate to the `{user}-assistant` channel. Send:
+. Confirm the tools are visible to your assistant. Open link:{mattermost_url}[Mattermost^], go to the `{user}-assistant` channel, and send:
 +
 [source,text]
 ----
-List the governed tools available to you. Do any of them start with "orders"?
+Discover your governed tools. Do any of them start with "orders_"?
 ----
 +
-// AUTHOR NOTE (verify live): confirm the tool name the gateway exposes for the registered service. The toolPrefix "orders" means the exposed tool name is likely "orders_metrics_stuck_orders" depending on the MCP server's tool manifest. Note the verified tool name here and update the closing-loop prompt in Exercise 5 to name it explicitly.
+The assistant's governed tool surface now includes `orders_metrics_stuck_orders` and `orders_metrics_weekly_summary` — the service your dev agent shipped an hour ago, already indistinguishable in governance terms from the tools the platform shipped with.
 
-// TODO screenshot (capture during the live walkthrough, then restore):
-// image::module-06-mcp-registration.png[Terminal showing MCPServerRegistration in Ready status, and Mattermost reply from the assistant confirming the orders tools are available,link=self,window=blank,width=700]
+// VERIFIED LIVE 2026-08-27 (seat user1, attendee-privilege apply): registration reached
+// Ready with "Total tools added 2" in ~30s; the gateway exposes the tools to agents as
+// governed__orders_metrics_* (prefix orders_ + tool name; governed__ added by the runtime's
+// gateway client). Both resources are namespaced and within seat RBAC; mcp-gateway
+// listeners allow cross-namespace route attachment (from: All).
 
 === Verify
 
-* `oc get mcpserverregistration {user}-order-metrics -n {user}-agent-workspace` shows a Ready status
-* The assistant agent reports a governed tool matching the `orders` prefix in its Mattermost reply
+* The registration's condition reads `Ready: server added successfully. Total tools added 2`
+* The assistant reports governed tools beginning `orders_` in its Mattermost reply
 
 == Exercise 5: Close the loop
 
@@ -356,7 +380,7 @@ This is the beat that makes it Morgan's Monday. Morgan had a request. The factor
 +
 [source,text]
 ----
-It's Monday. Using your new orders tools: how many orders are stuck in processing (stuck = more than 7 days), and what does the weekly summary look like? Post the numbers here.
+It's Monday. Using your new orders_metrics_stuck_orders and orders_metrics_weekly_summary tools: how many orders are stuck in processing (stuck = more than 7 days), and what does the weekly summary look like? Post the numbers here.
 ----
 +
 // AUTHOR NOTE (verify live): replace "order-metrics tool" in the prompt with the exact tool name verified in Exercise 4 step 3. The assistant recognizes the name more reliably when the prompt matches the gateway-exposed name precisely.
