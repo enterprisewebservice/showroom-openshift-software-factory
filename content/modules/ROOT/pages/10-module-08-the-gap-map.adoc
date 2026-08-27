@@ -100,8 +100,8 @@ These are gaps the lab's own construction exposed. They are labeled as such in t
 |The platform exposes a queryable, per-seat view of the authoritative audit stream — same data as the platform operator sees, scoped to the requesting identity, with the same retention and export controls.
 
 |Cluster-native delivery for published skill packs
-|Red Hat publishes agentic skill packs in the Ecosystem Catalog (open SKILL.md format), installed today by downloading files into each workstation's skills directory by hand. This platform already imports five of those skills, repackages each as a digest-pinned versioned artifact with source provenance, and delivers them to every agent declaratively — Module 4's mechanism, applied to Red Hat's own content.
-|Skill packs from the Ecosystem Catalog install onto OpenShift as versioned, provenance-carrying resources — per namespace, digest-pinned, operator-delivered — instead of per-laptop file copies.
+|The delivery mechanism exists on this platform: skills ship as OCI artifacts in the cluster's registry, a namespace installs one as a digest-pinned reference the operator fetches, verifies, and refuses on drift — you ran it in Module 4 — and five of Red Hat's own Ecosystem Catalog skills are already imported and delivered this way. What Red Hat ships today is the content only, as SKILL.md files copied into each workstation by hand.
+|Red Hat publishes its skill packs as OCI artifacts (the shape the ecosystem's draft spec already defines), and a supported operator delivers them per namespace — the mechanism this platform demonstrates, offered as product. The remaining platform-side ask is the server-side install that targets a tenant namespace directly.
 |===
 
 == What the gaps are not
