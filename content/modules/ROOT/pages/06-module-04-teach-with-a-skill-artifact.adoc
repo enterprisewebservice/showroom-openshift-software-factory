@@ -4,9 +4,9 @@ include::partial$_attributes.adoc[]
 
 Your agent arrived knowing how to investigate and document. It did not arrive knowing your organization's procedures. On commercial agent platforms, the AgentWorks pitch for this capability is "skills/harness, supply-chain graded" — skill packs from the vendor's catalog, versioned however the vendor tracks them, installed on the vendor's timeline.
 
-On this platform, know-how ships the way software ships. The platform packages each skill as a *versioned artifact* in a registry: it has coordinates (`namespace/name:version`), a manifest, declared dependencies, and a content hash — and installing one is a declarative act your platform records. In this module you watch your agent fail at a task it was never taught, install a versioned pack that teaches it, and then trace the artifact's supply chain from registry coordinate to the running agent.
+On this platform, know-how ships the way software ships — literally the same way. Each skill is a *versioned OCI artifact* in the cluster's own container registry: a repository and tag, a manifest, a config that declares its dependencies, a content hash — the storage discipline your images already live under, applied to know-how. Installing one is a declarative act your platform records. In this module you watch your agent fail at a task it was never taught, install a versioned artifact that teaches it, and then trace the supply chain from registry to running agent.
 
-The format inside the pack is deliberately not proprietary. A skill's body is a `SKILL.md` — the open Agent Skills format (Markdown with YAML frontmatter) that most agent runtimes now read. What the platform adds is everything *around* the file, the part the open format leaves to you: versioned distribution, declared dependencies, content hashing, and Kubernetes-native delivery. Portable know-how, governed delivery.
+The format inside the pack is deliberately not proprietary. A skill's body is a `SKILL.md` — the open Agent Skills format (Markdown with YAML frontmatter) that most agent runtimes now read. What the platform adds is everything *around* the file, the part the open format leaves to you: versioned distribution, declared dependencies, content hashing, and Kubernetes-native delivery. The packaging follows the shape the ecosystem's emerging Agent-Skills-as-OCI-artifacts draft defines — skills as registry artifacts, bundles as image indexes — so none of it is a private convention. Portable know-how, governed delivery.
 
 Plan on about 30 minutes.
 
@@ -59,65 +59,78 @@ Incident report: users say the orders API is returning 500s since about 10 minut
 
 == Exercise 2: Inspect the artifact in the registry
 
-The pack you are about to install exists as a published artifact in the platform's know-how registry — public, versioned, inspectable before you trust it.
+The pack you are about to install exists as a published OCI artifact in the platform's container registry — versioned, content-addressed, and inspectable before you trust it, exactly like the images your cluster already runs.
 
-. Read its registry index entry:
+. Registry reads are authenticated. Wire up a token helper using the same pull secret your pods use (this shell keeps the variables for the rest of the module):
 +
-[source,bash,role="execute"]
+[source,bash,role="execute",subs="attributes"]
 ----
-curl -s https://mindifact.ai/v1/index.json | python3 -c "
-import sys, json
-for a in json.load(sys.stdin)['artifacts']:
-    if a['name'] == 'platform-incident-triage' and a['version'] == '1.1.0':
-        print(json.dumps(a, indent=2))"
-----
-+
-Coordinates `agent-office/platform-incident-triage:1.1.0` (the index carries every published version — the filter pins one), kind `skill`, a declared dependency (`mcpServer: ops-metrics`), and a declared capability (`ops.incident-triage`). Dependencies are *declared in the artifact*, not discovered by trial at runtime.
-
-. Read the versioned content itself — the exact procedure your agent will follow:
-+
-[source,bash,role="execute"]
-----
-curl -s https://mindifact.ai/v1/platform-incident-triage/1.1.0/skills/platform-incident-triage.md
-----
-+
-A fixed four-section reply structure, a P1–P4 severity rubric, and an investigation sequence whose first step is a governed tool call: business impact through the `metrics_stuck_orders` and `metrics_weekly_summary` tools, cited by name and number — and an explicit rule that a denied step is marked "blocked — needs access" and handed to the human instead of stopping the triage. This URL is version-pinned: `1.1.0` in the path means this content, forever.
-
-. Check the version history — a first-class record, not a changelog sentence:
-+
-[source,bash,role="execute"]
-----
-curl -s https://mindifact.ai/v1/platform-incident-triage/metadata.json
+QUAY={artifact_registry}
+oc extract secret/quay-pull-secret -n {user}-agent-workspace --keys=.dockerconfigjson --to=- > /tmp/quay.json
+AUTH=$(python3 -c "import json;a=json.load(open('/tmp/quay.json'))['auths'];print(next(iter(a.values()))['auth'])")
+tok() { curl -sk "https://$QUAY/v2/auth?service=$QUAY&scope=repository:deanpeterson/$1:pull" -H "Authorization: Basic $AUTH" | python3 -c "import sys,json;print(json.load(sys.stdin)['token'])"; }
 ----
 
-. The registry holds more than skills. Group its index by kind:
+. Read the artifact's OCI manifest:
 +
 [source,bash,role="execute"]
 ----
-curl -s https://mindifact.ai/v1/index.json | python3 -c "
-import sys, json, collections
-k = collections.Counter(a['kind'] for a in json.load(sys.stdin)['artifacts'])
-print(dict(k))"
+REPO=deanpeterson/agent-office-skill-platform-incident-triage
+T=$(tok agent-office-skill-platform-incident-triage)
+curl -sk "https://$QUAY/v2/$REPO/manifests/1.1.0" \
+  -H "Authorization: Bearer $T" \
+  -H "Accept: application/vnd.oci.image.manifest.v1+json" | python3 -m json.tool
 ----
 +
-Four kinds. `tool` rows are governed tool definitions — and your skill's declared dependency, `ops-metrics`, is one of them: the dependency names an installable artifact in the same registry, not a wish. `pack` rows bundle a capability. Read one:
+One config blob and one content layer, each pinned by digest — a skill packaged the way a container image is packaged. The `annotations` block already carries the content hash.
+
+. The config blob is the artifact's manifest *inside* the package — the `MANIFEST.MF` of this jar:
 +
 [source,bash,role="execute"]
 ----
-curl -s https://mindifact.ai/v1/index.json | python3 -c "
-import sys, json
-for a in json.load(sys.stdin)['artifacts']:
-    if a['name'] == 'supply-chain-ops': print(a['description'])"
+CFGD=$(curl -sk "https://$QUAY/v2/$REPO/manifests/1.1.0" -H "Authorization: Bearer $T" \
+  -H "Accept: application/vnd.oci.image.manifest.v1+json" | python3 -c "import sys,json;print(json.load(sys.stdin)['config']['digest'])")
+curl -skL "https://$QUAY/v2/$REPO/blobs/$CFGD" -H "Authorization: Bearer $T" | python3 -m json.tool
 ----
 +
-"Install this and the agent has both the skill and the tool it calls." One coordinate, a whole capability: the procedure and the governed tool it depends on, versioned together. Installing a pack expands to every skill it contains, each stamped with the pack's provenance — and the platform reports each declared dependency as satisfied or not against what actually runs, rather than pretending. This module installs a single skill so you can audit every moving part; the capstone meets the pack model from the other side, when the factory's own output becomes the governed tool a capability depends on.
+Name, version, a declared dependency (`mcpServer: ops-metrics`), a declared capability (`ops.incident-triage`), and `contentSha256` — the package describes its own content hash. Dependencies are *declared in the artifact*, not discovered by trial at runtime.
+
+. Read the content itself, straight out of the artifact's layer — the exact procedure your agent will follow:
++
+[source,bash,role="execute"]
+----
+LAYERD=$(curl -sk "https://$QUAY/v2/$REPO/manifests/1.1.0" -H "Authorization: Bearer $T" \
+  -H "Accept: application/vnd.oci.image.manifest.v1+json" | python3 -c "import sys,json;print(json.load(sys.stdin)['layers'][0]['digest'])")
+curl -skL "https://$QUAY/v2/$REPO/blobs/$LAYERD" -H "Authorization: Bearer $T" | tar -xzO SKILL.md
+----
++
+A fixed four-section reply structure, a P1–P4 severity rubric, an investigation sequence whose first step is a governed tool call — business impact through `metrics_stuck_orders` and `metrics_weekly_summary`, cited by name and number — and an explicit rule that a denied step is marked "blocked — needs access" and handed to the human instead of stopping the triage.
+
+. Version history is the repository's tag list — a first-class record:
++
+[source,bash,role="execute"]
+----
+curl -sk "https://$QUAY/v2/$REPO/tags/list" -H "Authorization: Bearer $T" | python3 -m json.tool
+----
+
+. The registry holds more than skills. A *pack* bundles a capability — and it is not a description pointing at names, it is an OCI image index whose members are pinned by digest. Read one:
++
+[source,bash,role="execute"]
+----
+curl -sk "https://$QUAY/v2/deanpeterson/agent-office-pack-supply-chain-ops/manifests/0.1.0" \
+  -H "Authorization: Bearer $(tok agent-office-pack-supply-chain-ops)" \
+  -H "Accept: application/vnd.oci.image.index.v1+json" | python3 -m json.tool
+----
++
+Two members — a `skill` and a `tool` — each referenced by digest, and the description on the index says why they travel together: "Install this and the agent has both the skill and the tool it calls." The bundle physically contains what it claims: the members' manifests and blobs live inside the pack's own repository, so the pack is one signable, content-addressed unit. This module installs a single skill so you can audit every moving part; the capstone meets the pack from the other side, when the factory's own output becomes the governed tool a capability depends on.
 
 === Verify
 
-* The index entry shows kind `skill`, version `1.1.0`, and the `ops-metrics` dependency
-* The versioned content URL serves the SKILL.md
-* `metadata.json` lists two versions with `latest: 1.1.0` — the pack's history is a first-class record
-* The index groups into four kinds — `skill`, `tool`, `pack`, `meta-pack` — and the `supply-chain-ops` pack describes a skill-plus-tool bundle
+* The artifact manifest shows one config blob and one content layer, both digest-pinned
+* The config blob declares version `1.1.0`, the `ops-metrics` dependency, and `contentSha256`
+* The layer serves the SKILL.md with the four-section procedure
+* `tags/list` shows both `1.0.0` and `1.1.0`
+* The pack index lists a `skill` member and a `tool` member by digest
 
 == Exercise 3: Install it into your workspace
 
@@ -136,10 +149,8 @@ metadata:
     app.kubernetes.io/managed-by: agent-office
     agentoffice.ai/skill-tier: registry
   annotations:
-    agentoffice.ai/registry: mindifact.ai
+    agentoffice.ai/registry: quay-quay-quay-test.apps.salamander.aimlworkbench.com
     agentoffice.ai/pack-ref: agent-office/platform-incident-triage:1.1.0
-    agentoffice.ai/manifest: https://mindifact.ai/v1/platform-incident-triage/1.1.0/mindifact.json
-    agentoffice.ai/content-url: https://mindifact.ai/v1/platform-incident-triage/1.1.0/skills/platform-incident-triage.md
 spec:
   displayName: "Platform Incident Triage"
   description: "Triage a reported platform incident with a fixed severity rubric and a reproducible investigation sequence. Use whenever a user reports an outage, degradation, error, or \"something is broken\" on the cluster."
@@ -149,13 +160,14 @@ spec:
       name: ops-metrics
   source:
     packageRef:
-      ref: platform-incident-triage:1.1.0
+      ref: oci://quay-quay-quay-test.apps.salamander.aimlworkbench.com/deanpeterson/agent-office-skill-platform-incident-triage:1.1.0
       digest: 2b0e2b9c91a33eb99f71e0d72ee346d721f5d434882b7a3d49314b3676e6d126
-      registry: https://mindifact.ai/v1
+      pullSecretName: quay-pull-secret
+      insecureSkipTLSVerify: true
 SKILL_EOF
 ----
 +
-NOTE: This YAML was rendered from the registry row — the `digest` is the SHA-256 of the published content, computed at render time, and every annotation points back at the live artifact. Rendering-and-applying is the client-side form of the platform's `/catalog/install`; a server-side install that targets your namespace directly is a named roadmap item.
+NOTE: This YAML was rendered from the artifact itself — the `digest` is the `contentSha256` the package's own config blob declares, and `pullSecretName` names the same pull secret your pods already use, the `imagePullSecrets` convention applied to know-how. Rendering-and-applying is the client-side form of the platform's `/catalog/install`; a server-side install that targets your namespace directly is a named roadmap item.
 
 . The resource is now part of your workspace's declared state:
 +
@@ -202,14 +214,17 @@ oc get skill platform-incident-triage -n {user}-agent-workspace \
   -o jsonpath='{.metadata.annotations.agentoffice\.ai/pack-ref}'
 ----
 +
-*Is the content what the registry published?* Three hashes, three parties: what you pinned in the spec, what the operator resolved and delivered, and what the registry serves right now:
+*Is the content what the registry published?* Three hashes, three parties: what you pinned in the spec, what the operator resolved and delivered, and what the artifact in the registry declares as its own content:
 +
 [source,bash,role="execute",subs="attributes"]
 ----
 oc get skill platform-incident-triage -n {user}-agent-workspace \
   -o jsonpath='pinned:    {.spec.source.packageRef.digest}{"\n"}delivered: {.status.contentSha256}{"\n"}'
-curl -s "$(oc get skill platform-incident-triage -n {user}-agent-workspace \
-  -o jsonpath='{.metadata.annotations.agentoffice\.ai/content-url}')" | shasum -a 256 | sed 's/^/registry:  /'
+T=$(tok agent-office-skill-platform-incident-triage)
+CFGD=$(curl -sk "https://$QUAY/v2/$REPO/manifests/1.1.0" -H "Authorization: Bearer $T" \
+  -H "Accept: application/vnd.oci.image.manifest.v1+json" | python3 -c "import sys,json;print(json.load(sys.stdin)['config']['digest'])")
+curl -skL "https://$QUAY/v2/$REPO/blobs/$CFGD" -H "Authorization: Bearer $T" \
+  | python3 -c "import sys,json;print('registry:  '+json.load(sys.stdin)['contentSha256'])"
 ----
 +
 All three match. And the pin has teeth: if the registry ever served different bytes for this version, the operator would refuse to deliver them — the Skill's `ContentResolved` condition goes false instead of the agent silently learning something you never reviewed.

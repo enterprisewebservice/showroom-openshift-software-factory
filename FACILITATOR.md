@@ -68,3 +68,16 @@ The single shared Showroom instance rebuilds its whole site on every
 content change: the route 503s for ~60 seconds per push (Recreate
 strategy; the terminal home PVC is RWO). Freeze content during live
 modules, or announce the refresh.
+
+## Moving the artifact registry (cluster migration)
+
+Module 4's artifacts are OCI artifacts in the cluster's Quay. To move the
+workshop to a new cluster: `skopeo copy --all` each repo
+(agent-office-skill-platform-incident-triage, agent-office-skill-weekly-ops-report,
+agent-office-tool-ops-metrics, agent-office-pack-supply-chain-ops) into the
+target registry, grant the seat pull secrets read on them, and change
+`:artifact_registry:` in partials/_attributes.adoc (or the provisioning
+attribute). Digests are content-addressed, so every pinned digest in the
+module and in packageRef CRs stays valid unchanged. Module 1's Suggest
+federation still reads the HTTP registry (AGENT_REGISTRY_URLS) — the
+in-cluster veneer is the remaining migration item.

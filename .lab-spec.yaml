@@ -82,8 +82,18 @@ notes:
     exposes the github backend under UNPREFIXED tool names with the platform App identity;
     per-user tool filtering is not yet enabled — an honest-labeling caveat, not a feature).
   skill_artifact_model: >-
-    The registry behind modules 1 and 4 (mindifact.ai — infrastructure name, never the
-    pattern name in attendee copy) carries FOUR kinds: skill, tool (governed tool
+    Module 4's artifacts live as OCI artifacts in the CLUSTER'S OWN Quay
+    ({artifact_registry} attribute; spec-shaped: config blob = manifest-inside-the-package
+    with contentSha256, single tar.gz content layer; pack = a real OCI image index whose
+    members are pinned by digest and physically present in the pack repo). Operator >=
+    v1.7.53 resolves spec.source.packageRef with oci:// refs (namespace pullSecretName =
+    quay-pull-secret, insecureSkipTLSVerify for the self-signed route, digest refusal +
+    no-stub). Publisher: software-factory-deployer tools/mindifact/publish-oci.py; CR
+    renderer: render-skill-cr-oci.sh. Moving clusters = skopeo copy the artifact repos +
+    change the attribute. The HTTP registry (mindifact.ai — infrastructure name, never
+    the pattern name in attendee copy) still feeds module 1's Suggest federation
+    (AGENT_REGISTRY_URLS) — the remaining external dependency; in-cluster veneer/mirror
+    is the named next step. The catalog carries FOUR kinds: skill, tool (governed tool
     definitions), pack (capability bundles: skill + the tool it calls, one coordinate),
     meta-pack. Two graphs: CONTAINS (pack members) and REQUIRES (declared dependencies,
     reported satisfied/unsatisfied against the live cluster — never auto-widened).

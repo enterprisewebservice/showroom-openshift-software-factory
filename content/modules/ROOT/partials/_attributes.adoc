@@ -7,3 +7,7 @@
 :gitops_url: {gitops_url}
 :ocp_version: {ocp_version}
 :mattermost_url: {mattermost_url}
+:artifact_registry: quay-quay-quay-test.apps.salamander.aimlworkbench.com
+// ^ the cluster's own container registry serving skill artifacts; when the
+//   workshop moves clusters, the deployer mirrors the artifact repos there
+//   (skopeo copy, digests preserved) and this is the only line that changes.
