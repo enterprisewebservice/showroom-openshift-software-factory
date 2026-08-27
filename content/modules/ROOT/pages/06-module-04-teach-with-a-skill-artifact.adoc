@@ -134,7 +134,7 @@ Two members — a `skill` and a `tool` — each referenced by digest, and the de
 
 == Exercise 3: Install it into your workspace
 
-Installing a skill artifact is declarative — and it is a *reference, not a copy*. The `Skill` resource you are about to apply carries no skill content at all: it pins a coordinate and a content digest, and the operator fetches the body from the registry, verifies the digest, and refuses delivery if the content has drifted. This is the same shape as the golden set's lockfile — a pinned reference, with the operator doing the fetching — applied at namespace scope.
+Installing a skill artifact is declarative — and it is a *reference, not a copy*. The `Skill` resource you are about to apply carries no skill content at all: it pins a coordinate and a content digest, and the operator fetches the body from the registry, verifies the digest, and refuses delivery if the content has drifted. This is the same shape as the golden set's lockfile — a pinned reference, with the operator doing the fetching — applied at namespace scope. And namespace scope is the whole grant: every Skill resource in your namespace reaches every agent in it, no separate binding step (the FAQ at the end covers why).
 
 . Apply the rendered artifact into your own workspace:
 +
@@ -302,6 +302,8 @@ Every one of these came up the first time a platform engineer walked this module
 *What reads the registry, and when?* Three readers, three moments. The compose job at *bake* time (lockfile → catalog image, for everyone). The composer at *hire* time — module 1's Suggest button picks from this catalog. The operator at *install* time — a pack expands into its member skills as Skill resources, each labeled with the pack it came from; the pack itself persists only as that label.
 
 *We already have a hand-built multi-skill image. How do we adopt this?* The way this platform did: split each skill into its own artifact, generate the lockfile pinning them, recompose the big image from the pieces, and let an equivalence gate prove the rebuilt image is file-for-file identical to the hand-built one before anything ships. From that day the order reverses permanently: artifact first, image derived.
+
+*Didn't installing a skill used to need a SkillBinding?* It did — and the resource still exists for the cases that want it. Under the current discovery model, the namespace is the grant: every Skill resource in a namespace is rendered into every agent in that namespace, and the *runtime* selects at run time — it scans each skill's frontmatter and loads the full body only when a task triggers it. In a seat namespace with one assistant, a binding would be ceremony. A SkillBinding still earns its place when one namespace hosts many agents with different duties, when an agent must pin a specific skill version, or for per-agent overrides.
 
 *How is this different from an editor plugin (a Claude Code plugin, say)?* A plugin is a per-workstation bundle for one runtime — skills, commands, hooks, and MCP config shipped together as a git repo you trust as a whole and install on each laptop. Here the unit is one skill, immutable by digest, delivered by the platform to every agent that should have it — and the executable parts are deliberately *not* bundled alongside: tools are governed separately behind the MCP gateway, which is the trust boundary this whole lab is about. Plugins optimize convenience on a laptop; this model optimizes provenance on a platform.
 
