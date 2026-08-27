@@ -38,6 +38,8 @@ oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw --
 +
 The same set for every agent on this platform, pinned by digest in a lockfile you will read in Exercise 4.
 +
+Hold both results in view, because the contrast is the mental model: `oc get skills` shows *nothing* while the folder shows a full set. `oc get skills` lists only what your namespace *adds* — the baked floor is invisible to the Kubernetes API (its inventory is the lockfile, in git). The merged truth lives in that folder, and only there.
++
 Look at where that set comes from. Most of these are official published skills: five imported from Red Hat's link:https://github.com/openshift/agentic-skills[openshift/agentic-skills^] repository — the same content behind the Ecosystem Catalog's agentic skill pack for OpenShift — and two from the upstream Agent Skills project. Red Hat publishes those packs as SKILL.md files you download by hand; this platform imports them with source provenance, repackages each as a digest-pinned versioned artifact, and delivers them to every agent through the operator. Red Hat publishes the know-how; the platform ships it like software.
 
 . Now give the agent a task it was never taught. In link:{mattermost_url}[Mattermost^], type `/new` in the `{user}-assistant` channel (a clean session, so this module's before-and-after is honest), then send:
@@ -271,6 +273,22 @@ What you just did instead:
 * *Audited the whole chain* — coordinate, content hash, dependencies, lockfile — with four commands
 
 Know-how that ships like software can be reviewed like software, pinned like software, and rolled back like software. That is the supply-chain grade.
+
+== How the pieces fit — the questions platform people ask
+
+Every one of these came up the first time a platform engineer walked this module. Short answers, mechanics only.
+
+*Do the baked image's skills turn into Skill resources?* No. Nothing is generated. The image is mounted read-only; at seed time the operator copies its skill folders into the agent's workspace, then writes one more folder for each Skill resource in the namespace. On a name collision the image wins. The runtime scans one folder — it never sees images or resources, only files.
+
+*One image per skill, or many skills per image?* Both, on purpose: *versioned 1:1, delivered N:1*. Every skill is published as its own digest-pinned artifact — its own version history, its own supply-chain unit, the thing a `packageRef` or a lockfile line can point at. The catalog image every gateway mounts is *composed from* those, one layer per pinned artifact, by a build job reading the lockfile. Pods never pull the small images; the small images are the source of the big one — the relationship packages have to a machine image.
+
+*Why bother with the small images at all?* Because they give you answers a folder-built image cannot: which exact version of each skill is in production (the layers *are* the per-skill digests), single-skill blast radius for change, review, and rollback, and one artifact that feeds every lane — the bake, the namespace install, and the pack listing. Supply-chain gates (signing, scanning) attach per unit.
+
+*What reads the registry, and when?* Three readers, three moments. The compose job at *bake* time (lockfile → catalog image, for everyone). The composer at *hire* time — module 1's Suggest button picks from this catalog. The operator at *install* time — a pack expands into its member skills as Skill resources, each labeled with the pack it came from; the pack itself persists only as that label.
+
+*We already have a hand-built multi-skill image. How do we adopt this?* The way this platform did: split each skill into its own artifact, generate the lockfile pinning them, recompose the big image from the pieces, and let an equivalence gate prove the rebuilt image is file-for-file identical to the hand-built one before anything ships. From that day the order reverses permanently: artifact first, image derived.
+
+*How is this different from an editor plugin (a Claude Code plugin, say)?* A plugin is a per-workstation bundle for one runtime — skills, commands, hooks, and MCP config shipped together as a git repo you trust as a whole and install on each laptop. Here the unit is one skill, immutable by digest, delivered by the platform to every agent that should have it — and the executable parts are deliberately *not* bundled alongside: tools are governed separately behind the MCP gateway, which is the trust boundary this whole lab is about. Plugins optimize convenience on a laptop; this model optimizes provenance on a platform.
 
 == Module summary
 
