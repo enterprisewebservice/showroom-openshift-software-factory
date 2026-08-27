@@ -11,3 +11,5 @@
 // ^ the cluster's own container registry serving skill artifacts; when the
 //   workshop moves clusters, the deployer mirrors the artifact repos there
 //   (skopeo copy, digests preserved) and this is the only line that changes.
+:gitea_url: https://gitea-gitea.apps.salamander.aimlworkbench.com
+// ^ in-cluster Gitea; provisioning overrides this per environment.
