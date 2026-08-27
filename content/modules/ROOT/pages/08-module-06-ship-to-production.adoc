@@ -73,7 +73,7 @@ oc get pods -n {user}-agent-workspace
 +
 // AUTHOR NOTE (verify live): confirm whether both agents (assistant and dev) run in the same {user}-agent-workspace namespace, or whether each agent hire produces its own namespace. Update the namespace in this command and in all subsequent steps if the platform places them differently.
 +
-Expected: both `{user}-assistant` and `{user}-dev` pods appear with `Running` status. Allow up to 2 minutes for the first image pull.
+Expected: both `{user}-assistant` and `{user}-dev` pods appear with `Running` status. Allow up to 2 minutes for the first image pull — and then give the *chat side* another two to three minutes before messaging the new agent: the channel bridge adopts a fresh hire on its next roster scan, and the gateway performs one configuration restart on first boot. A message sent during that settle window sits until adoption; the typing indicator appears once the agent's first turn actually starts.
 
 // TODO screenshot (capture during the live walkthrough, then restore):
 // image::module-06-dev-agent-compose.png[Developer Hub Suggest output for the dev brief: a scaffold skill and Gitea integration, distinct from the assistant's investigation kit,link=self,window=blank,width=700]
@@ -114,7 +114,7 @@ Now commission the fix. You will open the dev agent's Mattermost channel and des
 
 . Send the intent:
 +
-[source,text]
+[source,text,subs="attributes"]
 ----
 Please build a service called order-metrics. It reads the existing orders API at http://orders-api.agent-office.svc.cluster.local:8080 (GET /orders with status/region/date filters, GET /meta) and turns Morgan's weekly ops questions into MCP tools served on an HTTP /mcp endpoint: metrics_stuck_orders(threshold_days=7) returns the count and list of orders in processing longer than the threshold, and metrics_weekly_summary() returns order counts by status for the last 7 days. "Stuck" means more than 7 days in processing. Also expose GET /healthz returning {"ok": true}. The platform will publish your container image at quay-quay-quay-test.apps.salamander.aimlworkbench.com/deanpeterson/{user}-order-metrics:main — reference exactly that image in deploy/deployment.yaml, with imagePullSecrets naming quay-pull-secret. Use the golden-path template and open a pull request to my Gitea org for review.
 ----
