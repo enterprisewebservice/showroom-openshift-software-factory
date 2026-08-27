@@ -116,7 +116,7 @@ Now commission the fix. You will open the dev agent's Mattermost channel and des
 +
 [source,text]
 ----
-Please build a service called order-metrics. It reads the existing orders API at http://orders-api.agent-office.svc.cluster.local:8080 (GET /orders with status/region/date filters, GET /meta) and turns Morgan's weekly ops questions into MCP tools served on an HTTP /mcp endpoint: metrics_stuck_orders(threshold_days=7) returns the count and list of orders in processing longer than the threshold, and metrics_weekly_summary() returns order counts by status for the last 7 days. "Stuck" means more than 7 days in processing. Also expose GET /healthz returning {"ok": true}. Use the golden-path template and open a pull request to my Gitea org for review.
+Please build a service called order-metrics. It reads the existing orders API at http://orders-api.agent-office.svc.cluster.local:8080 (GET /orders with status/region/date filters, GET /meta) and turns Morgan's weekly ops questions into MCP tools served on an HTTP /mcp endpoint: metrics_stuck_orders(threshold_days=7) returns the count and list of orders in processing longer than the threshold, and metrics_weekly_summary() returns order counts by status for the last 7 days. "Stuck" means more than 7 days in processing. Also expose GET /healthz returning {"ok": true}. The platform will publish your container image at quay-quay-quay-test.apps.salamander.aimlworkbench.com/deanpeterson/{user}-order-metrics:main — reference exactly that image in deploy/deployment.yaml, with imagePullSecrets naming quay-pull-secret. Use the golden-path template and open a pull request to my Gitea org for review.
 ----
 +
 // AUTHOR NOTE (verify live): confirm this level of prompt specificity is sufficient for the dev agent to invoke the scaffold skill and the gitea_* tools without asking for clarification. If the agent requests additional detail, note what it needed and revise the intent text here.
@@ -145,84 +145,149 @@ Please build a service called order-metrics. It reads the existing orders API at
 * A `order-metrics` repository exists in your `{user}-agents` Gitea org
 * An open pull request in that repository contains the scaffolded service files
 
-== Exercise 3: Merge and watch the supply chain
+== Exercise 3: Merge and ship through the supply chain
 
-The dev agent opened the pull request. You own the merge decision — the same pattern you practiced in Module 2: the diff is readable, the source is the agent's tool calls, and the merge is the moment of record. Once you merge, the supply-chain pipeline triggers automatically.
+The dev agent opened the pull request. You own the merge decision — the same pattern you practiced in Module 2: the diff is readable, the source is the agent's tool calls, and the merge is the moment of record. Then you wire the repo into the supply chain — two declared objects — and watch the platform take it from merge to running pods.
 
-. Open the pull request in Gitea and review the diff. When you are satisfied, merge the pull request.
-+
-// AUTHOR NOTE (verify live): confirm the merge alone is sufficient to trigger the supply-chain PipelineRun (i.e., a Pipelines-as-Code EventListener or webhook is registered on the order-metrics repository at scaffold time). If a webhook registration step is required first, document it here as a numbered step before the merge.
+. Open the pull request in Gitea and review the diff. The service skeleton is real engineering: source, tests, a Dockerfile, and a deployment manifest with probes, resource limits, and a hardened security context. When you are satisfied, merge it.
 
-. In the terminal, watch for the PipelineRun to start:
+. Wire your repository into the supply chain. The platform side is already standing — an org-level webhook on your Gitea org feeds the cluster's Pipelines-as-Code controller — so your half is one resource: a `Repository` that tells Pipelines-as-Code this repo's runs belong in your namespace, authenticated by your own seat credentials:
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-oc get pipelinerun -n {user}-agent-workspace --watch
+cat <<EOF | oc apply -n {user}-agent-workspace -f -
+apiVersion: pipelinesascode.tekton.dev/v1alpha1
+kind: Repository
+metadata:
+  name: order-metrics
+spec:
+  url: {gitea_url}/{user}-agents/order-metrics
+  git_provider:
+    type: gitea
+    url: {gitea_url}
+    secret:
+      name: {user}-gitea-token
+      key: GITEA_TOKEN
+    webhook_secret:
+      name: pac-gitea-webhook
+      key: secret
+EOF
 ----
-+
-// AUTHOR NOTE (verify live): confirm the PipelineRun runs in {user}-agent-workspace. If the supply chain uses a shared CI namespace (e.g., tssc-ci, openshift-pipelines, or similar), replace the namespace in this command and the next. Note the verified namespace here.
 
-. When the PipelineRun appears, get its current status:
+. Give the repo its pipeline definition. Pipelines-as-Code convention: the pipeline lives *in the repo*, under `.tekton/` — reviewed, versioned, and owned like any other code. Clone with your seat credentials, add it, and push — and notice that the push you are about to make is itself the first build trigger:
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-oc get pipelinerun -n {user}-agent-workspace -o wide
+TOKEN=$(oc get secret {user}-gitea-token -n {user}-agent-workspace -o jsonpath='{.data.GITEA_TOKEN}' | base64 -d)
+cd /tmp && rm -rf order-metrics
+git clone "https://{user}:${TOKEN}@$(echo {gitea_url} | sed 's|https://||')/{user}-agents/order-metrics.git" -c http.sslVerify=false
+cd order-metrics && mkdir -p .tekton
+cat <<'PIPE' > .tekton/on-push.yaml
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: order-metrics-on-push
+  annotations:
+    pipelinesascode.tekton.dev/on-cel-expression: 'event == "push" && target_branch == "main"'
+    pipelinesascode.tekton.dev/cancel-in-progress: "true"
+    pipelinesascode.tekton.dev/max-keep-runs: "5"
+spec:
+  params:
+    - name: git-url
+      value: '{{source_url}}'
+    - name: revision
+      value: '{{revision}}'
+    - name: output-image
+      value: 'quay-quay-quay-test.apps.salamander.aimlworkbench.com/deanpeterson/USER-order-metrics:main'
+    - name: dockerfile
+      value: Dockerfile
+    - name: path-context
+      value: .
+    - name: rebuild
+      value: "true"
+    - name: skip-checks
+      value: "true"
+  pipelineRef:
+    resolver: bundles
+    params:
+      - name: bundle
+        value: 'quay.io/konflux-ci/tekton-catalog/pipeline-docker-build@sha256:1b2a544f5308a50b8ebf76e76f10f8be3e12342d6ce7233d2520aca724294a82'
+      - name: name
+        value: docker-build
+      - name: kind
+        value: pipeline
+  workspaces:
+    - name: workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests: {storage: 1Gi}
+    - name: git-auth
+      secret:
+        secretName: '{{ git_auth_secret }}'
+PIPE
+sed -i "s/USER-order-metrics/{user}-order-metrics/" .tekton/on-push.yaml
+git add .tekton && git -c user.email="{user}@workshop" -c user.name="{user}" commit -m "ci: supply-chain pipeline (Pipelines-as-Code)" && git push
 ----
-+
-The supply-chain pipeline runs three stages before promotion:
-+
-* *Build*: the container image is built from the Dockerfile in the scaffold
-* *Sign*: the image is signed with the platform's key, producing a Sigstore cosign signature and an SLSA (Supply-chain Levels for Software Artifacts) provenance attestation
-* *Scan*: the image is scanned for known vulnerabilities; a failing scan blocks promotion
-+
-// AUTHOR NOTE (verify live): confirm the exact task names in the TSSC PipelineRun for each stage (build/sign/scan may appear as different names, e.g., buildah, cosign-sign, grype-scan). List the verified task names here and update the bullets above to match.
 
-. Open the link:{openshift_console_url}[OpenShift Console^], navigate to *Pipelines* → *PipelineRuns* in the `{user}-agent-workspace` namespace, and click the active PipelineRun. Watch the task graph: build completes first, then sign, then scan, then the promotion step.
-+
-// AUTHOR NOTE (verify live): confirm whether GitOps promotion is a task inside the PipelineRun or a separate mechanism (e.g., a pipeline task commits an updated image tag to a GitOps repo, which an ArgoCD ApplicationSet then syncs), and confirm the Application name the attendee sees (their GitOps view shows only their own apps).
-
-. Open link:{gitops_url}[OpenShift GitOps^] and find the Application for `order-metrics`. Wait for it to report *Synced* and *Healthy* — the promotion is GitOps reconciling what the pipeline committed, the same loop you watched carry your directive change in Module 2.
-+
-// AUTHOR NOTE (verify live): confirm the order-metrics Application name matches the {user}-agents-* pattern the attendee's GitOps visibility rows cover.
-
-. When all stages complete, verify the service is running:
+. Watch the build arrive in *your* namespace — the webhook fires, Pipelines-as-Code matches the push, and the run appears where your RBAC lives:
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-oc get pods -n {user}-agent-workspace -l app=order-metrics
+oc get pipelinerun -n {user}-agent-workspace -w
 ----
 +
-// AUTHOR NOTE (verify live): confirm the deployed service namespace and the label selector. GitOps may promote order-metrics into a separate production namespace (e.g., {user}-app-prod). Update the namespace and label selector here to match the live promotion target.
-+
-Expected: a pod with `order-metrics` in the name at `Running` status.
+Press `Ctrl+C` at `Succeeded` (about 3 minutes). The task graph — also visible under *Pipelines* in the OpenShift Console — runs `init`, `clone-repository`, `prefetch-dependencies`, `build-container`, `build-image-index`, `apply-tags`, and `push-dockerfile`: the same in-cluster Konflux `docker-build` pipeline the platform builds its own components with.
 
-. Confirm the service responds:
+. Look at everything the build pushed — not just an image:
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-oc exec -n {user}-agent-workspace \
-  $(oc get pods -n {user}-agent-workspace -o name | grep {user}-assistant | head -1) \
-  -c openclaw -- \
-  curl -s "http://order-metrics.{user}-agent-workspace.svc.cluster.local:8080/healthz"
+QUAY=quay-quay-quay-test.apps.salamander.aimlworkbench.com
+oc extract secret/quay-pull-secret -n {user}-agent-workspace --keys=.dockerconfigjson --to=- > /tmp/quay.json 2>/dev/null
+AUTH=$(python3 -c "import json;a=json.load(open('/tmp/quay.json'))['auths'];print(next(iter(a.values()))['auth'])")
+T=$(curl -sk "https://$QUAY/v2/auth?service=$QUAY&scope=repository:deanpeterson/{user}-order-metrics:pull" -H "Authorization: Basic $AUTH" | python3 -c "import sys,json;print(json.load(sys.stdin)['token'])")
+curl -sk "https://$QUAY/v2/deanpeterson/{user}-order-metrics/tags/list" -H "Authorization: Bearer $T" | python3 -m json.tool
 ----
 +
-// AUTHOR NOTE (verify live): confirm the service DNS name, namespace, and port (port may differ from 8080). Update the namespace in the URL to match the promotion target from the previous step. If the assistant-gateway pod does not have curl, substitute any pod in {user}-agent-workspace that does (e.g., oc run curl-test --image=registry.access.redhat.com/ubi9/ubi-minimal:latest --rm -it --restart=Never -- curl -s "<url>").
+Beside `main` sit the supply-chain artifacts, each pinned to the image digest: an SBOM (`.sbom`), the exact Dockerfile that built it (`.dockerfile`), a cryptographic signature (`.sig`), and an in-toto provenance attestation (`.att`) — the signature and attestation written by Tekton Chains the moment the run finished, keyed by the platform. Exercise 5 verifies them. One honest parameter while you are here: your pipeline file sets `skip-checks: "true"`, which skips the deep vulnerability-scan tasks the bundle also carries — flip it to `"false"` and the same pipeline gates on scan results, at the cost of several extra minutes per build. The gate is a parameter in a file you own, not a vendor tier.
+
+. Promotion is already happening. A platform ApplicationSet adopts any repository in your org that carries `deploy/deployment.yaml` and syncs it into your workspace — merge, build, promote, with no imperative step anywhere:
 +
-Expected: `{"ok": true}` — the service is up; its real interface is the `/mcp` endpoint the next exercise registers.
+[source,bash,role="execute",subs="attributes"]
+----
+oc get pods -n {user}-agent-workspace -l app.kubernetes.io/name=order-metrics
+----
++
+Two replicas, `Running` (the link:{gitops_url}[OpenShift GitOps console^] shows the `{user}-agents-order-metrics` Application Synced and Healthy). Confirm the service answers — first its health, then its *real* interface, the MCP handshake:
++
+[source,bash,role="execute",subs="attributes"]
+----
+oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw -- \
+  curl -s http://order-metrics.{user}-agent-workspace.svc.cluster.local:8080/healthz; echo
+oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw -- \
+  curl -s -X POST http://order-metrics.{user}-agent-workspace.svc.cluster.local:8080/mcp \
+  -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"probe","version":"1"}}}' | head -c 300; echo
+----
++
+`{"ok":true}`, then `serverInfo: order-metrics` — the service Morgan asked for, built by an agent, shipped by the supply chain, running in your namespace.
 
-// TODO screenshot (capture during the live walkthrough, then restore):
-// image::module-06-pipeline-stages.png[OpenShift Console PipelineRun task graph showing build, sign, and scan tasks in Succeeded status,link=self,window=blank,width=700]
-
-// TODO screenshot (capture during the live walkthrough, then restore):
-// image::module-06-service-running.png[Terminal showing order-metrics pod at Running status and curl returning a JSON greeting,link=self,window=blank,width=700]
+// VERIFIED LIVE 2026-08-27 (first walk, seat user1): webhook->PaC gitea provider->PipelineRun
+// in-namespace in ~20s; build Succeeded in 160s (task names above are the live set); SBOM +
+// dockerfile artifacts pushed; after Chains was keyed, .sig/.att appeared and cosign verify +
+// verify-attestation (slsaprovenance v0.2) both passed against the cluster key. seat-services
+// ApplicationSet adopted the repo in <60s; AppProject sourceRepos needed the org-wide gitea
+// pattern (fixed declaratively, agent-office cluster/agent-office-appproject.yaml). Pods
+// Running 21s after sync; /healthz and /mcp initialize both answered.
 
 === Verify
 
-* The pull request merged successfully
-* A PipelineRun started in response to the merge
-* The PipelineRun completed with all three stages (build, sign, scan) at *Succeeded* status
-* The order-metrics pod is in `Running` status
-* A `curl` to `/healthz` returns `{"ok": true}`
+* The pull request merged, and the `Repository` resource exists in your namespace
+* Your `.tekton` push triggered a PipelineRun in `{user}-agent-workspace` that reached `Succeeded`
+* The Quay tag list shows `main` plus `.sbom`, `.dockerfile`, `.sig`, and `.att` artifacts
+* `order-metrics` pods are `Running`, `/healthz` returns `{"ok": true}`, and `/mcp` answers the initialize handshake
 
 == Exercise 4: Register the service behind the gateway
 
@@ -315,28 +380,48 @@ The `orders_*` tool call appears in the ledger alongside the `governed__gitea_*`
 +
 // AUTHOR NOTE (verify live): confirm the orders tool entries appear namespaced in the ledger (expected shape: a prefixed toolName matching the MCPServerRegistration prefix) and name the exact string here and in the Verify bullet.
 
-. Read the supply-chain attestation on the image the pipeline signed in Exercise 3:
-+
-First read the image reference the pipeline produced — it is recorded on the Deployment GitOps promoted:
+. Verify the supply chain on the running image — with nothing but the registry API. First, resolve which digest your deployment actually runs:
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-oc get deploy order-metrics -n {user}-agent-workspace \
-  -o jsonpath='{.spec.template.spec.containers[0].image}'
+QUAY=quay-quay-quay-test.apps.salamander.aimlworkbench.com
+AUTH=$(python3 -c "import json;a=json.load(open('/tmp/quay.json'))['auths'];print(next(iter(a.values()))['auth'])")
+T=$(curl -sk "https://$QUAY/v2/auth?service=$QUAY&scope=repository:deanpeterson/{user}-order-metrics:pull" -H "Authorization: Basic $AUTH" | python3 -c "import sys,json;print(json.load(sys.stdin)['token'])")
+DIGEST=$(curl -skI "https://$QUAY/v2/deanpeterson/{user}-order-metrics/manifests/main" \
+  -H "Authorization: Bearer $T" -H "Accept: application/vnd.oci.image.index.v1+json" \
+  | grep -i docker-content-digest | tr -d '\r' | awk '{print $2}')
+echo "deployed digest: $DIGEST"
 ----
-+
-Then verify the signed attestation on that image:
+
+. Tekton Chains signed exactly that digest the moment the build finished. The signature and attestation live in the registry as artifacts named by the digest — confirm both exist, then read the provenance itself:
 +
 [source,bash,role="execute",subs="attributes"]
 ----
-cosign verify-attestation --type slsaprovenance \
-  $(oc get deploy order-metrics -n {user}-agent-workspace \
-    -o jsonpath='{.spec.template.spec.containers[0].image}')
+SAFE=$(echo "$DIGEST" | sed 's/:/-/')
+curl -sk "https://$QUAY/v2/deanpeterson/{user}-order-metrics/tags/list" -H "Authorization: Bearer $T" \
+  | python3 -c "import sys,json; tags=json.load(sys.stdin)['tags']; import os; s=os.environ.get('SAFE','$SAFE'); print('signature:  ', s+'.sig' in tags); print('attestation:', s+'.att' in tags)"
+ATTL=$(curl -sk "https://$QUAY/v2/deanpeterson/{user}-order-metrics/manifests/$SAFE.att" \
+  -H "Authorization: Bearer $T" -H "Accept: application/vnd.oci.image.manifest.v1+json" \
+  | python3 -c "import sys,json;print(json.load(sys.stdin)['layers'][0]['digest'])")
+curl -skL "https://$QUAY/v2/deanpeterson/{user}-order-metrics/blobs/$ATTL" -H "Authorization: Bearer $T" \
+  | python3 -c "
+import sys, json, base64
+d = json.load(sys.stdin)
+pl = json.loads(base64.b64decode(d['payload']))
+print('predicateType:', pl['predicateType'])
+print('subject:      ', pl['subject'][0]['name'].split('/')[-1] + '@sha256:' + pl['subject'][0]['digest']['sha256'][:16] + '...')
+print('signatures:   ', len(d.get('signatures', [])))"
 ----
 +
-// AUTHOR NOTE (verify live): confirm the TSSC pipeline's registry target and the cosign trust flags this cluster needs (key/keyless, --certificate-identity, insecure registry flags for the in-cluster Quay). Confirm cosign is present in the Showroom terminal image; if not, provide it or move this verification to the pipeline's own verify task output. Confirm the Deployment name and namespace once the golden-path template's output shape is verified.
+`predicateType: https://slsa.dev/provenance/v0.2`, and the subject digest is the digest your pods run. That attestation records what inputs produced what outputs — the commit the dev agent's PR introduced, the pipeline tasks that built it, the image the gateway is about to serve as a tool. The chain from the tool call back to Morgan's intent is written down, signed, and stored beside the artifact it describes.
 +
-The attestation records what inputs produced what outputs: the commit hash the dev agent's PR introduced, the pipeline that signed it, and the image digest the gateway is now serving. Any operator can follow that chain from the tool call in Mattermost back to the intent Morgan posted in the dev agent's channel.
+NOTE: The platform's signing key pair lives in the cluster (`openshift-pipelines/signing-secrets`), and its public half is in your namespace as the `chains-public-key` ConfigMap. In a production review you would close the loop cryptographically with cosign: `cosign verify --key cosign.pub <image>@<digest>` and `cosign verify-attestation --type slsaprovenance --key cosign.pub <image>@<digest>` — both verified green against this build on this cluster.
++
+// VERIFIED LIVE 2026-08-27: .sig/.att present for the post-key build; cosign verify and
+// verify-attestation (slsaprovenance v0.2, subject == image digest, konflux task materials)
+// both passed against the cluster key from an admin shell. The curl-based read above is the
+// attendee-runnable form; terminal image carries no cosign binary (deliberate — the beat
+// teaches that signatures are registry artifacts, not tool magic).
 
 // TODO screenshot (capture during the live walkthrough, then restore):
 // image::module-06-loop-closed.png[Mattermost {user}-assistant channel showing the assistant's Monday-numbers reply from the order-metrics tools,link=self,window=blank,width=700]
