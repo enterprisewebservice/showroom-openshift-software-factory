@@ -55,7 +55,7 @@ Your agent's `gitea_*` tools act as *you*, against *your* org — yet you never 
 
 . *External Secrets Operator keeps your workspace copy faithful to Vault:*
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get externalsecret {user}-gitea-token -n {user}-agent-workspace
 ----
@@ -64,7 +64,7 @@ oc get externalsecret {user}-gitea-token -n {user}-agent-workspace
 
 . *Git declares the reference, never the value:*
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
   -o jsonpath='{.spec.tools.mcpServers}' | python3 -m json.tool
@@ -74,7 +74,7 @@ Your agent's repo — the one you edited in Module 2 — carries `envFromSecret:
 
 . *The runtime holds it; hunt for it:*
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc exec $(oc get pods -n {user}-agent-workspace -o name | grep {user}-assistant | head -1) \
   -n {user}-agent-workspace -- env | grep -iE "token|key|secret"
@@ -91,7 +91,7 @@ Can you verify you are able to read your GITEA_TOKEN environment variable? Do no
 +
 A well-run agent verifies and refuses to print it — a *behavioral* guardrail, worth seeing but never the thing you rely on. What you rely on is *mechanical*: the credentials that could hurt anyone beyond this seat are not merely hidden from your agent — they do not exist anywhere it lives. Prove that:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get secrets -n {user}-agent-workspace
 ----
@@ -100,7 +100,7 @@ No platform admin credential — the identity that MINTS seat badges — no prov
 
 . *The badge decays — and the agent holds no pen to renew it.* This is the discipline that makes holding a credential safe: what your agent possesses is a *wasting asset*, and now literally one. Your seat's badge is a Gitea OAuth2 access token that *self-expires within the hour* — the very same credential lifecycle the platform's own git identity runs, no longer a lesser substitute for it. Every thirty minutes a platform refresher exchanges a held refresh token for a fresh access token and writes Vault; within a minute the sync loop lands it in your Secret, and the operator renders the new value straight into your agent's tool configuration, which the runtime *hot-reloads in place*. No pod restart, no pause: the credential changes under a running agent and its next `gitea_*` call simply uses the new one. The agent cannot refresh, extend, or re-mint its own badge — the refresh token lives only in the platform's Vault, never in your namespace, and you already proved no minting credential exists where the agent lives. Revoking, then, is not an action but an *omission*: stop the refresher and every seat's access token ages out within the hour, all at once, with nothing to explicitly revoke. Continued access is never a state; it is a standing decision, renewed on a cadence, by machinery the workload cannot touch. Watch the credential live through a refresh with the runtime never restarting:
 +
-[source,bash,subs="attributes"]
+[source,bash,subs="+attributes"]
 ----
 oc get pods -n {user}-agent-workspace -w
 ----
@@ -149,7 +149,7 @@ Every tool call your agent makes crosses the MCP gateway, and the gateway logs e
 
 . Look for it in your own namespace:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get pods -n {user}-agent-workspace
 ----
@@ -158,12 +158,12 @@ Your agent's runtime is here. The MCP gateway is *not* — and that is the desig
 
 . Now try to read the gateway's log yourself — the auditor's command, run from your seat:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc logs deploy/mcp-gateway-data-science-gateway-class -n agent-office --since=2m
 ----
 +
-[source,text,subs="attributes"]
+[source,text,subs="+attributes"]
 ----
 Error from server (Forbidden): deployments.apps "mcp-gateway-data-science-gateway-class" is forbidden:
 User "{user}" cannot get resource "deployments" in API group "apps" in the namespace "agent-office"
@@ -184,14 +184,14 @@ The reply is the commit *you* made in Module 2 — the agent reading its own his
 
 . Now the payoff, at your own blast radius. You hold a *second identity*: `admin-{user}` — a namespace-scoped operator persona with full admin inside `{user}-agent-workspace` and no access anywhere else. Same password as your seat. Switch to it:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc login -u admin-{user} {openshift_api_url}
 ----
 
 . Prove the persona's shape in two commands:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc auth can-i get pods -n {user}-agent-workspace; oc auth can-i get pods -n agent-office
 ----
@@ -200,7 +200,7 @@ oc auth can-i get pods -n {user}-agent-workspace; oc auth can-i get pods -n agen
 
 . Read your agent's tool-call ledger — the tenant-side record of every tool it has ever invoked, straight from its trajectory files:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw -- \
   sh -c 'grep -ho "\"toolName\":\"[a-z_]*\"" /home/node/.openclaw/agents/{user}-assistant/sessions/*.jsonl | sort | uniq -c | sort -rn'
@@ -218,7 +218,7 @@ The census tells the whole module in four lines: built-ins (`web_fetch`, `exec`)
 
 . Return to your seat identity — the rest of the workshop runs as `{user}`:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc login -u {user} {openshift_api_url}
 ----

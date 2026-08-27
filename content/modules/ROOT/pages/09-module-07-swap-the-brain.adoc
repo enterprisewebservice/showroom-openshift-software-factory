@@ -35,7 +35,7 @@ oc whoami
 +
 Expected output:
 +
-[subs="attributes"]
+[subs="+attributes"]
 ----
 {user}
 ----
@@ -44,7 +44,7 @@ Expected output:
 +
 // VERIFIED LIVE 2026-08-25: the field is spec.model with two sub-fields — provider and modelName (current live value: provider openai-codex, modelName gpt-5.6-sol). The swap edits exactly those two fields.
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
   -o jsonpath='{.spec.model}'
@@ -98,12 +98,12 @@ The sync completes within seconds — by the time you switch tabs it may already
 
 . The agent pod does not restart for a model reference change. The operator re-renders the agent's configuration in place. Confirm the pod is still running, then read the model reference back from the cluster:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get pods -n {user}-agent-workspace
 ----
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
   -o jsonpath='{.spec.model}'
@@ -171,7 +171,7 @@ git push origin main
 
 . Read the model reference from the cluster:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
   -o jsonpath='{.spec.model}'
@@ -181,7 +181,7 @@ The frontier values are back.
 
 . Confirm the runtime never moved:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get pods -n {user}-agent-workspace
 ----

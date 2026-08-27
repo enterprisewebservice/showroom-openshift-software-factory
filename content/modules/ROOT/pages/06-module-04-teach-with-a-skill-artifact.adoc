@@ -23,14 +23,14 @@ By the end of this module, you'll be able to:
 
 . Your agent's teachable knowledge is a resource type. List it:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get skills -n {user}-agent-workspace
 ----
 +
 `No resources found`. Your agent is running entirely on the platform's *baked golden set* — a pinned catalog image every gateway mounts. See it:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw -- \
   ls /home/node/.openclaw/workspaces/{user}-assistant/skills/
@@ -63,7 +63,7 @@ The pack you are about to install exists as a published OCI artifact in the plat
 
 . Registry reads are authenticated. Wire up a token helper using the same pull secret your pods use (this shell keeps the variables for the rest of the module):
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 QUAY={artifact_registry}
 oc extract secret/quay-pull-secret -n {user}-agent-workspace --keys=.dockerconfigjson --to=- > /tmp/quay.json
@@ -138,7 +138,7 @@ Installing a skill artifact is declarative — and it is a *reference, not a cop
 
 . Apply the rendered artifact into your own workspace:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc apply -n {user}-agent-workspace -f - <<'SKILL_EOF'
 apiVersion: agentoffice.ai/v1alpha1
@@ -171,7 +171,7 @@ NOTE: This YAML was rendered from the artifact itself — the `digest` is the `c
 
 . The resource is now part of your workspace's declared state:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get skills -n {user}-agent-workspace
 ----
@@ -186,7 +186,7 @@ One skill, with its VERSION column — `1.1.1` — straight from the artifact.
 
 . The operator noticed your Skill the moment it landed and re-seeded the agent's workspace — no restart, no redeploy. Confirm:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw -- \
   ls /home/node/.openclaw/workspaces/{user}-assistant/skills/ | grep incident
@@ -194,7 +194,7 @@ oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw --
 +
 And ask the runtime itself what it can now do:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw -- \
   openclaw skills list --agent {user}-assistant | grep incident
@@ -208,7 +208,7 @@ The union rule in one line: the baked image is the floor, your namespace's decla
 +
 *Where did this come from?*
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get skill platform-incident-triage -n {user}-agent-workspace \
   -o jsonpath='{.metadata.annotations.agentoffice\.ai/pack-ref}'
@@ -216,7 +216,7 @@ oc get skill platform-incident-triage -n {user}-agent-workspace \
 +
 *Is the content what the registry published?* Three hashes, three parties: what you pinned in the spec, what the operator resolved and delivered, and what the artifact in the registry declares as its own content:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get skill platform-incident-triage -n {user}-agent-workspace \
   -o jsonpath='pinned:    {.spec.source.packageRef.digest}{"\n"}delivered: {.status.contentSha256}{"\n"}'
@@ -233,7 +233,7 @@ All three match. And the pin has teeth: if the registry ever served different by
 +
 *What does it need?*
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get skill platform-incident-triage -n {user}-agent-workspace \
   -o jsonpath='{.spec.dependencies}'

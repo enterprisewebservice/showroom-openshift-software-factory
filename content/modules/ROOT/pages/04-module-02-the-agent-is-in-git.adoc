@@ -44,7 +44,7 @@ This field is the agent's directive: the standing instructions it receives at th
 
 . In the terminal, confirm the running resource matches what the repository declares:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get agentworkstation -n {user}-agent-workspace -o yaml
 ----
@@ -95,14 +95,14 @@ After the merge, OpenShift GitOps detects the new commit on the main branch and 
 
 . The agent pod does not restart for a directive change — and that is the point: the operator re-renders the agent's identity in place, in seconds, while the pod stays `Running`. Verify with the terminal instead of waiting on pods:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.spec.systemPrompt}'
 ----
 +
 The directive printed is the one you just merged.
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get pods -n {user}-agent-workspace
 ----
@@ -145,7 +145,7 @@ Rolling back an AI agent's behavior on this platform is the same operation as ro
 +
 If you prefer the command line, clone the repository and run:
 +
-[source,text,subs="attributes"]
+[source,text,subs="+attributes"]
 ----
 # Replace <repo-url> with the URL shown in the catalog entry.
 git clone <repo-url>
@@ -165,7 +165,7 @@ NOTE: The directive lives in the agent's identity, not in the conversation — b
 
 . Wait for the agent pod to return to `Running`:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get pods -n {user}-agent-workspace
 ----

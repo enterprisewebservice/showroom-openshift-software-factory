@@ -43,7 +43,7 @@ You will also see *OpenClaw Agent (advanced -- every option)* in the list. That 
 
 . The form asks one question: *What will your agent be doing?* Write the brief you would give a new hire on day 1, and include the name you want the agent to carry:
 +
-[source,text,subs="attributes"]
+[source,text,subs="+attributes"]
 ----
 You are {user}-assistant, ACME Financial's platform assistant: investigate questions about this OpenShift cluster and document what you find.
 ----
@@ -85,7 +85,7 @@ oc whoami
 +
 Expected output:
 +
-[subs="attributes"]
+[subs="+attributes"]
 ----
 {user}
 ----
@@ -94,7 +94,7 @@ If the output differs, complete the login steps from the lab details page before
 
 . Watch the agent pod start:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get pods -n {user}-agent-workspace
 ----
@@ -103,7 +103,7 @@ NOTE: Your agent runs in your own namespace, `{user}-agent-workspace` — nobody
 +
 Re-run the command until the pod reports `Running`. The first start pulls the agent image, so allow a minute or 2. Expected output (the pod name may differ):
 +
-[subs="attributes"]
+[subs="+attributes"]
 ----
 NAME                 READY   STATUS    RESTARTS   AGE
 <your-agent>-0       1/1     Running   0          2m
@@ -128,7 +128,7 @@ On a vendor control plane, you trust that onboarding happened correctly. Here yo
 
 . In the terminal, list the AgentWorkstation resources in your agent namespace:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get agentworkstation -n {user}-agent-workspace
 ----
@@ -137,7 +137,7 @@ Your agent appears in the list.
 
 . Read the full resource the template created:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get agentworkstation <your-agent> -n {user}-agent-workspace -o yaml
 ----

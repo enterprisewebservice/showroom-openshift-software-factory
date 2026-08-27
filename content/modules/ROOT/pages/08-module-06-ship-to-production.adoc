@@ -43,7 +43,7 @@ This exercise uses the same Developer Hub template. The only thing that changes 
 
 . For *What will your agent be doing?*, write:
 +
-[source,text,subs="attributes"]
+[source,text,subs="+attributes"]
 ----
 You are {user}-dev, a software engineer on the ACME Financial platform team: take assigned intents from Mattermost, scaffold new services from the golden-path template into your Gitea org using your governed git tools, open pull requests for review, and see builds through the pipeline.
 ----
@@ -66,7 +66,7 @@ The run creates a git repository for the dev agent, registers it in the catalog,
 
 . In the terminal, confirm the dev agent pod is running:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get pods -n {user}-agent-workspace
 ----
@@ -91,7 +91,7 @@ The dev agent is live. Before you give it the job, look at the job as Morgan liv
 
 . Morgan's Monday, unautomated — pull the raw exports the spreadsheet is built from:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw -- \
   curl -s http://orders-api.agent-office.svc.cluster.local:8080/meta
@@ -114,7 +114,7 @@ Now commission the fix. You will open the dev agent's Mattermost channel and des
 
 . Send the intent:
 +
-[source,text,subs="attributes"]
+[source,text,subs="+attributes"]
 ----
 Please build a service called order-metrics. It reads the existing orders API at http://orders-api.agent-office.svc.cluster.local:8080 (GET /orders with status/region/date filters, GET /meta) and turns Morgan's weekly ops questions into MCP tools served on an HTTP /mcp endpoint: metrics_stuck_orders(threshold_days=7) returns the count and list of orders in processing longer than the threshold, and metrics_weekly_summary() returns order counts by status for the last 7 days. "Stuck" means more than 7 days in processing. Also expose GET /healthz returning {"ok": true}. The platform will publish your container image at quay-quay-quay-test.apps.salamander.aimlworkbench.com/deanpeterson/{user}-order-metrics:main — reference exactly that image in deploy/deployment.yaml, with imagePullSecrets naming quay-pull-secret. Use the golden-path template and open a pull request to my Gitea org for review.
 ----
@@ -153,7 +153,7 @@ The dev agent opened the pull request. You own the merge decision — the same p
 
 . Wire your repository into the supply chain. The platform side is already standing — an org-level webhook on your Gitea org feeds the cluster's Pipelines-as-Code controller — so your half is one resource: a `Repository` that tells Pipelines-as-Code this repo's runs belong in your namespace, authenticated by your own seat credentials:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 cat <<EOF | oc apply -n {user}-agent-workspace -f -
 apiVersion: pipelinesascode.tekton.dev/v1alpha1
@@ -176,7 +176,7 @@ EOF
 
 . Give the repo its pipeline definition. Pipelines-as-Code convention: the pipeline lives *in the repo*, under `.tekton/` — reviewed, versioned, and owned like any other code. Clone with your seat credentials, add it, and push — and notice that the push you are about to make is itself the first build trigger:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 TOKEN=$(oc get secret {user}-gitea-token -n {user}-agent-workspace -o jsonpath='{.data.GITEA_TOKEN}' | base64 -d)
 cd /tmp && rm -rf order-metrics
@@ -233,7 +233,7 @@ git add .tekton && git -c user.email="{user}@workshop" -c user.name="{user}" com
 
 . Watch the build arrive in *your* namespace — the webhook fires, Pipelines-as-Code matches the push, and the run appears where your RBAC lives:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get pipelinerun -n {user}-agent-workspace -w
 ----
@@ -242,7 +242,7 @@ Press `Ctrl+C` at `Succeeded` (about 3 minutes). The task graph — also visible
 
 . Look at everything the build pushed — not just an image:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 QUAY=quay-quay-quay-test.apps.salamander.aimlworkbench.com
 oc extract secret/quay-pull-secret -n {user}-agent-workspace --keys=.dockerconfigjson --to=- > /tmp/quay.json 2>/dev/null
@@ -255,14 +255,14 @@ Beside `main` sit the supply-chain artifacts, each pinned to the image digest: a
 
 . Promotion is already happening. A platform ApplicationSet adopts any repository in your org that carries `deploy/deployment.yaml` and syncs it into your workspace — merge, build, promote, with no imperative step anywhere:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get pods -n {user}-agent-workspace -l app.kubernetes.io/name=order-metrics
 ----
 +
 Two replicas, `Running` (the link:{gitops_url}[OpenShift GitOps console^] shows the `{user}-agents-order-metrics` Application Synced and Healthy). Confirm the service answers — first its health, then its *real* interface, the MCP handshake:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw -- \
   curl -s http://order-metrics.{user}-agent-workspace.svc.cluster.local:8080/healthz; echo
@@ -295,7 +295,7 @@ The service is live. At this point, no agent knows it exists. Making it callable
 
 . Create both resources:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 cat <<EOF | oc apply -n {user}-agent-workspace -f -
 apiVersion: gateway.networking.k8s.io/v1
@@ -340,7 +340,7 @@ Read what you just declared: the route attaches your service to the platform's `
 
 . Watch the gateway discover the tools:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get mcpserverregistration {user}-order-metrics -n {user}-agent-workspace \
   -o jsonpath='{.status.conditions[0].reason}: {.status.conditions[0].message}{"\n"}'
@@ -389,7 +389,7 @@ It's Monday. Using your new orders_metrics_stuck_orders and orders_metrics_weekl
 
 . Read your tenant-side tool-call ledger to confirm the governed call was made:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc exec $(oc get pods -n {user}-agent-workspace -o name | grep {user}-assistant | head -1) \
   -n {user}-agent-workspace -c openclaw -- \
@@ -406,7 +406,7 @@ The `orders_*` tool call appears in the ledger alongside the `governed__gitea_*`
 
 . Verify the supply chain on the running image — with nothing but the registry API. First, resolve which digest your deployment actually runs:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 QUAY=quay-quay-quay-test.apps.salamander.aimlworkbench.com
 AUTH=$(python3 -c "import json;a=json.load(open('/tmp/quay.json'))['auths'];print(next(iter(a.values()))['auth'])")
@@ -419,7 +419,7 @@ echo "deployed digest: $DIGEST"
 
 . Tekton Chains signed exactly that digest the moment the build finished. The signature and attestation live in the registry as artifacts named by the digest — confirm both exist, then read the provenance itself:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 SAFE=$(echo "$DIGEST" | sed 's/:/-/')
 curl -sk "https://$QUAY/v2/deanpeterson/{user}-order-metrics/tags/list" -H "Authorization: Bearer $T" \

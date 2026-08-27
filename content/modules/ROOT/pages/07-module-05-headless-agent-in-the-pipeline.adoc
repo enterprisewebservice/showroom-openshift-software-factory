@@ -40,7 +40,7 @@ Commit directly to `main` with a message like `Enable the gateway HTTP face for 
 
 . Watch the change arrive the same way Module 2's change did — GitOps reconciles, the operator re-renders the gateway's configuration, and the pod rolls because the *rendered configuration* changed:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get pods -n {user}-agent-workspace \
   -l agentoffice.ai/gateway={user}-assistant-gateway -w
@@ -50,7 +50,7 @@ Within about two minutes you will see the running pod terminate and a fresh one 
 
 . Read the evidence chain, spec to pod:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get agentgateway {user}-assistant-gateway -n {user}-agent-workspace \
   -o jsonpath='declared: {.spec.http}{"\n"}'
@@ -65,7 +65,7 @@ Declared in git, rendered by the operator, rolled by a content hash. Nobody ran 
 
 . One more thing before you call it: who can actually *use* this new surface? The endpoint authenticates with the gateway token — the `OPENCLAW_GATEWAY_TOKEN` you met in Module 3's credential hunt. That token lives in a Secret in this namespace, and reading it requires this namespace's RBAC:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get secret {user}-assistant-gateway-token -n {user}-agent-workspace \
   -o jsonpath='{.metadata.name} holds {.data.OPENCLAW_GATEWAY_TOKEN}' | cut -c1-60; echo "..."
@@ -86,7 +86,7 @@ A headless agent run is a standard Tekton PipelineRun with one task: POST a prom
 
 . Save the manifest to disk. It is self-contained — the task is inline, the token arrives via `secretKeyRef`, and an empty or malformed reply fails the run loudly instead of reporting success with nothing in the result:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 cat <<'MANIFEST' > /tmp/headless-agent-run.yaml
 apiVersion: tekton.dev/v1
@@ -145,7 +145,7 @@ echo "Manifest written."
 
 . Create the run in your namespace and capture its generated name:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 PIPELINE_RUN=$(oc create -n {user}-agent-workspace \
   -f /tmp/headless-agent-run.yaml -o name | cut -d/ -f2)
@@ -154,7 +154,7 @@ echo "PipelineRun: ${PIPELINE_RUN}"
 
 . Watch it reach a terminal state (allow a few minutes — the task image pulls on first use, and the agent turn itself takes 30–90 seconds):
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get pipelinerun ${PIPELINE_RUN} -n {user}-agent-workspace -w
 ----
@@ -163,7 +163,7 @@ Press `Ctrl+C` once STATUS shows `Succeeded`.
 
 . Read the step log — the agent's one-line reply appears there before the task exits:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc logs -n {user}-agent-workspace \
   -l tekton.dev/pipelineRun=${PIPELINE_RUN} --all-containers | tail -5
@@ -181,7 +181,7 @@ A log line is ephemeral. A Tekton result is a named, structured value attached t
 
 . Read the result from the PipelineRun status:
 +
-[source,bash,role="execute",subs="attributes"]
+[source,bash,role="execute",subs="+attributes"]
 ----
 oc get pipelinerun ${PIPELINE_RUN} -n {user}-agent-workspace \
   -o jsonpath='{.status.results}' | python3 -m json.tool
