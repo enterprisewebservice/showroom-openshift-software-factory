@@ -161,9 +161,9 @@ git push origin main
 
 . Return to link:{gitops_url}[OpenShift GitOps^]. The same loop runs — and just as fast: check the Application's *History* for a new sync against your revert commit rather than waiting to see a transition.
 
-NOTE: The directive lives in the agent's identity, not in the conversation — but the conversation remembers itself. A chat thread that just produced several three-bullet answers may echo that style for a turn or two even after the rollback lands, because the model sees its own recent replies. That is history momentum, not the directive surviving: read the directive back with the `oc` command above to see the enforced truth. For a clean-room proof, type `/new` in the agent's channel — it starts a fresh session, so the very next answer reflects the current directive with zero transcript behind it.
+NOTE: The directive lives in the agent's identity, not in the conversation — but the conversation remembers itself. A chat thread that just produced several three-bullet answers may echo that style for a turn or two even after the rollback lands, because the model sees its own recent replies. That is history momentum, not the directive surviving: read the directive back with the `oc` command above to see the enforced truth. For a clean-room proof, send the message `new session` in the agent's channel — the agent confirms the conversation history is cleared, so the very next answer reflects the current directive with zero transcript behind it. (Spell it without a slash: Mattermost intercepts any message that starts with `/` as one of its own slash commands and never delivers it.)
 
-. Wait for the agent pod to return to `Running`:
+. Confirm the agent pod stayed `Running` through the rollback — same pod, no restart, exactly as in Exercise 2:
 +
 [source,bash,role="execute",subs="+attributes"]
 ----

@@ -101,13 +101,15 @@ oc get pods -n {user}-agent-workspace
 +
 NOTE: Your agent runs in your own namespace, `{user}-agent-workspace` — nobody else's agents share it. It carries exactly the name you declared in your brief. `oc get agentworkstations -n {user}-agent-workspace` lists precisely one workstation: yours.
 +
-Re-run the command until the pod reports `Running`. The first start pulls the agent image, so allow a minute or 2. Expected output (the pod name may differ):
+Re-run the command until the pod reports `Running`. The first start pulls the agent image, so allow a minute or 2. Expected output (the hash suffixes will differ):
 +
 [subs="+attributes"]
 ----
-NAME                 READY   STATUS    RESTARTS   AGE
-<your-agent>-0       1/1     Running   0          2m
+NAME                                      READY   STATUS    RESTARTS   AGE
+{user}-assistant-gateway-c77bb699b-dzv5q  2/2     Running   0          2m
 ----
++
+The pod is named after the agent's gateway — the runtime your agent lives in — and `READY 2/2` counts the agent runtime plus its credential-sync sidecar. It is normal to see this pod replaced once shortly after first start (the AGE resets): the operator finishes wiring the model credential and restarts it one time.
 
 // TODO: Add screenshot
 // TODO screenshot: capture the OpenShift GitOps Application view as an attendee
@@ -151,7 +153,7 @@ oc get agentworkstation <your-agent> -n {user}-agent-workspace -o yaml
 Introduce yourself. What is your purpose, and which skills were you hired with?
 ----
 +
-The template created the channel at hire time: open link:{mattermost_url}[Mattermost^], sign in as `{user}`, and find the channel named after your agent.
+The template created the channel at hire time: open link:{mattermost_url}[Mattermost^], sign in as `{user}`, and find the channel named after your agent — it is in the left sidebar under *Channels* (you land in Town Square first; the system join messages there are just onboarding noise).
 
 . Read the reply. The agent answers in its channel, and its answer reflects the purpose sentence and the skills you saw in the resource.
 

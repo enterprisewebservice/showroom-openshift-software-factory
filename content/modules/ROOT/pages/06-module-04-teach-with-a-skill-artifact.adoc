@@ -42,7 +42,7 @@ Hold both results in view, because the contrast is the mental model: `oc get ski
 +
 Look at where that set comes from. Most of these are official published skills: five imported from Red Hat's link:https://github.com/openshift/agentic-skills[openshift/agentic-skills^] repository — the same content behind the Ecosystem Catalog's agentic skill pack for OpenShift — and two from the upstream Agent Skills project. Red Hat publishes those packs as SKILL.md files you download by hand; this platform imports them with source provenance, repackages each as a digest-pinned versioned artifact, and delivers them to every agent through the operator. Red Hat publishes the know-how; the platform ships it like software.
 
-. Now give the agent a task it was never taught. In link:{mattermost_url}[Mattermost^], type `/new` in the `{user}-assistant` channel (a clean session, so this module's before-and-after is honest), then send:
+. Now give the agent a task it was never taught. In link:{mattermost_url}[Mattermost^], send the message `new session` in the `{user}-assistant` channel (a clean session, so this module's before-and-after is honest — no slash: Mattermost swallows `/`-prefixed messages as its own commands), then send:
 +
 [source,text]
 ----
@@ -255,7 +255,7 @@ curl -s https://raw.githubusercontent.com/enterprisewebservice/agent-office/main
 
 == Exercise 5: The behavior change
 
-. Back in link:{mattermost_url}[Mattermost^], type `/new` in the `{user}-assistant` channel, then send the *same* incident report from Exercise 1:
+. Back in link:{mattermost_url}[Mattermost^], send `new session` in the `{user}-assistant` channel, then send the *same* incident report from Exercise 1:
 +
 [source,text]
 ----

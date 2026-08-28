@@ -111,11 +111,11 @@ oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
 +
 The output now names the sovereign endpoint.
 
-. Test the agent with a task that requires governed tools. Open link:{mattermost_url}[Mattermost^], sign in as `{user}`, and find the `{user}-assistant` channel. Type `/new` first to start a clean session — a thread that replied from the frontier endpoint carries history momentum for a turn or two, and `/new` is the deterministic reset:
+. Test the agent with a task that requires governed tools. Open link:{mattermost_url}[Mattermost^], sign in as `{user}`, and find the `{user}-assistant` channel. Send `new session` first to start a clean session — a thread that replied from the frontier endpoint carries history momentum for a turn or two, and the reset is deterministic (no slash: Mattermost swallows `/`-prefixed messages as its own commands):
 +
 [source,text]
 ----
-/new
+new session
 ----
 +
 Then send the task:
@@ -141,7 +141,7 @@ The reply arrives from the sovereign vLLM. The agent calls the same `gitea_*` to
 * The Application's *History* tab shows the latest revision matches the merge commit from this exercise
 * `oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.spec.model}'` returns the sovereign endpoint value
 * The agent pod in `{user}-agent-workspace` is `Running` — the pod name and restart count are unchanged
-* After `/new`, the agent answers the commit-message task correctly, and its answer is the commit you merged in this exercise
+* After the session reset, the agent answers the commit-message task correctly, and its answer is the commit you merged in this exercise
 
 == Exercise 3: Swap back
 
@@ -188,11 +188,11 @@ oc get pods -n {user}-agent-workspace
 +
 Same pod, same restart count as before the swap — both changes re-rendered the agent in place.
 
-. Open link:{mattermost_url}[Mattermost^] and type `/new` in the `{user}-assistant` channel, then send the same task:
+. Open link:{mattermost_url}[Mattermost^] and send `new session` in the `{user}-assistant` channel, then send the same task:
 +
 [source,text]
 ----
-/new
+new session
 ----
 +
 [source,text]
@@ -210,7 +210,7 @@ The reply arrives from the frontier endpoint. The answer is the revert commit �
 
 * The Application's *History* tab shows the revert commit as the latest sync revision
 * `oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.spec.model}'` returns the frontier endpoint value
-* After `/new`, the agent answers the commit-message task correctly from the frontier endpoint, and its answer names the revert commit
+* After the session reset, the agent answers the commit-message task correctly from the frontier endpoint, and its answer names the revert commit
 
 == What just happened
 
@@ -245,6 +245,6 @@ Module 8 closes the lab with the honest gap map: where this platform-built facto
 Assets needed (capture against the live environment):
 
 . content/modules/ROOT/assets/images/module-07-jsonpath-sovereign.png — Terminal output showing the oc jsonpath readback of the model field after the Exercise 2 merge, with the sovereign vLLM endpoint value visible
-. content/modules/ROOT/assets/images/module-07-mattermost-sovereign-reply.png — Mattermost channel (after /new) showing the agent's correct answer to the commit-message task from the sovereign endpoint, with the commit message from the Exercise 2 merge visible
+. content/modules/ROOT/assets/images/module-07-mattermost-sovereign-reply.png — Mattermost channel (after a `new session` reset) showing the agent's correct answer to the commit-message task from the sovereign endpoint, with the commit message from the Exercise 2 merge visible
 . content/modules/ROOT/assets/images/module-07-jsonpath-frontier-restored.png — Terminal output showing the oc jsonpath readback after the Exercise 3 revert, with the frontier endpoint value restored
 ////
