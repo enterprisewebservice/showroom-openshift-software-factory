@@ -208,7 +208,30 @@ Beside `main` sit the supply-chain artifacts, each pinned to the image digest: a
 oc get pods -n {user}-agent-workspace -l app.kubernetes.io/name=order-metrics
 ----
 +
-Two replicas, `Running` (the link:{gitops_url}[OpenShift GitOps console^] shows the `{user}-agents-order-metrics` Application Synced and Healthy). Confirm the service answers — first its health, then its *real* interface, the MCP handshake:
+Two replicas, `Running` (the link:{gitops_url}[OpenShift GitOps console^] shows the `{user}-agents-order-metrics` Application Synced and Healthy).
++
+[NOTE]
+====
+*If the pods are crash-looping instead:* that is a bug in the service — and fixing it is the contractor's job, not yours. Pull the error and hand it back:
+
+[source,bash,role="execute",subs="+attributes"]
+----
+oc logs deploy/order-metrics -n {user}-agent-workspace --previous 2>/dev/null | tail -15
+----
+
+Then send this to the `{user}-dev` channel, pasting the error output where indicated:
+
+[source,text]
+----
+Your order-metrics service is crash-looping in production. Here is the startup error:
+
+<paste the log lines here>
+
+Diagnose and fix it per your golden-path-service skill, push the fix directly to main, and summarize what was wrong.
+----
+
+The push rebuilds and redeploys automatically. This loop — production signal, error handed to the agent, fix on the record — is the same one a human contractor gets, minus the standup meeting.
+==== Confirm the service answers — first its health, then its *real* interface, the MCP handshake:
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
