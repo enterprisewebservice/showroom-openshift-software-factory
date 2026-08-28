@@ -147,11 +147,9 @@ Please build a service called order-metrics. It reads the existing orders API at
 
 == Exercise 3: Merge and ship through the supply chain
 
-The dev agent opened the pull request. You own the merge decision — the same pattern you practiced in Module 2: the diff is readable, the source is the agent's tool calls, and the merge is the moment of record. Then you wire the repo into the supply chain — two declared objects — and watch the platform take it from merge to running pods.
+The dev agent opened the pull request. You own the merge decision — the same pattern you practiced in Module 2: the diff is readable, the source is the agent's tool calls, and the merge is the moment of record. The scaffold conforms to the platform's *golden-path service contract* — a versioned skill every agent on your seat carries (Module 4's delivery mechanism, working for Module 6): Dockerfile at the root, port 8080, the deployment manifest shape, and the supply-chain pipeline definition already included under `.tekton/`.
 
-. Open the pull request in Gitea and review the diff. The service skeleton is real engineering: source, tests, a Dockerfile, and a deployment manifest with probes, resource limits, and a hardened security context. When you are satisfied, merge it.
-
-. Wire your repository into the supply chain. The platform side is already standing — an org-level webhook on your Gitea org feeds the cluster's Pipelines-as-Code controller — so your half is one resource: a `Repository` that tells Pipelines-as-Code this repo's runs belong in your namespace, authenticated by your own seat credentials:
+. Wire your repository into the supply chain *before* merging, so the merge event lands on a listening pipeline. The platform side is already standing — an org-level webhook on your Gitea org feeds the cluster's Pipelines-as-Code controller — so your half is one resource: a `Repository` that tells Pipelines-as-Code this repo's runs belong in your namespace, authenticated by your own seat credentials:
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
@@ -174,66 +172,9 @@ spec:
 EOF
 ----
 
-. Give the repo its pipeline definition. Pipelines-as-Code convention: the pipeline lives *in the repo*, under `.tekton/` — reviewed, versioned, and owned like any other code. Clone with your seat credentials, add it, and push — and notice that the push you are about to make is itself the first build trigger:
-+
-[source,bash,role="execute",subs="+attributes"]
-----
-TOKEN=$(oc get secret {user}-gitea-token -n {user}-agent-workspace -o jsonpath='{.data.GITEA_TOKEN}' | base64 -d)
-cd /tmp && rm -rf order-metrics
-git clone "https://{user}:${TOKEN}@$(echo {gitea_url} | sed 's|https://||')/{user}-agents/order-metrics.git" -c http.sslVerify=false
-cd order-metrics && mkdir -p .tekton
-cat <<'PIPE' > .tekton/on-push.yaml
-apiVersion: tekton.dev/v1
-kind: PipelineRun
-metadata:
-  name: order-metrics-on-push
-  annotations:
-    pipelinesascode.tekton.dev/on-cel-expression: 'event == "push" && target_branch == "main"'
-    pipelinesascode.tekton.dev/cancel-in-progress: "true"
-    pipelinesascode.tekton.dev/max-keep-runs: "5"
-spec:
-  params:
-    - name: git-url
-      value: '{{source_url}}'
-    - name: revision
-      value: '{{revision}}'
-    - name: output-image
-      value: 'quay-quay-quay-test.apps.salamander.aimlworkbench.com/deanpeterson/USER-order-metrics:main'
-    - name: dockerfile
-      value: Dockerfile
-    - name: path-context
-      value: .
-    - name: rebuild
-      value: "true"
-    - name: skip-checks
-      value: "true"
-  pipelineRef:
-    resolver: bundles
-    params:
-      - name: bundle
-        value: 'quay.io/konflux-ci/tekton-catalog/pipeline-docker-build@sha256:1b2a544f5308a50b8ebf76e76f10f8be3e12342d6ce7233d2520aca724294a82'
-      - name: name
-        value: docker-build
-      - name: kind
-        value: pipeline
-  workspaces:
-    - name: workspace
-      volumeClaimTemplate:
-        spec:
-          accessModes: [ReadWriteOnce]
-          resources:
-            requests: {storage: 1Gi}
-    - name: git-auth
-      secret:
-        secretName: '{{ git_auth_secret }}'
-PIPE
-sed -i "s/USER-order-metrics/{user}-order-metrics/" .tekton/on-push.yaml
-git add .tekton && git -c user.email="{user}@workshop" -c user.name="{user}" commit -m "ci: supply-chain pipeline (Pipelines-as-Code)" && git push
-----
-+
-NOTE: Order matters: merge the agent's pull request *before* this push. If the pipeline file lands on a main that does not yet contain the service, the triggered build fails with `Cannot find Dockerfile` — a loud, harmless failure. Merge the PR and the next push event (the merge itself) runs the real build.
+. Open the pull request in Gitea and review the diff. The service skeleton is real engineering: source, tests, a root `Dockerfile`, a deployment manifest with probes, limits, and a hardened security context, and `.tekton/on-push.yaml` — the pipeline, reviewed and versioned like any other code. If anything strays from the golden-path contract, say so in the agent's channel and it will push the fix; when you are satisfied, **merge** — the merge is the push event that fires the build.
 
-. Watch the build arrive in *your* namespace — the webhook fires, Pipelines-as-Code matches the push, and the run appears where your RBAC lives:
+. Watch the build arrive in *your* namespace:
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
@@ -291,8 +232,8 @@ oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw --
 
 === Verify
 
-* The pull request merged, and the `Repository` resource exists in your namespace
-* Your `.tekton` push triggered a PipelineRun in `{user}-agent-workspace` that reached `Succeeded`
+* The `Repository` resource exists in your namespace, and the pull request merged
+* The merge triggered a PipelineRun in `{user}-agent-workspace` that reached `Succeeded`
 * The Quay tag list shows `main` plus `.sbom`, `.dockerfile`, `.sig`, and `.att` artifacts
 * `order-metrics` pods are `Running`, `/healthz` returns `{"ok": true}`, and `/mcp` answers the initialize handshake
 
