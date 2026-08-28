@@ -208,7 +208,7 @@ Beside `main` sit the supply-chain artifacts, each pinned to the image digest: a
 oc get pods -n {user}-agent-workspace -l app.kubernetes.io/name=order-metrics
 ----
 +
-Two replicas, `Running` (the link:{gitops_url}[OpenShift GitOps console^] shows the `{user}-agents-order-metrics` Application Synced and Healthy).
+The pods report `Running` (the link:{gitops_url}[OpenShift GitOps console^] shows the `{user}-agents-order-metrics` Application Synced and Healthy; the replica count is the agent's implementation choice).
 +
 [NOTE]
 ====
