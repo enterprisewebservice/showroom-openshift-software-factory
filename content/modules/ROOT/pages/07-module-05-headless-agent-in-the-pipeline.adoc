@@ -46,7 +46,9 @@ oc get pods -n {user}-agent-workspace \
   -l agentoffice.ai/gateway={user}-assistant-gateway -w
 ----
 +
-Within about two minutes you will see the running pod terminate and a fresh one reach `Running` (the sync interval is the slow part; the link:{gitops_url}[OpenShift GitOps console^] shows the same convergence live, and a manual Refresh there speeds it up). Press `Ctrl+C` once the new pod is `Running`.
+Within about a minute you will see the running pod terminate and a fresh one reach `Running` (the link:{gitops_url}[OpenShift GitOps console^] shows the same convergence live). Press `Ctrl+C` once the new pod is `Running`.
++
+NOTE: If nothing rolls after a couple of minutes, the most likely cause is a quiet one: `chatCompletions` indented to the same depth as `http` instead of nested under it. The CRD's schema rejects the stray field, and your Application in OpenShift GitOps reports a *ComparisonError* naming it (`.spec.chatCompletions: field not declared in schema`) instead of syncing. Fix the indent — `chatCompletions:` two spaces deeper than `http:` — and the sync heals on the next commit.
 
 . Read the evidence chain, spec to pod:
 +

@@ -52,9 +52,12 @@ The sentence is doing real work: "governed git tools" signals Gitea MCP integrat
 
 . Click *Suggest*. Read the composed plan. Compare it with what the platform composed for `{user}-assistant` in Module 1.
 +
-The assistant received an investigation and documentation kit. The dev agent receives a development and scaffolding kit — a different set of skills pulled from the same catalog, driven by the same single-sentence input. Same form, same template, different brief, different employee.
+The assistant received an investigation and documentation kit. The dev agent receives a development and scaffolding kit — the governed Gitea tools, the `golden-path-service` skill, the golden-path probe — a different set pulled from the same catalog, driven by the same single-sentence input. Same form, same template, different brief, different employee.
 +
-// AUTHOR NOTE (verify live): confirm Suggest selects a materially different skill composition for the dev brief versus the assistant brief — specifically, confirm the presence of a scaffold or golden-path skill and the absence of investigation or documentation skills. Note the exact skill names selected here.
+The composed plan is a *draft, not a verdict* — that is why the review step exists. Each pick shows the words it matched on and a *remove* link. Keyword matching over-reaches sometimes: if a pack in the list has nothing to do with development work, remove it before you continue. Then give the drafted *System prompt* a final read — it names the selected skills, so if you removed one, delete its name from the directive text too (the draft does not re-write itself yet).
+// Live walk 2026-08-27 (user3): Suggest pulled the parkforge-brain meta-pack (5 packs,
+// 6 skills of Unreal scripting) into a dev hire on generic word matches; one-click remove +
+// a prompt edit fixed it. Root fix filed against the composer's /catalog/recommend scoring.
 
 . Click *Review*, check the composed summary, then click *Create*. Watch the scaffolding steps complete.
 +
@@ -231,6 +234,13 @@ Diagnose and fix it per your golden-path-service skill, push the fix directly to
 ----
 
 The push rebuilds and redeploys automatically. This loop — production signal, error handed to the agent, fix on the record — is the same one a human contractor gets, minus the standup meeting.
+
+One mechanical detail: crash-looping pods pick the fixed image up on their next restart by themselves. If the pods are *Running* but misbehaving (a bad response rather than a crash), they have no reason to restart — after the fix's build completes, roll them once so they pull the new image:
+
+[source,bash,role="execute",subs="+attributes"]
+----
+oc rollout restart deployment/order-metrics -n {user}-agent-workspace
+----
 ==== Confirm the service answers — first its health, then its *real* interface, the MCP handshake:
 +
 [source,bash,role="execute",subs="+attributes"]
@@ -298,7 +308,7 @@ metadata:
   name: {user}-order-metrics
 spec:
   path: /mcp
-  prefix: orders_
+  prefix: {user}_orders_
   state: Enabled
   targetRef:
     group: gateway.networking.k8s.io
@@ -307,7 +317,7 @@ spec:
 EOF
 ----
 +
-Read what you just declared: the route attaches your service to the platform's `mcp-gateway` (its listeners deliberately admit routes from any namespace — attachment is the tenant's declaration, the gateway stays the platform's control point), and the registration names the route, the `/mcp` path your dev agent implemented, and the `orders_` prefix that namespaces your tools on the shared gateway.
+Read what you just declared: the route attaches your service to the platform's `mcp-gateway` (its listeners deliberately admit routes from any namespace — attachment is the tenant's declaration, the gateway stays the platform's control point), and the registration names the route, the `/mcp` path your dev agent implemented, and the `{user}_orders_` prefix that namespaces your tools on the shared gateway. The prefix carries your seat name *on purpose*: every seat in this room is shipping a service with the same two tool names, and the gateway refuses a registration whose tool names collide with one already registered — the prefix is the tenancy boundary on a shared gateway, and yours has to be yours.
 
 . Watch the gateway discover the tools:
 +
@@ -321,23 +331,26 @@ Within about 30 seconds: `Ready: server added successfully. Total tools added 2.
 
 . Confirm the tools are visible to your assistant. Open link:{mattermost_url}[Mattermost^], go to the `{user}-assistant` channel, and send:
 +
-[source,text]
+[source,text,subs="+attributes"]
 ----
-Discover your governed tools. Do any of them start with "orders_"?
+Discover your governed tools. Do any of them start with "{user}_orders_"?
 ----
 +
-The assistant's governed tool surface now includes `orders_metrics_stuck_orders` and `orders_metrics_weekly_summary` — the service your dev agent shipped an hour ago, already indistinguishable in governance terms from the tools the platform shipped with.
+The assistant's governed tool surface now includes `{user}_orders_metrics_stuck_orders` and `{user}_orders_metrics_weekly_summary` — the service your dev agent shipped an hour ago, already indistinguishable in governance terms from the tools the platform shipped with.
 
-// VERIFIED LIVE 2026-08-27 (seat user1, attendee-privilege apply): registration reached
-// Ready with "Total tools added 2" in ~30s; the gateway exposes the tools to agents as
-// governed__orders_metrics_* (prefix orders_ + tool name; governed__ added by the runtime's
-// gateway client). Both resources are namespaced and within seat RBAC; mcp-gateway
+// VERIFIED LIVE 2026-08-27 (seats user1 + user3, attendee-privilege apply): registration
+// reached Ready with "Total tools added 2" in ~30s; the gateway exposes the tools to agents
+// as governed__{user}_orders_metrics_* (seat prefix + tool name; governed__ added by the
+// runtime's gateway client). The seat prefix is LOAD-BEARING: user3's registration with the
+// original shared prefix orders_ was refused — "conflicting tools discovered" against
+// user1's — because tool names are global on the shared gateway. spec.prefix is immutable;
+// a wrong one means delete + re-apply. Both resources are namespaced and within seat RBAC; mcp-gateway
 // listeners allow cross-namespace route attachment (from: All).
 
 === Verify
 
 * The registration's condition reads `Ready: server added successfully. Total tools added 2`
-* The assistant reports governed tools beginning `orders_` in its Mattermost reply
+* The assistant reports governed tools beginning `{user}_orders_` in its Mattermost reply
 
 == Exercise 5: Close the loop
 
@@ -349,9 +362,9 @@ This is the beat that makes it Morgan's Monday. Morgan had a request. The factor
 
 . Ask the assistant to use the new service:
 +
-[source,text]
+[source,text,subs="+attributes"]
 ----
-It's Monday. Using your new orders_metrics_stuck_orders and orders_metrics_weekly_summary tools: how many orders are stuck in processing (stuck = more than 7 days), and what does the weekly summary look like? Post the numbers here.
+It's Monday. Using your new {user}_orders_metrics_stuck_orders and {user}_orders_metrics_weekly_summary tools: how many orders are stuck in processing (stuck = more than 7 days), and what does the weekly summary look like? Post the numbers here.
 ----
 +
 // AUTHOR NOTE (verify live): replace "order-metrics tool" in the prompt with the exact tool name verified in Exercise 4 step 3. The assistant recognizes the name more reliably when the prompt matches the gateway-exposed name precisely.
@@ -371,7 +384,7 @@ oc exec $(oc get pods -n {user}-agent-workspace -o name | grep {user}-assistant 
 +
 // AUTHOR NOTE (verify live): confirm the session JSONL path inside the assistant container. This mirrors the audit command from Module 3 — if that path changed, update both modules.
 +
-The `orders_*` tool call appears in the ledger alongside the `governed__gitea_*` calls you saw in Module 3 — the factory's newest tool, already leaving the same class of record as its oldest. The ledger entry is your tenant-side receipt. Its platform-side twin — the gateway's access-log line for this call — lives in the shared stream you proved in Module 3 you cannot open, shown on the shared screen during the session, on the same cluster, under the same retention policy as every other audit artifact ACME governs.
+The `{user}_orders_*` tool call appears in the ledger alongside the `governed__gitea_*` calls you saw in Module 3 — the factory's newest tool, already leaving the same class of record as its oldest. The ledger entry is your tenant-side receipt. Its platform-side twin — the gateway's access-log line for this call — lives in the shared stream you proved in Module 3 you cannot open, shown on the shared screen during the session, on the same cluster, under the same retention policy as every other audit artifact ACME governs.
 +
 // AUTHOR NOTE (verify live): confirm the orders tool entries appear namespaced in the ledger (expected shape: a prefixed toolName matching the MCPServerRegistration prefix) and name the exact string here and in the Verify bullet.
 
@@ -427,7 +440,7 @@ NOTE: The platform's signing key pair lives in the cluster (`openshift-pipelines
 === Verify
 
 * The assistant agent replied in Mattermost with the stuck count and weekly summary from order-metrics
-* The tenant-side tool-call ledger shows an `orders_*` entry marked as a governed call
+* The tenant-side tool-call ledger shows a `{user}_orders_*` entry marked as a governed call
 * The image attestation command returns annotation data, confirming the pipeline's signing step produced a traceable artifact
 
 == What just happened
