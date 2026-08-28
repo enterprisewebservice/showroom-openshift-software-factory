@@ -28,7 +28,7 @@ By the end of this module, you'll be able to:
 oc get skills -n {user}-agent-workspace
 ----
 +
-`No resources found`. Your agent is running entirely on the platform's *baked golden set* — a pinned catalog image every gateway mounts. See it:
+One row: `golden-path-service` — a skill the platform pre-installed in your namespace for Module 6's build lane. That single row is the point: `oc get skills` lists only what your namespace *adds*. Everything else your agent knows comes from the platform's *baked golden set* — a pinned catalog image every gateway mounts. See the merged result:
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
@@ -36,9 +36,9 @@ oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw --
   ls /home/node/.openclaw/workspaces/{user}-assistant/skills/
 ----
 +
-The same set for every agent on this platform, pinned by digest in a lockfile you will read in Exercise 4.
+Roughly a dozen folders: the baked set (identical for every agent on this platform, pinned by digest in a lockfile you will read in Exercise 4) plus the one namespace addition you just listed.
 +
-Hold both results in view, because the contrast is the mental model: `oc get skills` shows *nothing* while the folder shows a full set. `oc get skills` lists only what your namespace *adds* — the baked floor is invisible to the Kubernetes API (its inventory is the lockfile, in git). The merged truth lives in that folder, and only there.
+Hold both results in view, because the contrast is the mental model: `oc get skills` shows *one* row while the folder shows a full set. The baked floor is invisible to the Kubernetes API (its inventory is the lockfile, in git); the namespace additions are visible as Skill resources; the merged truth lives in that folder, and only there. Note also what is in *neither* list: nothing named `platform-incident-triage`. Your hire's directive names it — the role calls for it — but the workspace has not received it. That gap is this module.
 +
 Look at where that set comes from. Most of these are official published skills: five imported from Red Hat's link:https://github.com/openshift/agentic-skills[openshift/agentic-skills^] repository — the same content behind the Ecosystem Catalog's agentic skill pack for OpenShift — and two from the upstream Agent Skills project. Red Hat publishes those packs as SKILL.md files you download by hand; this platform imports them with source provenance, repackages each as a digest-pinned versioned artifact, and delivers them to every agent through the operator. Red Hat publishes the know-how; the platform ships it like software.
 
@@ -53,8 +53,8 @@ Incident report: users say the orders API is returning 500s since about 10 minut
 
 === Verify
 
-* `oc get skills -n {user}-agent-workspace` returns `No resources found`
-* The workspace skills listing shows the baked set only
+* `oc get skills -n {user}-agent-workspace` returns exactly one row: the pre-installed `golden-path-service`
+* The workspace skills listing shows the baked set plus that one addition — and no `platform-incident-triage`
 * The agent's triage reply has no consistent severity rubric or section structure
 
 == Exercise 2: Inspect the artifact in the registry
@@ -176,11 +176,11 @@ NOTE: This YAML was rendered from the artifact itself — the `digest` is the `c
 oc get skills -n {user}-agent-workspace
 ----
 +
-One skill, with its VERSION column — `1.1.1` — straight from the artifact.
+Two rows now: the pre-installed `golden-path-service` and your new `platform-incident-triage`, its VERSION column — `1.1.1` — straight from the artifact.
 
 === Verify
 
-* `oc get skills -n {user}-agent-workspace` shows `platform-incident-triage` at version `1.1.1`
+* `oc get skills -n {user}-agent-workspace` shows `platform-incident-triage` at version `1.1.1` alongside the pre-installed `golden-path-service`
 
 == Exercise 4: Watch the agent learn, then audit the supply chain
 

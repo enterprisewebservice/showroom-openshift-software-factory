@@ -77,10 +77,10 @@ Your agent's repo — the one you edited in Module 2 — carries `envFromSecret:
 [source,bash,role="execute",subs="+attributes"]
 ----
 oc exec $(oc get pods -n {user}-agent-workspace -o name | grep {user}-assistant | head -1) \
-  -n {user}-agent-workspace -- env | grep -iE "token|key|secret"
+  -n {user}-agent-workspace -c openclaw -- env | grep -iE "token|key|secret" | cut -d= -f1
 ----
 +
-Two results: `OPENCLAW_GATEWAY_TOKEN` (the runtime's own control-plane plumbing) and `GITEA_TOKEN` — your seat's credential, exactly where the chain delivered it. Note what is absent: no provider API key in the environment (model auth is a short-lived file a platform sidecar rotates), no platform git identity, and nothing for tools like `ops-metrics` or `golden-path-probe`, whose credentials are injected on the gateway side and exist nowhere in your namespace at all.
+The `cut` keeps the *names* and drops the values — you are in a workshop room, and half the point of this module is that credentials do not get printed onto shared screens. Two results: `OPENCLAW_GATEWAY_TOKEN` (the runtime's own control-plane plumbing) and `GITEA_TOKEN` — your seat's credential, exactly where the chain delivered it. Note what is absent: no provider API key in the environment (model auth is a short-lived file a platform sidecar rotates), no platform git identity, and nothing for tools like `ops-metrics` or `golden-path-probe`, whose credentials are injected on the gateway side and exist nowhere in your namespace at all.
 
 . *The badge and the vault keys.* Your agent is a coding agent — its skills (including `find-token`, later this module) run real scripts, so it can read its own environment, including `GITEA_TOKEN`. That is not a leak; it is the design: this token is the agent's *own delegated badge* — it acts as {user}, inside {user}'s org, so an agent reading its own badge can reach exactly what its owner already owns. The badge self-expires within the hour, is refreshed every thirty minutes, is revocable by simply not refreshing, and is platform-scoped per seat. Red-team it yourself in Mattermost:
 +
@@ -96,7 +96,7 @@ A well-run agent verifies and refuses to print it — a *behavioral* guardrail, 
 oc get secrets -n {user}-agent-workspace
 ----
 +
-No platform admin credential — the identity that MINTS seat badges — no provider API key, no other seat's badge. An agent cannot exfiltrate what its entire namespace does not contain. Scope, rotation, and audit are the boundary — not hoping the workload never looks at its own pocket.
+Read the list against the blast-radius question — *what could each of these reach beyond this seat?* Your badge (`{user}-gitea-token`) and your gateway's own control token (`{user}-assistant-gateway-token`) are seat-scoped by construction. `codex-subscription-credentials` is the seat gateway's *model* credential — deliberately a namespace-local copy, so cutting one seat off from the model is deleting one Secret, not rotating a shared key. `pac-gitea-webhook` is a random webhook shared-secret and `quay-pull-secret`/`quay-push-secret` are the registry pair for *your* build lane (Module 6 uses them). Now note what the list does *not* contain: the identity that MINTS seat badges (the refresh token — it lives only in the platform's Vault), any other seat's badge, and any platform admin identity. An agent cannot exfiltrate what its entire namespace does not contain. Scope, rotation, and audit are the boundary — not hoping the workload never looks at its own pocket.
 
 . *The badge decays — and the agent holds no pen to renew it.* This is the discipline that makes holding a credential safe: what your agent possesses is a *wasting asset*, and now literally one. Your seat's badge is a Gitea OAuth2 access token that *self-expires within the hour* — the very same credential lifecycle the platform's own git identity runs, no longer a lesser substitute for it. Every thirty minutes a platform refresher exchanges a held refresh token for a fresh access token and writes Vault; within a minute the sync loop lands it in your Secret, and the operator renders the new value straight into your agent's tool configuration, which the runtime *hot-reloads in place*. No pod restart, no pause: the credential changes under a running agent and its next `gitea_*` call simply uses the new one. The agent cannot refresh, extend, or re-mint its own badge — the refresh token lives only in the platform's Vault, never in your namespace, and you already proved no minting credential exists where the agent lives. Revoking, then, is not an action but an *omission*: stop the refresher and every seat's access token ages out within the hour, all at once, with nothing to explicitly revoke. Continued access is never a state; it is a standing decision, renewed on a cadence, by machinery the workload cannot touch. Watch the credential live through a refresh with the runtime never restarting:
 +
@@ -208,13 +208,13 @@ oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw --
 +
 [source,text]
 ----
-    330 "toolName":"web_fetch"
-    147 "toolName":"exec"
-      8 "toolName":"governed__gitea_list_org_repos"
-      6 "toolName":"governed__gitea_get_me"
+      9 "toolName":"governed__gitea_list_org_repos"
+      9 "toolName":"governed__gitea_get_me"
+      7 "toolName":"exec"
+      6 "toolName":"governed__gitea_list_commits"
 ----
 +
-The census tells the whole module in four lines: built-ins (`web_fetch`, `exec`) ran ungoverned from the runtime; every governed call is namespaced `governed__` — those crossed the gateway on your credential, and the calls you triggered this exercise are in the count. This ledger is yours because it lives at your blast radius. Its platform-side twin — the gateway's access-log line for those same `governed__` calls — lives in the shared stream you were denied above, shown on the shared screen during the session.
+Your counts will differ — this ledger is *your* agent's short life so far. The census tells the whole module in a few lines: built-ins (`exec`, `web_fetch`) ran ungoverned from the runtime; every governed call is namespaced `governed__` — those crossed the gateway on your credential, and the calls you triggered this exercise are in the count. This ledger is yours because it lives at your blast radius. Its platform-side twin — the gateway's access-log line for those same `governed__` calls — lives in the shared stream you were denied above, shown on the shared screen during the session.
 
 . Return to your seat identity — the rest of the workshop runs as `{user}`:
 +
