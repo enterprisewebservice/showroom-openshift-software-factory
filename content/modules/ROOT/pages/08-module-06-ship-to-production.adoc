@@ -230,6 +230,8 @@ PIPE
 sed -i "s/USER-order-metrics/{user}-order-metrics/" .tekton/on-push.yaml
 git add .tekton && git -c user.email="{user}@workshop" -c user.name="{user}" commit -m "ci: supply-chain pipeline (Pipelines-as-Code)" && git push
 ----
++
+NOTE: Order matters: merge the agent's pull request *before* this push. If the pipeline file lands on a main that does not yet contain the service, the triggered build fails with `Cannot find Dockerfile` — a loud, harmless failure. Merge the PR and the next push event (the merge itself) runs the real build.
 
 . Watch the build arrive in *your* namespace — the webhook fires, Pipelines-as-Code matches the push, and the run appears where your RBAC lives:
 +
