@@ -395,10 +395,10 @@ The `{user}_orders_*` tool call appears in the ledger alongside the `governed__g
 QUAY=quay-quay-quay-test.apps.salamander.aimlworkbench.com
 AUTH=$(python3 -c "import json;a=json.load(open('/tmp/quay.json'))['auths'];print(next(iter(a.values()))['auth'])")
 T=$(curl -sk "https://$QUAY/v2/auth?service=$QUAY&scope=repository:deanpeterson/{user}-order-metrics:pull" -H "Authorization: Basic $AUTH" | python3 -c "import sys,json;print(json.load(sys.stdin)['token'])")
-DIGEST=$(curl -skI "https://$QUAY/v2/deanpeterson/{user}-order-metrics/manifests/main" \
+DIGEST=$(curl -sk "https://$QUAY/v2/deanpeterson/{user}-order-metrics/manifests/main" \
   -H "Authorization: Bearer $T" -H "Accept: application/vnd.oci.image.index.v1+json" \
-  | grep -i docker-content-digest | tr -d '\r' | awk '{print $2}')
-echo "deployed digest: $DIGEST"
+  | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['manifests'][0]['digest'] if 'manifests' in d else '')")
+echo "deployed image manifest: $DIGEST"
 ----
 
 . Tekton Chains signed exactly that digest the moment the build finished. The signature and attestation live in the registry as artifacts named by the digest — confirm both exist, then read the provenance itself:
@@ -421,7 +421,7 @@ print('subject:      ', pl['subject'][0]['name'].split('/')[-1] + '@sha256:' + p
 print('signatures:   ', len(d.get('signatures', [])))"
 ----
 +
-`predicateType: https://slsa.dev/provenance/v0.2`, and the subject digest is the digest your pods run. That attestation records what inputs produced what outputs — the commit the dev agent's PR introduced, the pipeline tasks that built it, the image the gateway is about to serve as a tool. The chain from the tool call back to Morgan's intent is written down, signed, and stored beside the artifact it describes.
+`predicateType: https://slsa.dev/provenance/v0.2`, and the subject digest is the digest your pods run. One subtlety worth having seen once: your build pushes an *image index* (the multi-arch wrapper), and Chains signs the *image manifest inside it* — which is why the command above resolves `:main` down one layer before looking for the `.sig`. A signature check aimed at the index digest comes back empty and looks like a missing signature when nothing is wrong. That attestation records what inputs produced what outputs — the commit the dev agent's PR introduced, the pipeline tasks that built it, the image the gateway is about to serve as a tool. The chain from the tool call back to Morgan's intent is written down, signed, and stored beside the artifact it describes.
 +
 NOTE: The platform's signing key pair lives in the cluster (`openshift-pipelines/signing-secrets`), and its public half is in your namespace as the `chains-public-key` ConfigMap. In a production review you would close the loop cryptographically with cosign: `cosign verify --key cosign.pub <image>@<digest>` and `cosign verify-attestation --type slsaprovenance --key cosign.pub <image>@<digest>` — both verified green against this build on this cluster.
 +
