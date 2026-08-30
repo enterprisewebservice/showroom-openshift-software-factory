@@ -5,8 +5,10 @@
     <style>
       :root { --hom-blue: #246BFE; --hom-ink: #13233D; }
       /* Light masthead: the wordmark is designed on white. */
-      .hom-header { background: #ffffff !important; border-bottom: 3px solid var(--hom-blue); }
-      .hom-header .navbar { background: transparent; }
+      .hom-header { background: #ffffff !important; }
+      /* The navbar is the FIXED element that floats over scrolled content —
+         it must be opaque white itself, and it carries the brand rule. */
+      .hom-header .navbar { background: #ffffff !important; border-bottom: 3px solid var(--hom-blue); }
       .hom-brand { padding-top: 0.35rem !important; padding-bottom: 0.35rem !important; }
       .hom-wordmark-img { height: 42px; width: auto; display: block; }
       .hom-tagline { color: #5a6a85 !important; font-size: 0.8rem; letter-spacing: 0.06em; align-self: center; }
