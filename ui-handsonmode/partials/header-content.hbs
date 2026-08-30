@@ -1,7 +1,9 @@
 <header class="header hom-header">
   <nav class="navbar">
     <div class="navbar-brand">
-      <a class="navbar-item hom-wordmark" href="{{{or site.url (or siteRootUrl siteRootPath)}}}">HANDS-ON&nbsp;<span class="hom-accent">MODE</span></a>
+      <a class="navbar-item hom-brand" href="{{{or site.url (or siteRootUrl siteRootPath)}}}">
+        <img class="hom-wordmark-img" src="{{{uiRootPath}}}/img/hom-wordmark.svg" alt="Hands-On Mode">
+      </a>
       <span class="navbar-item hom-tagline">Watch it. Run it.</span>
     </div>
     <div id="topbar-nav" class="navbar-menu">
@@ -17,7 +19,7 @@
         </div>
         {{/if}}
         {{#if page.attributes.user}}
-        <div class="navbar-item">Seat: {{page.attributes.user}}</div>
+        <div class="navbar-item hom-seat">Seat: {{page.attributes.user}}</div>
         {{/if}}
         <a class="navbar-item hom-cta" href="{{{siteRootPath}}}/modules/handsonmode-start.html#get-a-seat">Get a seat</a>
       </div>

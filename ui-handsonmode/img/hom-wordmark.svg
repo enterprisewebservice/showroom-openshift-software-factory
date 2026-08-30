@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="520" viewBox="0 0 1800 520" role="img" aria-labelledby="title desc">
+  <title id="title">Hands-On Mode logo</title>
+  <desc id="desc">The play-to-prompt symbol beside the Hands-On Mode wordmark.</desc>
+
+  <!-- Play-to-prompt symbol. -->
+  <path d="M315 147H430Q448 147 448 165V355Q448 373 430 373H315"
+        fill="none" stroke="#13233D" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M215 205L335 260L215 315"
+        fill="none" stroke="#246BFE" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M355 322H415"
+        fill="none" stroke="#246BFE" stroke-width="32" stroke-linecap="round"/>
+
+  <!-- Full name remains explicit; ON carries the active color and scale. -->
+  <g font-family="Nimbus Sans, Arial, Helvetica, sans-serif" font-weight="600">
+    <text x="495" y="314" font-size="145" letter-spacing="-2.5" fill="#13233D">hands-</text>
+    <text x="975" y="329" font-size="185" font-weight="700" letter-spacing="-7" fill="#246BFE">ON</text>
+    <text x="1250" y="314" font-size="145" letter-spacing="-2.5" fill="#13233D">mode</text>
+  </g>
+</svg>
