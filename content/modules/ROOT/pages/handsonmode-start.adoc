@@ -1,0 +1,38 @@
+= Hands-On Mode
+include::partial$_attributes.adoc[]
+:page-role: landing
+
+ifdef::edition-self[]
+
+You just watched something get built on a real cluster. This is where you stop watching.
+
+Every course here runs on live infrastructure — a real OpenShift cluster, real agents, real pipelines, a seat of your own. Nothing is a recording, nothing is mocked, and everything you break resets.
+
+== Courses
+
+=== The Software Factory: Agents as Staff
+
+Hire an AI agent through a golden-path template, change its behavior with a pull request, govern its tool calls through an MCP gateway, teach it with versioned skill artifacts, run it headless in a pipeline, and finish by shipping a real microservice — commissioned in chat, built and signed by the supply chain, and consumed back as a governed tool by the agent that asked for it.
+
+Eight modules, roughly a half day at your own pace.
+
+xref:index.adoc[Start the course →]
+
+[#get-a-seat]
+== Get a seat
+
+Seats are live environments, so they are provisioned per person while self-service is being built. Ask for one and you will get a URL and a login:
+
+mailto:peterson.dean@gmail.com?subject=Hands-On%20Mode%20seat[Request a seat by email →]
+
+Each seat is yours for the duration: your own agent workspace, your own git org, your own namespace — isolated from every other seat on the cluster.
+
+== Why this exists
+
+Demo videos end and nothing changes. A seat is different: twenty minutes in, you have hired an agent, read its employment contract in git, and watched the platform enforce it. That experience does not survive compression into video — it has to be had.
+
+endif::edition-self[]
+
+ifndef::edition-self[]
+This page belongs to the Hands-On Mode edition. xref:index.adoc[Go to the workshop home.]
+endif::edition-self[]

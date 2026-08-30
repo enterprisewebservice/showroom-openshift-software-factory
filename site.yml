@@ -4,6 +4,10 @@ site:
   url: https://github.com/enterprisewebservice/showroom-openshift-software-factory
   start_page: modules::index.adoc
 
+asciidoc:
+  attributes:
+    edition-rhdp: ''
+
 content:
   sources:
     - url: .

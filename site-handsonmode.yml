@@ -1,0 +1,36 @@
+# Hands-On Mode edition — Dean's own platform skin (handsonmode.ai).
+# Same content core as site.yml (the RHDP edition); the fork between the
+# two editions is exactly which playbook ANTORA_SITE_FILE names. Modules
+# are edition-blind: anything edition-specific lives behind the
+# edition-self / edition-rhdp attributes, never in a divergent copy.
+site:
+  title: 'Hands-On Mode'
+  url: https://handsonmode.ai
+  start_page: modules::handsonmode-start.adoc
+
+content:
+  sources:
+    - url: .
+      start_path: content
+
+ui:
+  bundle:
+    url: https://github.com/rhpds/rhdp_showroom_theme/releases/download/latest/ui-bundle.zip
+    snapshot: true
+  supplemental_files: ./ui-handsonmode
+
+asciidoc:
+  attributes:
+    edition-self: ''
+
+antora:
+  extensions:
+    - require: '@sntke/antora-mermaid-extension'
+      mermaid_library_url: https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs
+      script_stem: header-scripts
+      mermaid_initialize_options:
+        start_on_load: true
+    - require: '@andrew-jones/antora-tabs-extension'
+
+output:
+  dir: ./www
