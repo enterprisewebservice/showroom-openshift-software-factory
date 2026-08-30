@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="520" viewBox="0 0 1800 520" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1426" height="252" viewBox="199 134 1425.72 252" role="img" aria-labelledby="title desc">
   <title id="title">Hands-On Mode logo</title>
   <desc id="desc">The play-to-prompt symbol beside the Hands-On Mode wordmark.</desc>
-
   <!-- Play-to-prompt symbol. -->
   <path d="M315 147H430Q448 147 448 165V355Q448 373 430 373H315"
         fill="none" stroke="#13233D" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>

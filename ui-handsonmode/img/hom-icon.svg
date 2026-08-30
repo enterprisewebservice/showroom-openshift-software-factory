@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="634" height="588" viewBox="195 218 634 588" role="img" aria-labelledby="title desc">
   <title id="title">Hands-On Mode play-to-prompt icon</title>
   <desc id="desc">A chevron crosses into an open machine frame and becomes a terminal prompt.</desc>
-
   <!-- The real machine: deliberately open on the entry side. -->
   <path d="M443 250H761Q797 250 797 286V738Q797 774 761 774H443"
         fill="none" stroke="#13233D" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/>
