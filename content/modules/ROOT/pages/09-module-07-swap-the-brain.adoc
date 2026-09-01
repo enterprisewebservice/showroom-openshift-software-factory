@@ -7,9 +7,9 @@ include::partial$_attributes.adoc[]
 // Attributes used by this module (injected by Showroom from lab user data):
 // {user}, {password}, {ocp_version}, {gitops_url}, {mattermost_url}
 
-The model is one field in the agent's manifest. Everything the agent is — its purpose, its skills, its governed tools, its git repository, its Mattermost channel — is unchanged by a model swap. Only the inference endpoint changes.
+The brain is one reference in the agent's manifest. Everything the agent is — its purpose, its skill artifacts, its governed tools, its git repository, its Mattermost channel — is unchanged by a brain swap. Only which model answers changes.
 
-This module makes that concrete. You will edit the model reference from the frontier endpoint to a sovereign in-cluster vLLM inference server, served by OpenShift AI, watch OpenShift GitOps propagate the change, confirm the agent still performs the same way, and swap back. The mechanics are Module 2's edit loop: a commit to the agent's gitops repository, a pull request, a merge.
+When you hired your agent in Module 1, you picked its brain from a menu of *model connections* — brains the platform administrator published, each with an access list saying which roles may use it. You saw it drawn on the constellation's BRAIN ring. In this module you swap that reference: from the frontier Claude model on the platform's connection to a Red Hat-hosted open model, watch OpenShift GitOps propagate the change, confirm the agent still performs the same way, and swap back. The mechanics are Module 2's edit loop: a commit to the agent's gitops repository, a pull request, a merge.
 
 Plan on 20 minutes.
 
@@ -17,14 +17,15 @@ Plan on 20 minutes.
 
 By the end of this module, you'll be able to:
 
-* Locate the model reference in the agent's manifest and identify the endpoint it currently declares
-* Change the model to a sovereign in-cluster vLLM by merging a pull request and confirm OpenShift GitOps propagated the change
-* Verify that the agent's skills, governed tools, and git identity are identical after the swap
-* Revert the model reference to the frontier endpoint with a git revert
+* Locate the brain reference — a model connection plus a model name — in the agent's manifest and read it back from the cluster
+* Explain what a ModelConnection is and why the agent never holds a model provider credential
+* Swap the agent to a Red Hat-hosted open model by merging a pull request, and confirm OpenShift GitOps propagated the change
+* Verify that the agent's skill artifacts, governed tools, and git identity are identical after the swap
+* Revert to the frontier model with a git revert
 
-== Exercise 1: Read the current model reference
+== Exercise 1: Read the current brain reference
 
-The AgentWorkstation resource declares everything the agent runs with: system prompt, skills, tools, gateway, and model. You have read the first three fields in earlier modules. The model reference is the same kind of field — a value in `spec`, declared in `base/agentworkstation.yaml`, enforced by the operator.
+The AgentWorkstation resource declares everything the agent runs with: system prompt, skill artifacts, tools, gateway, and brain. You have read the first four in earlier modules. The brain is the same kind of thing — fields in `spec.model`, declared in `base/agentworkstation.yaml`, enforced by the operator.
 
 . Confirm you are signed in as your lab user:
 +
@@ -40,9 +41,13 @@ Expected output:
 {user}
 ----
 
-. Read the model reference the agent is currently running with:
+. Read the brain reference the agent is currently running with:
 +
-// VERIFIED LIVE 2026-08-25: the field is spec.model with two sub-fields — provider and modelName (current live value: provider openai-codex, modelName gpt-5.6-sol). The swap edits exactly those two fields.
+// VERIFIED LIVE 2026-08-31: spec.model carries three sub-fields for a
+// connection-based hire — connectionRef (the ModelConnection name),
+// modelName, and provider (the literal `custom`, the vehicle for
+// connection-keyed models). A Module-1 hire on the Claude connection
+// reads: {"connectionRef":"claude-work","modelName":"claude-sonnet-5","provider":"custom"}
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
@@ -50,45 +55,53 @@ oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
   -o jsonpath='{.spec.model}'
 ----
 +
-The output names the current inference endpoint. It is a reference brokered through OpenShift AI Models-as-a-Service (MaaS, currently in early access) — not a credential the agent holds. The agent never receives a model provider key. MaaS manages provider access, per-user quotas, and rotation.
-
-. Open the agent's repository — use the Source link in the Developer Hub catalog entry for `{user}-assistant`, as you did in Module 2. Navigate to `base/agentworkstation.yaml` and find the model field.
+The `connectionRef` names a *ModelConnection* — a cluster-scoped resource the platform administrator published. The connection carries the endpoint and the credential reference; the agent carries only the connection's name and a model id. List the connections the platform publishes:
 +
-NOTE: The model reference here and the gateway reference in Module 3 follow the same pattern: the manifest names the endpoint, MaaS or the gateway holds the credential, and the agent carries a reference. Swapping the model is changing the reference.
+[source,bash,role="execute"]
+----
+oc get modelconnections
+----
++
+Each row is a brain on the hiring menu, and each declares which groups may pick it. Your seat sees the Claude connection (the frontier lane on the Red Hat work subscription) and the LiteMaaS connection (open models — Qwen — served by Red Hat's AI Services team). The administrator's personal lanes exist on the same cluster; your role simply cannot see them. Access is data, in git, like everything else here.
+
+. Open the agent's repository — use the Source link in the Developer Hub catalog entry for `{user}-assistant`, as you did in Module 2. Navigate to `base/agentworkstation.yaml` and find the `model:` block.
++
+NOTE: The brain reference here and the gateway reference in Module 3 follow the same pattern: the manifest names a reference, the platform holds the credential, and the operator projects it where it is needed. The agent's namespace never contains a model provider key. Swapping the brain is changing the reference.
 
 === Verify
 
-* `oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.spec.model}'` returns a non-empty value
-* The model field in `base/agentworkstation.yaml` matches what the cluster reports
+* `oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.spec.model}'` returns a value with a `connectionRef`
+* `oc get modelconnections` lists the published brains, including `claude-work` and `litemaas`
+* The `model:` block in `base/agentworkstation.yaml` matches what the cluster reports
 
-== Exercise 2: Swap to the sovereign endpoint
+== Exercise 2: Swap to the Red Hat-hosted open model
 
-The sovereign endpoint is an in-cluster vLLM instance served by OpenShift AI and registered into the same MaaS broker. Changing to it means updating one field in the manifest and merging a pull request.
+The `litemaas` connection fronts open models — Qwen — hosted by Red Hat's AI Services team and reached through the platform's model gateway. Swapping to it means updating the `model:` block and merging a pull request.
 
 . In the agent's repository web UI, navigate to `base/agentworkstation.yaml` and click the edit icon.
 
-. Find the model field and update `provider` and `modelName` to the sovereign vLLM values:
+. Replace the `model:` block so it reads exactly:
 +
-// AUTHOR NOTE (verify live): supply the sovereign provider and modelName values from the lab deployer's output before publishing (the in-cluster vLLM is registered into MaaS during the software-factory-deployer setup phase). Consider surfacing them as lab attributes so attendees have concrete values to copy here.
+// VERIFIED LIVE 2026-08-31: this exact swap validated end to end —
+// litemaas connection via the model-desk translator, Qwen3.8-27B
+// answering (UNIFIED-OK probe). Qwen 3.8 is a reasoning model: it
+// spends tokens thinking before it answers, so its replies can take
+// a little longer than the frontier model's. That is part of the
+// comparison.
 +
 [source,yaml]
 ----
-# In base/agentworkstation.yaml, locate the model field (verified shape):
-#
-#   spec:
-#     model:
-#       provider: <sovereign-provider>
-#       modelName: <sovereign-model-name>
-#
-# Update only provider and modelName.
-# Leave every other field in the manifest exactly as it is.
+  model:
+    provider: custom
+    connectionRef: litemaas
+    modelName: Qwen3.8-27B
 ----
 +
-NOTE: The sovereign endpoint is an in-cluster vLLM registered into MaaS — same broker, different model on the other end. The agent's access is still brokered by MaaS; no new credential enters the agent's namespace.
+Leave every other field in the manifest exactly as it is.
 
-. Commit the change to a new branch — use a name like `swap-to-sovereign` — and open a pull request to the main branch.
+. Commit the change to a new branch — use a name like `swap-to-qwen` — and open a pull request to the main branch.
 
-. Read the pull request diff before merging. The diff touches the model field. Every other field in the agent's spec is identical to what Module 1 created: same system prompt, same skills, same tools, same gateway reference.
+. Read the pull request diff before merging. The diff touches the `model:` block. Every other field in the agent's spec is identical to what Module 1 created: same system prompt, same skill artifacts, same tools, same gateway reference.
 
 . Merge the pull request.
 
@@ -96,7 +109,7 @@ NOTE: The sovereign endpoint is an in-cluster vLLM registered into MaaS — same
 +
 The sync completes within seconds — by the time you switch tabs it may already show *Synced*. The evidence is in the Application's *History* tab: the revision listed there must match the commit you just merged.
 
-. The agent pod does not restart for a model reference change. The operator re-renders the agent's configuration in place. Confirm the pod is still running, then read the model reference back from the cluster:
+. The operator now re-renders the gateway's model configuration: the `litemaas` connection becomes a provider block on the gateway, with its key projected by the operator — never written into your namespace's manifests. A brain change restarts the gateway pod briefly so the new configuration loads. Watch it settle, then read the brain back:
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
@@ -109,9 +122,9 @@ oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
   -o jsonpath='{.spec.model}'
 ----
 +
-The output now names the sovereign endpoint.
+The output now names the `litemaas` connection and the Qwen model.
 
-. Test the agent with a task that requires governed tools. Open link:{mattermost_url}[Mattermost^], sign in as `{user}`, and find the `{user}-assistant` channel. Send `new session` first to start a clean session — a thread that replied from the frontier endpoint carries history momentum for a turn or two, and the reset is deterministic (no slash: Mattermost swallows `/`-prefixed messages as its own commands):
+. Test the agent with a task that requires governed tools. Open link:{mattermost_url}[Mattermost^], sign in as `{user}`, and find the `{user}-assistant` channel. Send `new session` first to start a clean session — a thread that replied from the frontier model carries history momentum for a turn or two, and the reset is deterministic (no slash: Mattermost swallows `/`-prefixed messages as its own commands):
 +
 [source,text]
 ----
@@ -125,27 +138,27 @@ Then send the task:
 Using your governed git tools: what is the latest commit message in your gitops repository?
 ----
 +
-The reply arrives from the sovereign vLLM. The agent calls the same `gitea_*` tools through the same gateway, on your seat credential, as it always has. The answer is the commit you just merged — confirming the model, tools, and authentication chain all work together on the new endpoint.
+The reply arrives from Qwen. The agent calls the same `gitea_*` tools through the same gateway, on your seat credential, as it always has. The answer is the commit you just merged — confirming the model, tools, and authentication chain all work together on the new brain. Expect the reply to take a little longer: Qwen 3.8 reasons before it answers.
 
 // TODO: Add screenshot
 // TODO screenshot (capture during the live walkthrough, then restore):
-// image::module-07-jsonpath-sovereign.png[Terminal output showing the oc jsonpath readback returning the sovereign vLLM endpoint value after the merge,link=self,window=blank,width=700]
+// image::module-07-jsonpath-qwen.png[Terminal output showing the oc jsonpath readback returning the litemaas connection and Qwen model after the merge,link=self,window=blank,width=700]
 
 // TODO: Add screenshot
 // TODO screenshot (capture during the live walkthrough, then restore):
-// image::module-07-mattermost-sovereign-reply.png[Mattermost channel showing the agent reply from the sovereign endpoint with the latest commit message confirming governed tool use,link=self,window=blank,width=700]
+// image::module-07-mattermost-qwen-reply.png[Mattermost channel showing the agent reply from the Qwen model with the latest commit message confirming governed tool use,link=self,window=blank,width=700]
 
 === Verify
 
 * The Application `{user}-agents-{user}-assistant-agent` shows *Synced* and *Healthy* in OpenShift GitOps
 * The Application's *History* tab shows the latest revision matches the merge commit from this exercise
-* `oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.spec.model}'` returns the sovereign endpoint value
-* The agent pod in `{user}-agent-workspace` is `Running` — the pod name and restart count are unchanged
+* `oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.spec.model}'` returns `connectionRef: litemaas` and `modelName: Qwen3.8-27B`
+* The gateway pod in `{user}-agent-workspace` is `Running` (it restarted once to load the new brain)
 * After the session reset, the agent answers the commit-message task correctly, and its answer is the commit you merged in this exercise
 
 == Exercise 3: Swap back
 
-A model revert is a git revert. The same reconciliation loop that applied the swap applies the reversal.
+A brain revert is a git revert. The same reconciliation loop that applied the swap applies the reversal.
 
 . In the repository web UI, open the commit history for the main branch and find the merge commit from Exercise 2.
 
@@ -169,7 +182,7 @@ git push origin main
 
 . Open link:{gitops_url}[OpenShift GitOps^] and confirm the Application syncs against the revert commit. Check *History* — the latest revision should be the revert.
 
-. Read the model reference from the cluster:
+. Read the brain reference from the cluster:
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
@@ -178,15 +191,6 @@ oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
 ----
 +
 The frontier values are back.
-
-. Confirm the runtime never moved:
-+
-[source,bash,role="execute",subs="+attributes"]
-----
-oc get pods -n {user}-agent-workspace
-----
-+
-Same pod, same restart count as before the swap — both changes re-rendered the agent in place.
 
 . Open link:{mattermost_url}[Mattermost^] and send `new session` in the `{user}-assistant` channel, then send the same task:
 +
@@ -200,51 +204,53 @@ new session
 Using your governed git tools: what is the latest commit message in your gitops repository?
 ----
 +
-The reply arrives from the frontier endpoint. The answer is the revert commit — the newest entry in the repository.
+The reply arrives from the frontier model. The answer is the revert commit — the newest entry in the repository.
 
 // TODO: Add screenshot
 // TODO screenshot (capture during the live walkthrough, then restore):
-// image::module-07-jsonpath-frontier-restored.png[Terminal output showing the oc jsonpath readback returning the frontier endpoint value after the revert,link=self,window=blank,width=700]
+// image::module-07-jsonpath-frontier-restored.png[Terminal output showing the oc jsonpath readback returning the frontier connection value after the revert,link=self,window=blank,width=700]
 
 === Verify
 
 * The Application's *History* tab shows the revert commit as the latest sync revision
-* `oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.spec.model}'` returns the frontier endpoint value
-* After the session reset, the agent answers the commit-message task correctly from the frontier endpoint, and its answer names the revert commit
+* `oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.spec.model}'` returns the frontier connection value
+* After the session reset, the agent answers the commit-message task correctly from the frontier model, and its answer names the revert commit
 
 == What just happened
 
-AgentWorks offers model independence: choose a model from the vendor's approved list without changing anything else about your agents. That is a real capability, and you just exercised its equivalent — a single-field manifest change, reconciled by OpenShift GitOps, leaving every other agent attribute untouched.
+AgentWorks offers model independence: choose a model from the vendor's approved list without changing anything else about your agents. That is a real capability, and you just exercised its equivalent — a one-block manifest change, reconciled by OpenShift GitOps, leaving every other agent attribute untouched.
 
-Two things this platform does that a SaaS vendor cannot.
+Three things this platform does that a SaaS vendor cannot.
 
-First: the agent held no model credential in either configuration. Both the frontier endpoint and the sovereign vLLM are registered in OpenShift AI Models-as-a-Service. MaaS manages provider keys, enforces per-user quotas, and rotates access. The agent carries a reference. This is the same pattern as Module 3's tool credentials: the agent holds what it needs to ask; the platform holds what it needs to act.
+First: *the brains are published, permissioned resources.* A ModelConnection is a cluster resource with an access list — the administrator publishes brains the way a platform team publishes golden paths, and your role determines your menu. Nobody handed you a key; you were granted access to a connection.
 
-Second: you can run the model. The sovereign endpoint is a vLLM workload on the OpenShift cluster ACME already governs — the same cluster where the agents run, where GitOps reconciles, where the MCP gateway enforces tool access. Model weights do not leave ACME's infrastructure. Inference traffic does not cross a third-party network.
+Second: *the agent held no model credential in either configuration.* The connection's credential lives in the platform's namespace and is projected by the operator onto the gateway. This cluster also runs OpenShift AI Models-as-a-Service (Tech Preview), which governs the same models for direct API consumers — per-user API keys, token budgets per group, and usage metering through one gateway. Model access here is a governed, metered, revocable grant — the same pattern as Module 3's tool credentials.
 
-OpenShift is the platform ACME runs on AWS, on Azure, on GCP, and on-premise — the same operator-managed stack, the same governance model, the same governed-agents story regardless of where the hardware lives. Sovereign inference is not a datacenter-only option; it runs wherever OpenShift runs.
+Third: *the swap crossed provider boundaries, not just model names.* The frontier model runs on a hyperscaler's infrastructure under a Red Hat subscription; Qwen is an open model served by Red Hat. Same manifest field, same governance, radically different supply chains. The next step on this path — an open model served by vLLM on this very cluster, published through OpenShift AI Models-as-a-Service — uses the same connection mechanics you just exercised: when the platform adds it, your swap target is one more row in `oc get modelconnections`.
 
-The AgentWorks model menu has edges. This platform does not have a menu in that sense: if the cluster can serve it, the agent can use it. Swapping between a frontier endpoint and a model ACME operates is a diff in git.
+OpenShift is the platform ACME runs on AWS, on Azure, on GCP, and on-premise — the same operator-managed stack, the same governance model, the same governed-agents story regardless of where the hardware lives.
+
+The AgentWorks model menu has edges. This platform's menu is whatever the administrator publishes: frontier subscriptions, hosted open models, or models the cluster serves itself. Swapping between them is a diff in git.
 
 == Learning outcomes
 
 By completing this module, you should now understand:
 
-* ✓ Where the model reference lives in the AgentWorkstation spec and how to read it back from the cluster with `oc`
-* ✓ How a model swap is a single-field manifest change, reconciled by OpenShift GitOps, with no pod restart and no credential change in the agent's namespace
-* ✓ Why the agent holds no model provider credential in either configuration — and which platform component holds it instead
-* ✓ How the same OpenShift platform that runs the agents can run the model they use, on any infrastructure ACME governs
+* ✓ Where the brain reference lives in the AgentWorkstation spec — a ModelConnection name plus a model id — and how to read it back with `oc`
+* ✓ What a ModelConnection is: an administrator-published, permissioned brain, with the credential held platform-side and projected by the operator
+* ✓ How a brain swap is a one-block manifest change, reconciled by OpenShift GitOps, with a brief gateway reload and no credential change in the agent's namespace
+* ✓ How the same governance covers frontier subscriptions and hosted open models — and extends to cluster-served models through OpenShift AI Models-as-a-Service
 
 == Module summary
 
-The agent's model is a field. You changed it with a pull request and changed it back with a revert. Skills, governed tools, git identity, and the Mattermost channel were never part of the change.
+The agent's brain is a reference. You changed it with a pull request and changed it back with a revert. Skill artifacts, governed tools, git identity, and the Mattermost channel were never part of the change.
 
 Module 8 closes the lab with the honest gap map: where this platform-built factory still falls short of AgentWorks' surface area, and why none of the gaps are in trust, governance, or deployment reach.
 
 ////
 Assets needed (capture against the live environment):
 
-. content/modules/ROOT/assets/images/module-07-jsonpath-sovereign.png — Terminal output showing the oc jsonpath readback of the model field after the Exercise 2 merge, with the sovereign vLLM endpoint value visible
-. content/modules/ROOT/assets/images/module-07-mattermost-sovereign-reply.png — Mattermost channel (after a `new session` reset) showing the agent's correct answer to the commit-message task from the sovereign endpoint, with the commit message from the Exercise 2 merge visible
-. content/modules/ROOT/assets/images/module-07-jsonpath-frontier-restored.png — Terminal output showing the oc jsonpath readback after the Exercise 3 revert, with the frontier endpoint value restored
+. content/modules/ROOT/assets/images/module-07-jsonpath-qwen.png — Terminal output showing the oc jsonpath readback of spec.model after the Exercise 2 merge, with connectionRef litemaas and modelName Qwen3.8-27B visible
+. content/modules/ROOT/assets/images/module-07-mattermost-qwen-reply.png — Mattermost channel (after a `new session` reset) showing the agent's correct answer to the commit-message task from Qwen, with the commit message from the Exercise 2 merge visible
+. content/modules/ROOT/assets/images/module-07-jsonpath-frontier-restored.png — Terminal output showing the oc jsonpath readback after the Exercise 3 revert, with the frontier connection value restored
 ////
