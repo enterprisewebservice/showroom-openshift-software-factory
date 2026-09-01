@@ -85,7 +85,7 @@ If a step fails, open that step's log on the same page and read the error before
 
 The template did not deploy anything itself. It wrote the agent's configuration to git and created an OpenShift GitOps Application that points at it. OpenShift GitOps (Argo CD under the hood) reconciles continuously: it reads the repository and makes the cluster match. The repository is the employment contract; the cluster is its current enforcement.
 
-. Open link:{gitops_url}[OpenShift GitOps^] and sign in with your OpenShift credentials (`{user}` / `{password}`).
+. Open link:{gitops_url}[OpenShift GitOps^] and sign in with your workshop account (the account you registered with on a self-service workbench; `{user}` / `{password}` on an instructor-provisioned seat).
 
 . Find the Application for your agent (search for `{user}-assistant`) and open it. Watch the resource tree while it syncs: the namespace, the AgentWorkstation resource, and the supporting objects appear as OpenShift GitOps applies them.
 

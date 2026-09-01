@@ -33,7 +33,7 @@ In Module 1 you hired `{user}-assistant` with one sentence about investigating a
 
 This exercise uses the same Developer Hub template. The only thing that changes is the brief.
 
-. Open link:{devhub_url}[Red Hat Developer Hub^] and sign in as `{user}` with password `{password}`.
+. Open link:{devhub_url}[Red Hat Developer Hub^] and sign in with your workshop account (the account you registered with on a self-service workbench; `{user}` / `{password}` on an instructor-provisioned seat).
 
 . In the left navigation, click *Self-service*.
 
@@ -65,7 +65,7 @@ The run creates a git repository for the dev agent, registers it in the catalog,
 +
 // AUTHOR NOTE (verify live): confirm the exact git repository name produced for a dev agent hire. The expected pattern is `{user}-dev-agent-gitops` or similar. Update any reference to that name in the rest of this module.
 
-. Open link:{gitops_url}[OpenShift GitOps^] and sign in as `{user}` / `{password}`. Find the Application for `{user}-dev` and watch it reach *Synced* and *Healthy*.
+. Open link:{gitops_url}[OpenShift GitOps^] and sign in with your workshop account (the account you registered with on a self-service workbench; `{user}` / `{password}` on an instructor-provisioned seat). Find the Application for `{user}-dev` and watch it reach *Synced* and *Healthy*.
 
 . In the terminal, confirm the dev agent pod is running:
 +
