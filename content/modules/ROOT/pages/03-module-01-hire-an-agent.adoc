@@ -30,7 +30,7 @@ Hiring a developer at ACME takes weeks of process. Hiring an agent is 1 form, an
 
 Red Hat Developer Hub is ACME's front door for anything a developer requests from the platform. Golden-path templates keep those requests inside guardrails the platform team defined. The agent template is exactly that: a governed way to say "staff this role."
 
-. Open link:{devhub_url}[Red Hat Developer Hub^] and sign in as `{user}` with password `{password}`.
+. Open link:{devhub_url}[Red Hat Developer Hub^] and sign in with your workshop account: on a self-service workbench that is the account you registered with; on an instructor-provisioned seat it is `{user}` / `{password}`.
 
 . In the left navigation, click *Self-service*.
 +
@@ -89,21 +89,14 @@ The template did not deploy anything itself. It wrote the agent's configuration 
 
 . Find the Application for your agent (search for `{user}-assistant`) and open it. Watch the resource tree while it syncs: the namespace, the AgentWorkstation resource, and the supporting objects appear as OpenShift GitOps applies them.
 
-. In the terminal, confirm you are logged in as your lab user:
+. In the terminal, confirm who `oc` is working as:
 +
 [source,bash,role="execute"]
 ----
 oc whoami
 ----
 +
-Expected output:
-+
-[subs="+attributes"]
-----
-{user}
-----
-+
-If the output differs, complete the login steps from the lab details page before continuing.
+On a self-service workbench the terminal is already signed in as your workbench's service account and prints `system:serviceaccount:showroom-{user}:showroom-{user}` — that identity is an administrator of your project and nothing else, and its session never expires. On an instructor-provisioned seat it prints `{user}`; if it prints neither, complete the login steps from the lab details page before continuing.
 
 . Watch the agent pod start:
 +
