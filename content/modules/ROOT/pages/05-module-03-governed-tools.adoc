@@ -24,7 +24,7 @@ By the end of this module, you'll be able to:
 
 Your agent is wired to a set of tools through the MCP gateway. You did not configure this wiring in Module 1 or Module 2: it is declared in `base/agentgateway.yaml` in the agent's git repository. In this exercise you ask the agent something that requires a tool, then read what it returned.
 
-. Open link:{mattermost_url}[Mattermost^] and sign in with the *Sign in with your workshop account* button (your registered account; on an instructor-provisioned seat, `{user}` / `{password}` still works).
+. Open link:{mattermost_url}[Mattermost^]. On a self-service workbench that link signs you in with your workshop account automatically; on an instructor-provisioned seat, sign in as `{user}` with password `{password}`.
 
 . Navigate to the `{user}-assistant` channel.
 
