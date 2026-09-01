@@ -109,7 +109,7 @@ Two thousand orders, five statuses, five regions — and a raw list of everythin
 
 Now commission the fix. You will open the dev agent's Mattermost channel and describe the service you want built. The agent will use its governed Gitea tools to scaffold the service, commit the files to your org, and open a pull request.
 
-. Open link:{mattermost_url}[Mattermost^] and sign in as `{user}` with password `{password}`.
+. Open link:{mattermost_url}[Mattermost^] and sign in with the *Sign in with your workshop account* button (your registered account; on an instructor-provisioned seat, `{user}` / `{password}` still works).
 
 . Find the channel for `{user}-dev`. The hire template created it at the same time it created the channel for `{user}-assistant` in Module 1.
 +

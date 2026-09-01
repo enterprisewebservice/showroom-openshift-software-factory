@@ -189,7 +189,7 @@ Provisioning injects a per-attendee value for each.
 
 This page renders the following Showroom attributes. Provisioning injects a per-attendee value for each:
 
-* `+{user}+` and `+{password}+`: your workbench username and its chat/git password (Mattermost, Gitea). Browser sign-ins — Developer Hub, OpenShift GitOps, the console — use the account you registered with on a self-service workbench, or these same credentials on an instructor-provisioned seat
+* `+{user}+`: your workbench username. On a self-service workbench every sign-in — Developer Hub, OpenShift GitOps, the console, Gitea, Mattermost — is the account you registered with; `+{password}+` only applies to instructor-provisioned seats
 * `+{openshift_console_url}+`: OpenShift web console URL
 * `+{openshift_api_url}+`: cluster API endpoint used by `oc login`
 * `+{devhub_url}+`: Red Hat Developer Hub URL

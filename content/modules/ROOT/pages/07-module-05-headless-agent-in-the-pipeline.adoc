@@ -28,7 +28,7 @@ By the end of this module, you'll be able to:
 
 Your gateway serves chat channels today. Pipelines need HTTP. The runtime can serve an OpenAI-compatible surface (`/v1/chat/completions`) on the gateway port, but it is *off by default* — the credential that authenticates it is the gateway token from Module 3, and that token is operator-grade. Turning the surface on is therefore a declared, reviewable act — and it happens where everything about your agent happens: in its git repository.
 
-. Open your agent's repository in link:{gitea_url}[Gitea^] — or jump link:{gitea_url}/{user}-agents/{user}-assistant-agent-gitops/_edit/main/base/agentgateway.yaml[straight into the editor on `base/agentgateway.yaml`^] (sign in as `{user}` if asked). Add two lines at the end of `spec`:
+. Open your agent's repository in link:{gitea_url}[Gitea^] — or jump link:{gitea_url}/{user}-agents/{user}-assistant-agent-gitops/_edit/main/base/agentgateway.yaml[straight into the editor on `base/agentgateway.yaml`^] (sign in with your workshop account if asked — the *Sign in with Keycloak* button). Add two lines at the end of `spec`:
 +
 [source,yaml]
 ----
