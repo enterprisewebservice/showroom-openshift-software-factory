@@ -69,7 +69,7 @@ It answers from the live catalog and changes nothing until you tell it to. Every
 
 The template run executes in front of you. It creates a git repository for the agent, registers the agent in the catalog, and hands the rollout to Red Hat OpenShift GitOps.
 
-image::module-01-agent-constellation.png[The composed hire drawn as a constellation: the agent core with its GPT-5.6 Sol brain ring, six skill-artifact wedges with strength bars beside them (platform-incident-triage showing 15% live with a hollow rim), seeded memory documents, and the new team ring — with the identity, gateway, and selected catalog packs below,link=self,window=blank,width=700]
+image::module-01-agent-constellation.png[The composed hire: the brief has become a chat whose opener asks whether the hire looks right, above the constellation — GPT-5.6 Sol brain ring, six skill-artifact wedges with strength bars (platform-incident-triage at 15% live with a hollow rim), memory documents, the new team ring — and the identity and gateway below,link=self,window=blank,width=700]
 
 === Verify
 
@@ -210,7 +210,7 @@ Module 2 builds on that fact. Because the agent lives in git, you will change it
 ////
 Assets needed (capture against the live environment):
 
-. content/modules/ROOT/assets/images/module-01-agent-constellation.png - the composed hire after Suggest: the constellation (brain ring, skill-artifact wedges with a 15%-live example, memory docs, new team) with identity and selected packs below (CAPTURED 2026-08-31 against the live seat)
+. content/modules/ROOT/assets/images/module-01-agent-constellation.png - the composed hire after Suggest: refine chat (opener + input) above the constellation (brain ring, skill-artifact wedges with a 15%-live example, memory docs, new team), identity below (CAPTURED 2026-08-31 against the live seat, binders v0.0.26)
 . content/modules/ROOT/assets/images/module-01-gitops-application.png - OpenShift GitOps Application view for the agent, resource tree Synced and Healthy
 . content/modules/ROOT/assets/images/module-01-first-contact.png - Agent chat channel showing the first reply
 ////
