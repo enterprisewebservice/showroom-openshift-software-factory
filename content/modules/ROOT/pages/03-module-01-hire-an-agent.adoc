@@ -91,10 +91,14 @@ If a step fails, open that step's log on the same page and read the error before
 The template did not deploy anything itself. It wrote the agent's configuration to git and created an OpenShift GitOps Application that points at it. OpenShift GitOps (Argo CD under the hood) reconciles continuously: it reads the repository and makes the cluster match. The repository is the employment contract; the cluster is its current enforcement.
 
 ifeval::["{seat_mode}" == "self-service"]
-. Open link:{gitops_url}[OpenShift GitOps^] and sign in with the account you registered.
+. Open link:{gitops_url}[OpenShift GitOps^] and click *Log in via OpenShift*. The OpenShift login page offers several identity providers -- choose *factory-sso*, the one your workshop account lives in, and sign in with the account you registered. The other providers belong to the platform team and will not know you.
++
+image::module-01-login-factory-sso.png[The OpenShift "Log in with" page listing kube:admin, htpasswd, workshop and factory-sso, with factory-sso highlighted as the provider to choose,link=self,window=blank,width=700]
 endif::[]
 ifeval::["{seat_mode}" != "self-service"]
-. Open link:{gitops_url}[OpenShift GitOps^] and sign in with your OpenShift credentials (`{user}` / `{password}`).
+. Open link:{gitops_url}[OpenShift GitOps^] and click *Log in via OpenShift*. The OpenShift login page offers several identity providers -- choose *workshop* and sign in with your OpenShift credentials (`{user}` / `{password}`). The other providers belong to the platform team and will not know you.
++
+image::module-01-login-workshop.png[The OpenShift "Log in with" page listing kube:admin, htpasswd, workshop and factory-sso, with workshop highlighted as the provider to choose,link=self,window=blank,width=700]
 endif::[]
 
 . Find the Application for your agent (search for `{user}-assistant`) and open it. Watch the resource tree while it syncs: the namespace, the AgentWorkstation resource, and the supporting objects appear as OpenShift GitOps applies them.
@@ -174,7 +178,32 @@ oc get agentworkstation <your-agent> -n {user}-agent-workspace -o yaml
 Introduce yourself. What is your purpose, and which skills were you hired with?
 ----
 +
-The template created the channel at hire time: open link:{mattermost_url}[Mattermost^], sign in as `{user}`, and find the channel named after your agent — it is in the left sidebar under *Channels* (you land in Town Square first; the system join messages there are just onboarding noise).
+The template created the channel at hire time: open link:{mattermost_url}[Mattermost^], sign in (the note below shows how), and find the channel named after your agent — it is in the left sidebar under *Channels* (you land in Town Square first; the system join messages there are just onboarding noise).
++
+ifeval::["{seat_mode}" == "self-service"]
+[NOTE]
+====
+Chat uses your workshop login -- there is no separate chat password. The first time you open Mattermost it shows the workshop chat sign-in page. Click *Sign in with your workshop account*:
+
+image::module-01-chat-signin.png[The workshop chat sign-in page with its single red button labelled Sign in with your workshop account,link=self,window=blank,width=560]
+
+If Gitea then asks how to sign in, choose *Sign in with keycloak* -- not the username and password form:
+
+image::module-01-gitea-keycloak.png[The Gitea sign-in page with the Sign in with keycloak button highlighted beneath the username and password form,link=self,window=blank,width=560]
+
+If you land on Mattermost's own login form instead, reload the page: the workshop chat sign-in page comes back.
+====
+endif::[]
+ifeval::["{seat_mode}" != "self-service"]
+[NOTE]
+====
+The first time you open Mattermost it shows the workshop chat sign-in page. Click *Sign in with your workshop account*; if Gitea then asks how to sign in, use the username and password form with `{user}` / `{password}`.
+
+image::module-01-chat-signin.png[The workshop chat sign-in page with its single red button labelled Sign in with your workshop account,link=self,window=blank,width=560]
+
+If you land on Mattermost's own login form instead, reload the page: the workshop chat sign-in page comes back.
+====
+endif::[]
 
 . Read the reply. The agent answers in its channel, and its answer reflects the purpose sentence and the skills you saw in the resource.
 
@@ -219,6 +248,10 @@ Module 2 builds on that fact. Because the agent lives in git, you will change it
 Assets needed (capture against the live environment):
 
 . content/modules/ROOT/assets/images/module-01-agent-constellation.png - the composed hire after Suggest: refine chat (opener + input) above the constellation (brain ring, skill-artifact wedges with a 15%-live example, memory docs, new team), identity below (CAPTURED 2026-08-31 against the live seat, binders v0.0.26)
+. content/modules/ROOT/assets/images/module-01-login-factory-sso.png - OpenShift "Log in with" provider page, factory-sso highlighted (self-service seats)
+. content/modules/ROOT/assets/images/module-01-login-workshop.png - OpenShift "Log in with" provider page, workshop highlighted (fixed seats)
+. content/modules/ROOT/assets/images/module-01-chat-signin.png - the workshop chat (Mattermost front) sign-in page
+. content/modules/ROOT/assets/images/module-01-gitea-keycloak.png - Gitea sign-in page, "Sign in with keycloak" highlighted (self-service seats)
 . content/modules/ROOT/assets/images/module-01-gitops-application.png - OpenShift GitOps Application view for the agent, resource tree Synced and Healthy
 . content/modules/ROOT/assets/images/module-01-first-contact.png - Agent chat channel showing the first reply
 ////
