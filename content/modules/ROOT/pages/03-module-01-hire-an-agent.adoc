@@ -66,7 +66,7 @@ It answers from the live catalog and changes nothing until you tell it to. Every
 
 . Read the *constellation* that appears — the agent, drawn. The core is its identity; the BRAIN ring names its model; each skill artifact is a wedge of stadium rows where depth means how much it knows and hollow rim dots mean a capability whose cluster prerequisite is not deployed here; memory shows the seeded workspace documents; tools and the team orbit outside. Click anything for details — artifacts marked *»* open into their own orbit (double-click), showing what is inside a bundle. You will meet several of these rings again: Module 3 governs the tools, Module 4 teaches with a skill artifact, Module 7 swaps the brain.
 
-. In the *Brain* section, pick *Claude — Red Hat Vertex* (Claude Sonnet 5 is its default model). The menu is not hardcoded: each entry is a *model connection* the platform administrator published with an access list, so the brains you see are the brains your role is granted. Module 7 swaps this reference without touching anything else.
+. In the *Brain* section, confirm *Claude — Red Hat Vertex* is selected — it is pre-selected for you, and Claude Opus 4.6 is its default model. The menu is not hardcoded: each entry is a *model connection* the platform administrator published with an access list, so the brains you see are the brains your role is granted. Module 7 swaps this reference without touching anything else.
 
 . Click *Review*, check the summary of what Suggest composed, and click *Create*.
 
