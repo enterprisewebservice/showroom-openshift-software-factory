@@ -282,7 +282,7 @@ curl -s https://raw.githubusercontent.com/enterprisewebservice/agent-office/main
 
 == Exercise 5: The behavior change
 
-. Back in link:{mattermost_url}[Mattermost^], send `new session` in the `{user}-assistant` channel, then send the *same* incident report from Exercise 1:
+. Skills load when a session starts, so the agent must begin a fresh one before it can use the new skill. The chat bridge does this for you: within a minute of the workspace re-seed it posts *🔄 Skills changed — added: platform-incident-triage* in your agent's channel and starts a fresh session. If you do not see that message, send `new session` yourself (no slash — Mattermost swallows `/`-prefixed text). Then send the *same* incident report as before:
 +
 [source,text]
 ----
