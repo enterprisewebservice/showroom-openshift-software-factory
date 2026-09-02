@@ -7,6 +7,9 @@
 :gitops_url: {gitops_url}
 :ocp_version: {ocp_version}
 :mattermost_url: {mattermost_url}
+// seat_mode: "self-service" (set by the factory hub's provisioner in user data) or "seat" (default: instructor/RHDP-provisioned).
+// Pages use ifeval on it so a reader only ever sees instructions for their own seat.
+:seat_mode: seat
 :artifact_registry: quay-quay-quay-test.apps.salamander.aimlworkbench.com
 // ^ the cluster's own container registry serving skill artifacts; when the
 //   workshop moves clusters, the deployer mirrors the artifact repos there

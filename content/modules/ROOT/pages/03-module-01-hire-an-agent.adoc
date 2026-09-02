@@ -30,7 +30,12 @@ Hiring a developer at ACME takes weeks of process. Hiring an agent is 1 form, an
 
 Red Hat Developer Hub is ACME's front door for anything a developer requests from the platform. Golden-path templates keep those requests inside guardrails the platform team defined. The agent template is exactly that: a governed way to say "staff this role."
 
-. Open link:{devhub_url}[Red Hat Developer Hub^] and sign in with your workshop account: on a self-service workbench that is the account you registered with; on an instructor-provisioned seat it is `{user}` / `{password}`.
+ifeval::["{seat_mode}" == "self-service"]
+. Open link:{devhub_url}[Red Hat Developer Hub^] and sign in with the account you registered.
+endif::[]
+ifeval::["{seat_mode}" != "self-service"]
+. Open link:{devhub_url}[Red Hat Developer Hub^] and sign in as `{user}` with password `{password}`.
+endif::[]
 
 . In the left navigation, click *Self-service*.
 +
@@ -85,7 +90,12 @@ If a step fails, open that step's log on the same page and read the error before
 
 The template did not deploy anything itself. It wrote the agent's configuration to git and created an OpenShift GitOps Application that points at it. OpenShift GitOps (Argo CD under the hood) reconciles continuously: it reads the repository and makes the cluster match. The repository is the employment contract; the cluster is its current enforcement.
 
-. Open link:{gitops_url}[OpenShift GitOps^] and sign in with your workshop account (the account you registered with on a self-service workbench; `{user}` / `{password}` on an instructor-provisioned seat).
+ifeval::["{seat_mode}" == "self-service"]
+. Open link:{gitops_url}[OpenShift GitOps^] and sign in with the account you registered.
+endif::[]
+ifeval::["{seat_mode}" != "self-service"]
+. Open link:{gitops_url}[OpenShift GitOps^] and sign in with your OpenShift credentials (`{user}` / `{password}`).
+endif::[]
 
 . Find the Application for your agent (search for `{user}-assistant`) and open it. Watch the resource tree while it syncs: the namespace, the AgentWorkstation resource, and the supporting objects appear as OpenShift GitOps applies them.
 
@@ -96,7 +106,12 @@ The template did not deploy anything itself. It wrote the agent's configuration 
 oc whoami
 ----
 +
-On a self-service workbench the terminal is already signed in as your workbench's service account and prints `system:serviceaccount:showroom-{user}:showroom-{user}` — that identity is an administrator of your project and nothing else, and its session never expires. On an instructor-provisioned seat it prints `{user}`; if it prints neither, complete the login steps from the lab details page before continuing.
+ifeval::["{seat_mode}" == "self-service"]
+It prints `system:serviceaccount:showroom-{user}:showroom-{user}` — your workbench's service account, an administrator of your project and nothing else, with a session that never expires.
+endif::[]
+ifeval::["{seat_mode}" != "self-service"]
+It prints `{user}`; if it does not, complete the login steps from the lab details page before continuing.
+endif::[]
 
 . Watch the agent pod start:
 +

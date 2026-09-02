@@ -24,7 +24,12 @@ By the end of this module, you'll be able to:
 
 Your agent is wired to a set of tools through the MCP gateway. You did not configure this wiring in Module 1 or Module 2: it is declared in `base/agentgateway.yaml` in the agent's git repository. In this exercise you ask the agent something that requires a tool, then read what it returned.
 
-. Open link:{mattermost_url}[Mattermost^]. On a self-service workbench that link signs you in with your workshop account automatically; on an instructor-provisioned seat, sign in as `{user}` with password `{password}`.
+ifeval::["{seat_mode}" == "self-service"]
+. Open link:{mattermost_url}[Mattermost^] — the link signs you in with the account you registered.
+endif::[]
+ifeval::["{seat_mode}" != "self-service"]
+. Open link:{mattermost_url}[Mattermost^] and sign in as `{user}` with password `{password}`.
+endif::[]
 
 . Navigate to the `{user}-assistant` channel.
 
@@ -182,12 +187,17 @@ The reply is the commit *you* made in Module 2 — the agent reading its own his
 
 . From your seat, that is the whole exercise: you proved the boundary (the `Forbidden`), and you generated an audit record on demand (the agent's reply is your receipt that the governed call happened). Seeing the record itself is the platform operator's move — which is the point.
 
-. Now the payoff, at your own blast radius. The operator persona for your workspace is a *namespace-scoped* identity: full admin inside `{user}-agent-workspace` and no access anywhere else. On a self-service workbench your terminal already runs as it — the workbench's service account — so there is nothing to switch. On an instructor-provisioned seat it is a second login, `admin-{user}`, with the same password as your seat:
+ifeval::["{seat_mode}" == "self-service"]
+. Now the payoff, at your own blast radius. The operator persona for your workspace is a *namespace-scoped* identity — full admin inside `{user}-agent-workspace` and no access anywhere else — and your terminal already runs as it: the workbench's service account. Nothing to switch.
+endif::[]
+ifeval::["{seat_mode}" != "self-service"]
+. Now the payoff, at your own blast radius. You hold a *second identity*: `admin-{user}` — a namespace-scoped operator persona with full admin inside `{user}-agent-workspace` and no access anywhere else. Same password as your seat. Switch to it:
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
 oc login -u admin-{user} {openshift_api_url}
 ----
+endif::[]
 
 . Prove the persona's shape in two commands:
 +
@@ -216,12 +226,14 @@ oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw --
 +
 Your counts will differ — this ledger is *your* agent's short life so far. The census tells the whole module in a few lines: built-ins (`exec`, `web_fetch`) ran ungoverned from the runtime; every governed call is namespaced `governed__` — those crossed the gateway on your credential, and the calls you triggered this exercise are in the count. This ledger is yours because it lives at your blast radius. Its platform-side twin — the gateway's access-log line for those same `governed__` calls — lives in the shared stream you were denied above, shown on the shared screen during the session.
 
-. Return to your seat identity. On a self-service workbench there is nothing to do — your terminal never left its service account. On an instructor-provisioned seat, sign back in as `{user}`, which the rest of the workshop runs as:
+ifeval::["{seat_mode}" != "self-service"]
+. Return to your seat identity — the rest of the workshop runs as `{user}`:
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
 oc login -u {user} {openshift_api_url}
 ----
+endif::[]
 
 // TODO screenshot (capture during the live walkthrough, then restore):
 // image::module-03-gateway-log.png[Terminal output showing MCP gateway access-log lines with POST /mcp entries and 200 status,link=self,window=blank,width=700]
@@ -230,9 +242,15 @@ oc login -u {user} {openshift_api_url}
 
 * The auditor's command from your seat returns `Forbidden` — with your username in the error
 * Your agent's reply to the commit question is your receipt that the governed call happened
-* As the operator persona (your terminal's service account, or `admin-{user}` on an instructor seat): `can-i` answers `yes` for your workspace and `no` for `agent-office`
+ifeval::["{seat_mode}" == "self-service"]
+* As your workbench's service account: `can-i` answers `yes` for your workspace and `no` for `agent-office`
 * The tool-call ledger shows `governed__gitea_*` entries alongside the ungoverned built-ins
-* On an instructor-provisioned seat, you are signed back in as `{user}`
+endif::[]
+ifeval::["{seat_mode}" != "self-service"]
+* As `admin-{user}`: `can-i` answers `yes` for your workspace and `no` for `agent-office`
+* The tool-call ledger shows `governed__gitea_*` entries alongside the ungoverned built-ins
+* You are signed back in as `{user}`
+endif::[]
 
 == What just happened
 
