@@ -58,6 +58,17 @@ Your agent's `gitea_*` tools act as *you*, against *your* org — yet you never 
 
 . *Vault is the source of truth.* The platform established a Gitea OAuth2 grant for your seat and holds its refresh token in the cluster's Vault, alongside the short-lived access token your runtime actually uses. You cannot see Vault (that is the point), but you can see the machinery that drinks from it.
 
+ifeval::["{seat_mode}" == "self-service"]
+. *The credential is in your workspace as a Secret, and only there:* on a self-service workbench the platform minted your seat's Gitea token at signup and placed it directly in your workspace (standing seats get the same Secret through a Vault-backed refresh loop; the shape your agent sees is identical):
++
+[source,bash,role="execute",subs="+attributes"]
+----
+oc get secret {user}-gitea-token -n {user}-agent-workspace
+----
++
+One Secret, one key (`GITEA_TOKEN`), scoped to your seat's own Gitea identity — the runtime reads it by reference, as the next step shows.
+endif::[]
+ifeval::["{seat_mode}" != "self-service"]
 . *External Secrets Operator keeps your workspace copy faithful to Vault:*
 +
 [source,bash,role="execute",subs="+attributes"]
@@ -66,6 +77,7 @@ oc get externalsecret {user}-gitea-token -n {user}-agent-workspace
 ----
 +
 `STORE vault-cluster`, `REFRESH 1m`, `STATUS SecretSynced`, `READY True`. Two clocks, and keeping them apart is the point: the `1m` here is the *delivery* loop — every minute ESO checks Vault and reconciles the Secret, which is why a change anywhere upstream lands in your workspace within sixty seconds. The *badge itself* changes on a different clock entirely — a fresh access token every thirty minutes from the platform refresher, each one self-expiring within the hour, which you will see in step 6. Delivery is continuous; the credential is deliberately not.
+endif::[]
 
 . *Git declares the reference, never the value:*
 +
@@ -119,7 +131,12 @@ When the refresher runs — every thirty minutes, or on demand during the sessio
 
 === Verify
 
+ifeval::["{seat_mode}" == "self-service"]
+* Your workspace holds exactly one seat credential, `{user}-gitea-token`, with a single `GITEA_TOKEN` key
+endif::[]
+ifeval::["{seat_mode}" != "self-service"]
 * The ExternalSecret in your workspace is `SecretSynced`/`Ready` against the `vault-cluster` store, delivering on a one-minute sync loop (the badge itself changes when the refresher renews it every thirty minutes, each token self-expiring within the hour)
+endif::[]
 * The AgentWorkstation spec declares `envFromSecret: {user}-gitea-token` — a reference, never a value
 * The `env` grep shows exactly the two platform-placed tokens, and nothing for the gateway-injected tools
 * Asked to check its own badge, the agent verifies without revealing it — and your workspace's Secret list contains no platform identity and no other seat's credential
