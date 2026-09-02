@@ -109,7 +109,7 @@ endif::[]
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
-oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.spec.systemPrompt}'
+oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.spec.systemPrompt}'; echo
 ----
 +
 The directive printed is the one you just merged.

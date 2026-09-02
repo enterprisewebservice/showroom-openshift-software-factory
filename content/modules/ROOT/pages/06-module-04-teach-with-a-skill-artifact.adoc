@@ -259,7 +259,7 @@ All three match. And the pin has teeth: if the registry ever served different by
 [source,bash,role="execute",subs="+attributes"]
 ----
 oc get skill platform-incident-triage -n {user}-agent-workspace \
-  -o jsonpath='{.spec.dependencies}'
+  -o jsonpath='{.spec.dependencies}'; echo
 ----
 +
 *And the golden set itself — who pins it?* Read the platform's lockfile: one entry per baked skill, each with an exact digest, closed by the digest of the composed catalog image. The compose run that builds it refuses to push unless the result is file-for-file identical to what shipped before — an equivalence gate.

@@ -52,7 +52,7 @@ Expected output:
 [source,bash,role="execute",subs="+attributes"]
 ----
 oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
-  -o jsonpath='{.spec.model}'
+  -o jsonpath='{.spec.model}'; echo
 ----
 +
 The `connectionRef` names a *ModelConnection* — a cluster-scoped resource the platform administrator published. The connection carries the endpoint and the credential reference; the agent carries only the connection's name and a model id. List the connections the platform publishes:
@@ -126,7 +126,7 @@ oc get pods -n {user}-agent-workspace
 [source,bash,role="execute",subs="+attributes"]
 ----
 oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
-  -o jsonpath='{.spec.model}'
+  -o jsonpath='{.spec.model}'; echo
 ----
 +
 The output now names the `{model_swap_connection}` connection and the {model_swap_family} model.
@@ -194,7 +194,7 @@ git push origin main
 [source,bash,role="execute",subs="+attributes"]
 ----
 oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
-  -o jsonpath='{.spec.model}'
+  -o jsonpath='{.spec.model}'; echo
 ----
 +
 The frontier values are back.
