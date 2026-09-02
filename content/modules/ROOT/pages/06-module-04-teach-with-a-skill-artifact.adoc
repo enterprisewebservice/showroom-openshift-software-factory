@@ -21,19 +21,28 @@ By the end of this module, you'll be able to:
 
 == Exercise 1: Establish what the agent does not know
 
-. Your agent's teachable knowledge is a resource type. List it:
+. Your agent's know-how is declared on its resource -- the list your hire wrote in Module 1. Read it:
++
+[source,bash,role="execute",subs="+attributes"]
+----
+oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.spec.skillRefs}' | python3 -m json.tool
+----
++
+Every name is a skill the agent was hired with. Where does each one come from? The operator resolves the list against two places, in order: your own namespace first, then the platform's *golden catalog* -- the baked skills every tenant can draw on, pinned by digest in the platform's lockfile. It reports the outcome on the resource:
++
+[source,bash,role="execute",subs="+attributes"]
+----
+oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.status.conditions[?(@.type=="SkillRefsResolved")].message}'; echo
+----
++
+Now your namespace's own `Skill` resources:
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
 oc get skills -n {user}-agent-workspace
 ----
 +
-What you see is what your hire declared. Each row is a `Skill` resource your agent's git repository created for a *registry* skill Suggest chose in Module 1 — a reference the operator resolves and verifies, never a copy. Skills that ship in the platform's *baked golden set* need no resource here: the agent names them in its own declaration and the operator resolves them from the platform catalog. Look at that declaration — it is the agent's skill list, and it is the only thing that decides what this agent knows:
-+
-[source,bash,role="execute",subs="+attributes"]
-----
-oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.spec.skillRefs}' | python3 -m json.tool
-----
+This list may be empty, and that is correct. A `Skill` resource lives in your namespace only when your agent's git repository brings a skill in from the *registry* rather than the golden catalog: a reference the operator resolves and verifies, never a copy. If Suggest built your hire entirely from the golden catalog, nothing had to be declared here. Exercise 2 is where that changes: you will bring a registry skill in yourself and watch the resource appear.
 +
 Now the workspace itself:
 +
@@ -43,12 +52,7 @@ oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw --
   ls /home/node/.openclaw/workspaces/{user}-assistant/skills/
 ----
 +
-One folder per skill in that list — no more, no fewer. Baked skills arrived from the platform's pinned catalog image, registry skills from the resources above; a name the operator could not resolve would be missing here *and* reported on the workstation:
-+
-[source,bash,role="execute",subs="+attributes"]
-----
-oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.status.conditions[?(@.type=="SkillRefsResolved")].message}'; echo
-----
+One folder per skill in the declaration -- no more, no fewer. Baked skills arrived from the platform's pinned catalog image, registry skills from `Skill` resources; a name the operator could not resolve would be missing here *and* reported in the condition you just read.
 +
 Hold the three results in view, because that is the mental model: the declaration names the skills, the resources make registry skills resolvable, and the workspace holds exactly the declared set. Another agent hired in the same namespace with different picks gets a different folder. Nothing reaches an agent because it happens to sit in a namespace.
 +
