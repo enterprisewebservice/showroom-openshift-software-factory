@@ -75,7 +75,8 @@ ifeval::["{seat_mode}" == "self-service"]
 endif::[]
 ifeval::["{seat_mode}" != "self-service"]
 . Open link:{gitops_url}[OpenShift GitOps^] and sign in as `{user}` / `{password}`.
-endif::[] Find the Application for `{user}-dev` and watch it reach *Synced* and *Healthy*.
+endif::[]
+Find the Application for `{user}-dev` and watch it reach *Synced* and *Healthy*.
 
 . In the terminal, confirm the dev agent pod is running:
 +

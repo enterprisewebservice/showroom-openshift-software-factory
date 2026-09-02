@@ -111,7 +111,8 @@ with the account you registered.
 endif::[]
 ifeval::["{seat_mode}" != "self-service"]
 with `{user}` / `{password}`.
-endif::[] Find the Application named `{user}-agents-{user}-assistant-agent`.
+endif::[]
+Find the Application named `{user}-agents-{user}-assistant-agent`.
 +
 The sync completes within seconds — by the time you switch tabs it may already show *Synced*. The evidence is in the Application's *History* tab: the revision listed there must match the commit you just merged.
 
