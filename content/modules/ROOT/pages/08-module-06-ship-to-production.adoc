@@ -257,7 +257,9 @@ One mechanical detail: crash-looping pods pick the fixed image up on their next 
 ----
 oc rollout restart deployment/order-metrics -n {user}-agent-workspace
 ----
-==== Confirm the service answers — first its health, then its *real* interface, the MCP handshake:
+====
+
+. Confirm the service answers — first its health, then its *real* interface, the MCP handshake:
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
