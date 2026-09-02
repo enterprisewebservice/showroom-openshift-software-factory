@@ -28,11 +28,11 @@ The template that ran in Module 1 created a git repository for your agent, named
 
 . Open link:{devhub_url}[Red Hat Developer Hub^] and sign in
 ifeval::["{seat_mode}" == "self-service"]
-with the account you registered
+with the account you registered.
 endif::[]
 ifeval::["{seat_mode}" != "self-service"]
-as `{user}` with password `{password}`
-endif::[].
+as `{user}` with password `{password}`.
+endif::[]
 
 . In the left navigation, click *Catalog* and search for `{user}-assistant`. Open the catalog entry.
 
@@ -97,11 +97,11 @@ After the merge, OpenShift GitOps detects the new commit on the main branch and 
 
 . Open link:{gitops_url}[OpenShift GitOps^] and sign in
 ifeval::["{seat_mode}" == "self-service"]
-with the account you registered
+with the account you registered.
 endif::[]
 ifeval::["{seat_mode}" != "self-service"]
-as `{user}` with password `{password}`
-endif::[].
+as `{user}` with password `{password}`.
+endif::[]
 
 . Open the Application named `{user}-agents-{user}-assistant-agent`. Do not expect to catch it mid-sync: on this platform the automated sync typically completes within seconds of your merge, so by the time you switch tabs it usually already reads *Synced* again. The evidence is in *Last Sync* (open the Application's *History*): the synced revision matches the commit you just made.
 
