@@ -89,7 +89,7 @@ The `{model_swap_connection}` connection fronts open models — {model_swap_fami
 // a little longer than the frontier model's. That is part of the
 // comparison.
 +
-[source,yaml]
+[source,yaml,subs="+attributes"]
 ----
   model:
     provider: custom
