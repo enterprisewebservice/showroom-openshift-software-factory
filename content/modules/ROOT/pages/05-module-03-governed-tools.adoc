@@ -16,7 +16,7 @@ Plan on 30 minutes: trigger a tool call and read the result, inspect the agent p
 By the end of this module, you'll be able to:
 
 * Trigger a governed tool call from a Mattermost conversation and identify the tool's contribution to the agent's reply
-* Trace your seat credential's lifecycle from Vault to the runtime, and explain why the agent can hold it but never mint or renew it
+* Trace your seat credential's lifecycle from the platform to the runtime, and explain why the agent can hold it but never mint, extend, or renew it
 * Explain the declared exception pattern for direct MCP integrations and why it preserves reviewability
 * Generate a governed call on demand, match it to the gateway's audit entry, and explain why the audit stream is platform-scoped
 
