@@ -182,7 +182,7 @@ The reply is the commit *you* made in Module 2 — the agent reading its own his
 
 . From your seat, that is the whole exercise: you proved the boundary (the `Forbidden`), and you generated an audit record on demand (the agent's reply is your receipt that the governed call happened). Seeing the record itself is the platform operator's move — which is the point.
 
-. Now the payoff, at your own blast radius. You hold a *second identity*: `admin-{user}` — a namespace-scoped operator persona with full admin inside `{user}-agent-workspace` and no access anywhere else. Same password as your seat. Switch to it:
+. Now the payoff, at your own blast radius. The operator persona for your workspace is a *namespace-scoped* identity: full admin inside `{user}-agent-workspace` and no access anywhere else. On a self-service workbench your terminal already runs as it — the workbench's service account — so there is nothing to switch. On an instructor-provisioned seat it is a second login, `admin-{user}`, with the same password as your seat:
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
@@ -230,9 +230,9 @@ oc login -u {user} {openshift_api_url}
 
 * The auditor's command from your seat returns `Forbidden` — with your username in the error
 * Your agent's reply to the commit question is your receipt that the governed call happened
-* As `admin-{user}`: `can-i` answers `yes` for your workspace and `no` for `agent-office`
+* As the operator persona (your terminal's service account, or `admin-{user}` on an instructor seat): `can-i` answers `yes` for your workspace and `no` for `agent-office`
 * The tool-call ledger shows `governed__gitea_*` entries alongside the ungoverned built-ins
-* You are signed back in as `{user}`
+* On an instructor-provisioned seat, you are signed back in as `{user}`
 
 == What just happened
 

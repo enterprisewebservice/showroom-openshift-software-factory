@@ -84,7 +84,7 @@ Provisioning stamps a personal set of values into this guide. Wherever these app
 
 One identity everywhere: the OpenShift console, Developer Hub, and OpenShift GitOps all authenticate against the same Keycloak, so this username and password works in each of them.
 
-You also hold a second, narrower identity: `admin-{user}` — an operator persona with full admin inside your own `{user}-agent-workspace` namespace and no access anywhere else, using the same password. Module 3 puts it to work.
+You also hold a second, narrower identity — an operator persona with full admin inside your own `{user}-agent-workspace` namespace and no access anywhere else. On a self-service workbench that is your terminal's service account (already signed in); on an instructor-provisioned seat it is the login `admin-{user}` with the same password. Module 3 puts it to work.
 
 === Verify your access
 
@@ -189,7 +189,7 @@ Provisioning injects a per-attendee value for each.
 
 This page renders the following Showroom attributes. Provisioning injects a per-attendee value for each:
 
-* `+{user}+`: your workbench username. On a self-service workbench every sign-in — Developer Hub, OpenShift GitOps, the console, Gitea, Mattermost — is the account you registered with; `+{password}+` only applies to instructor-provisioned seats
+* `+{user}+`: your workbench username. On a self-service workbench every sign-in — Developer Hub, OpenShift GitOps, the console, Gitea, Mattermost — is the account you registered with, and `+{password}+` simply reminds you of that; on an instructor-provisioned seat it is the seat's real password
 * `+{openshift_console_url}+`: OpenShift web console URL
 * `+{openshift_api_url}+`: cluster API endpoint used by `oc login`
 * `+{devhub_url}+`: Red Hat Developer Hub URL

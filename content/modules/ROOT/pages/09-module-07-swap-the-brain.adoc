@@ -105,7 +105,7 @@ Leave every other field in the manifest exactly as it is.
 
 . Merge the pull request.
 
-. Open link:{gitops_url}[OpenShift GitOps^] and sign in with `{user}` / `{password}`. Find the Application named `{user}-agents-{user}-assistant-agent`.
+. Open link:{gitops_url}[OpenShift GitOps^] and sign in with your workshop account (the account you registered with on a self-service workbench; `{user}` / `{password}` on an instructor-provisioned seat). Find the Application named `{user}-agents-{user}-assistant-agent`.
 +
 The sync completes within seconds — by the time you switch tabs it may already show *Synced*. The evidence is in the Application's *History* tab: the revision listed there must match the commit you just merged.
 
