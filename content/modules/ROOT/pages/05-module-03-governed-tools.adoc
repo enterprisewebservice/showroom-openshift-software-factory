@@ -56,7 +56,12 @@ NOTE: Not every tool is a governed tool. `web_search` and `web_fetch` are built-
 
 Your agent's `gitea_*` tools act as *you*, against *your* org — yet you never typed a token anywhere. This exercise walks the credential's whole life, one hop per command, on the same rails the platform runs its own identities; your seat simply has a lane of its own.
 
+ifeval::["{seat_mode}" == "self-service"]
+. *The platform minted your seat credential at signup.* When your workbench was created, the platform issued a Gitea token scoped to your own Gitea identity and placed it in your workspace. You never typed it and never will; the agent consumes it by reference.
+endif::[]
+ifeval::["{seat_mode}" != "self-service"]
 . *Vault is the source of truth.* The platform established a Gitea OAuth2 grant for your seat and holds its refresh token in the cluster's Vault, alongside the short-lived access token your runtime actually uses. You cannot see Vault (that is the point), but you can see the machinery that drinks from it.
+endif::[]
 
 ifeval::["{seat_mode}" == "self-service"]
 . *The credential is in your workspace as a Secret, and only there:* on a self-service workbench the platform minted your seat's Gitea token at signup and placed it directly in your workspace (standing seats get the same Secret through a Vault-backed refresh loop; the shape your agent sees is identical):
