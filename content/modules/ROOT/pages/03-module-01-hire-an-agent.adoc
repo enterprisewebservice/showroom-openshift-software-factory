@@ -125,10 +125,10 @@ Re-run the command until the pod reports `Running`. The first start pulls the ag
 [subs="+attributes"]
 ----
 NAME                                      READY   STATUS    RESTARTS   AGE
-{user}-assistant-gateway-c77bb699b-dzv5q  2/2     Running   0          2m
+{user}-assistant-gateway-c77bb699b-dzv5q  1/1     Running   0          2m
 ----
 +
-The pod is named after the agent's gateway — the runtime your agent lives in — and `READY 2/2` counts the agent runtime plus its credential-sync sidecar. It is normal to see this pod replaced once shortly after first start (the AGE resets): the operator finishes wiring the model credential and restarts it one time.
+The pod is named after the agent's gateway — the runtime your agent lives in. `READY` counts its containers: `1/1` for a brain served through a model connection, `2/2` when a subscription brain adds a credential-sync sidecar. It is normal to see this pod replaced once shortly after first start (the AGE resets): the operator finishes wiring the model credential and restarts it one time.
 
 // TODO: Add screenshot
 // TODO screenshot: capture the OpenShift GitOps Application view as an attendee
