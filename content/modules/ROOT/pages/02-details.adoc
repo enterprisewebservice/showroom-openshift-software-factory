@@ -90,29 +90,23 @@ You also hold a second, narrower identity — an operator persona with full admi
 
 Do this before module 1. It takes about 2 minutes.
 
-. In the *Terminal* tab, sign in as yourself. The terminal starts out
-authenticated as the lab environment's service account — the first command
-you run makes it yours. Enter the password from *Your credentials* above
-when prompted:
-+
-[source,bash,role="execute",subs="+attributes"]
-----
-oc login -u {user} {openshift_api_url}
-----
-
-. Verify who you are now:
+. In the *Terminal* tab, check who `oc` is working as:
 +
 [source,bash,role="execute"]
 ----
 oc whoami
 ----
 +
-Expected output:
+*On a self-service workbench* the terminal is already signed in as your workbench's service account — `system:serviceaccount:showroom-{user}:showroom-{user}` — which is an administrator of your project and nothing else, and whose session never expires. There is nothing to log in to, and `oc login -u {user}` will *not* work with a sign-up account: accounts you register live in Keycloak, and OpenShift's command-line password login cannot use them (only browser sign-ins can). If you ever want `oc` on your own laptop, use *Copy login command* from the OpenShift console's user menu instead.
 +
-[subs="+attributes"]
+*On an instructor-provisioned seat* the terminal starts as the lab environment's service account; sign in as yourself with the password from *Your credentials* above:
++
+[source,bash,role="execute",subs="+attributes"]
 ----
-{user}
+oc login -u {user} {openshift_api_url}
 ----
+
+. Expected output of `oc whoami`: `system:serviceaccount:showroom-{user}:showroom-{user}` on a self-service workbench, or `{user}` on an instructor-provisioned seat once you have logged in.
 
 . List your projects:
 +
@@ -123,7 +117,7 @@ oc get projects
 +
 You see only the projects you are entitled to. Other attendees' projects do not appear. That is the isolation model working, not a permissions problem.
 
-. Click the *OpenShift Console* tab — it opens in its own browser tab (the console does not allow embedding). When it offers a choice of identity providers, pick *workshop* and sign in as {user} — or pick *factory-sso* to use the same single sign-on the other surfaces use.
+. Click the *OpenShift Console* tab — it opens in its own browser tab (the console does not allow embedding). When it offers a choice of identity providers: on a self-service workbench pick *factory-sso* (the single sign-on you registered with — the *workshop* option is for instructor-provisioned seats and will reject a sign-up account); on an instructor-provisioned seat pick *workshop* and sign in as {user}, or *factory-sso* for the same single sign-on the other surfaces use.
 
 . Click the *Developer Hub* tab — also its own browser tab — and sign in with the same credentials.
 
@@ -180,7 +174,7 @@ Short on time? Modules 1, 3, 4, and 6 carry the core arc: hire, govern, teach, s
 == If something does not work
 
 * The *Terminal* tab is blank or stops responding: reload the browser tab. The terminal reconnects to your session.
-* `oc whoami` reports an error or the wrong user: re-run the `oc login` command from the verification steps.
+* `oc whoami` reports an error or the wrong user: on a self-service workbench, reload the *Terminal* tab (it comes back as your workbench's service account); on an instructor-provisioned seat, re-run the `oc login` command from the verification steps.
 * Keycloak rejects your password: confirm you are using the exact values from this page, because each attendee's credentials differ. If it still fails, tell your facilitator.
 
 ////
