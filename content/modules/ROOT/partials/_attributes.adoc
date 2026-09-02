@@ -16,3 +16,10 @@
 //   (skopeo copy, digests preserved) and this is the only line that changes.
 :gitea_url: https://gitea-gitea.apps.salamander.aimlworkbench.com
 // ^ in-cluster Gitea; provisioning overrides this per environment.
+
+// Module 7 swaps the agent's brain onto this published connection. One
+// place to change when the platform renames or replaces it; the module
+// text and its commands read these, never a literal name.
+:model_swap_connection: litemaas
+:model_swap_model: Qwen3.8-27B
+:model_swap_family: Qwen
