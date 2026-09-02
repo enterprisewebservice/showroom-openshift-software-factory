@@ -57,10 +57,10 @@ NOTE: If nothing rolls after a couple of minutes, the most likely cause is a qui
 oc get agentgateway {user}-assistant-gateway -n {user}-agent-workspace \
   -o jsonpath='declared: {.spec.http}{"\n"}'
 oc get cm {user}-assistant-gateway-config -n {user}-agent-workspace \
-  -o jsonpath='{.data.openclaw\.json}' | python3 -c \
+  -o go-template='{{index .data "openclaw.json"}}' | python3 -c \
   "import sys,json;print('rendered:', json.load(sys.stdin)['gateway'].get('http'))"
 oc get deploy {user}-assistant-gateway -n {user}-agent-workspace \
-  -o jsonpath='rolled on: {.spec.template.metadata.annotations.agentoffice\.ai/gateway-config-sha}{"\n"}'
+  -o go-template='rolled on: {{index .spec.template.metadata.annotations "agentoffice.ai/gateway-config-sha"}}{{"\n"}}'
 ----
 +
 Declared in git, rendered by the operator, rolled by a content hash. Nobody ran a restart command.

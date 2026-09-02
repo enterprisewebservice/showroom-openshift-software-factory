@@ -234,7 +234,7 @@ The union rule in one line: the baked image is the floor, your namespace's decla
 [source,bash,role="execute",subs="+attributes"]
 ----
 oc get skill platform-incident-triage -n {user}-agent-workspace \
-  -o jsonpath='{.metadata.annotations.agentoffice\.ai/pack-ref}'
+  -o go-template='{{index .metadata.annotations "agentoffice.ai/pack-ref"}}{{"\n"}}'
 ----
 +
 *Is the content what the registry published?* Three hashes, three parties: what you pinned in the spec, what the operator resolved and delivered, and what the artifact in the registry declares as its own content:
