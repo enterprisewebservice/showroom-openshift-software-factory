@@ -40,7 +40,7 @@ ifeval::["{seat_mode}" != "self-service"]
 . Open link:{devhub_url}[Red Hat Developer Hub^] and sign in as `{user}` with password `{password}`.
 endif::[]
 
-. In the left navigation, click *Self-service*.
+. In the left navigation, click *Catalog*, then click the *Self-service* button at the top right of the catalog page.
 
 . Find the *OpenClaw Agent* template and click *Choose*.
 +
