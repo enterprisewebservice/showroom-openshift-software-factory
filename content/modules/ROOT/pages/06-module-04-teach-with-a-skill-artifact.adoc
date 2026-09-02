@@ -28,7 +28,14 @@ By the end of this module, you'll be able to:
 oc get skills -n {user}-agent-workspace
 ----
 +
-One row: `golden-path-service` — a skill the platform pre-installed in your namespace for Module 6's build lane. That single row is the point: `oc get skills` lists only what your namespace *adds*. Everything else your agent knows comes from the platform's *baked golden set* — a pinned catalog image every gateway mounts. See the merged result:
+What you see is what your hire declared. Each row is a `Skill` resource your agent's git repository created for a *registry* skill Suggest chose in Module 1 — a reference the operator resolves and verifies, never a copy. Skills that ship in the platform's *baked golden set* need no resource here: the agent names them in its own declaration and the operator resolves them from the platform catalog. Look at that declaration — it is the agent's skill list, and it is the only thing that decides what this agent knows:
++
+[source,bash,role="execute",subs="+attributes"]
+----
+oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.spec.skillRefs}' | python3 -m json.tool
+----
++
+Now the workspace itself:
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
@@ -36,9 +43,14 @@ oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw --
   ls /home/node/.openclaw/workspaces/{user}-assistant/skills/
 ----
 +
-Roughly a dozen folders: the baked set (identical for every agent on this platform, pinned by digest in a lockfile you will read in Exercise 4) plus the one namespace addition you just listed.
+One folder per skill in that list — no more, no fewer. Baked skills arrived from the platform's pinned catalog image, registry skills from the resources above; a name the operator could not resolve would be missing here *and* reported on the workstation:
 +
-Hold both results in view, because the contrast is the mental model: `oc get skills` shows *one* row while the folder shows a full set. The baked floor is invisible to the Kubernetes API (its inventory is the lockfile, in git); the namespace additions are visible as Skill resources; the merged truth lives in that folder, and only there. Note also what is in *neither* list: nothing named `platform-incident-triage`. Your hire's directive names it — the role calls for it — but the workspace has not received it. That gap is this module.
+[source,bash,role="execute",subs="+attributes"]
+----
+oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.status.conditions[?(@.type=="SkillRefsResolved")].message}'; echo
+----
++
+Hold the three results in view, because that is the mental model: the declaration names the skills, the resources make registry skills resolvable, and the workspace holds exactly the declared set. Another agent hired in the same namespace with different picks gets a different folder. Nothing reaches an agent because it happens to sit in a namespace.
 +
 Look at where that set comes from. Most of these are official published skills: five imported from Red Hat's link:https://github.com/openshift/agentic-skills[openshift/agentic-skills^] repository — the same content behind the Ecosystem Catalog's agentic skill pack for OpenShift — and two from the upstream Agent Skills project. Red Hat publishes those packs as SKILL.md files you download by hand; this platform imports them with source provenance, repackages each as a digest-pinned versioned artifact, and delivers them to every agent through the operator. Red Hat publishes the know-how; the platform ships it like software.
 
@@ -53,8 +65,8 @@ Incident report: users say the orders API is returning 500s since about 10 minut
 
 === Verify
 
-* `oc get skills -n {user}-agent-workspace` returns exactly one row: the pre-installed `golden-path-service`
-* The workspace skills listing shows the baked set plus that one addition — and no `platform-incident-triage`
+* `oc get agentworkstation … -o jsonpath='{.spec.skillRefs}'` lists your hire's skills, and `platform-incident-triage` is not among them
+* The workspace skills listing has exactly those folders — and no `platform-incident-triage`; the `SkillRefsResolved` condition reports every ref resolved
 * The agent's triage reply has no consistent severity rubric or section structure
 
 == Exercise 2: Inspect the artifact in the registry
@@ -134,7 +146,7 @@ Two members — a `skill` and a `tool` — each referenced by digest, and the de
 
 == Exercise 3: Install it into your workspace
 
-Installing a skill artifact is declarative — and it is a *reference, not a copy*. The `Skill` resource you are about to apply carries no skill content at all: it pins a coordinate and a content digest, and the operator fetches the body from the registry, verifies the digest, and refuses delivery if the content has drifted. This is the same shape as the golden set's lockfile — a pinned reference, with the operator doing the fetching — applied at namespace scope. And namespace scope is the whole grant: every Skill resource in your namespace reaches every agent in it, no separate binding step (the FAQ at the end covers why).
+Installing a skill artifact is declarative, and it takes two declarations: a `Skill` resource that makes the artifact resolvable in your workspace, and one line in your agent's own definition that grants it. Start with the artifact — it is a *reference, not a copy*. The `Skill` resource you are about to apply carries no skill content at all: it pins a coordinate and a content digest, and the operator fetches the body from the registry, verifies the digest, and refuses delivery if the content has drifted. This is the same shape as the golden set's lockfile — a pinned reference, with the operator doing the fetching — applied at namespace scope. And namespace scope is the whole grant: every Skill resource in your namespace reaches every agent in it, no separate binding step (the FAQ at the end covers why).
 
 . Apply the rendered artifact into your own workspace:
 +
@@ -176,15 +188,26 @@ NOTE: This YAML was rendered from the artifact itself — the `digest` is the `c
 oc get skills -n {user}-agent-workspace
 ----
 +
-Two rows now: the pre-installed `golden-path-service` and your new `platform-incident-triage`, its VERSION column — `1.1.1` — straight from the artifact.
+Your new `platform-incident-triage` is in the list, its VERSION column — `1.1.1` — straight from the artifact. The agent does *not* have it yet: a resource in the namespace is an offer, and the agent's own declaration is the grant.
+
+. Grant it. Open your agent's git repository (Module 2 showed the way: the *Source* link on its Developer Hub catalog entry), edit `base/agentworkstation.yaml`, and add one entry to the `skillRefs` list, indented like its neighbours:
++
+[source,yaml]
+----
+    - name: platform-incident-triage
+      version: "1.1.1"
+----
++
+Commit to a branch, open the pull request, read the diff — one line, the agent's skill list growing by one, pinned to a version — and merge it. OpenShift GitOps applies it within seconds.
 
 === Verify
 
-* `oc get skills -n {user}-agent-workspace` shows `platform-incident-triage` at version `1.1.1` alongside the pre-installed `golden-path-service`
+* `oc get skills -n {user}-agent-workspace` shows `platform-incident-triage` at version `1.1.1`
+* The merged pull request added `platform-incident-triage` to the agent's `skillRefs`, and the running resource shows it: `oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.spec.skillRefs}'`
 
 == Exercise 4: Watch the agent learn, then audit the supply chain
 
-. The operator noticed your Skill the moment it landed and re-seeded the agent's workspace — no restart, no redeploy. Confirm:
+. The operator noticed the declaration the moment OpenShift GitOps applied it and re-seeded the agent's workspace — no restart, no redeploy. Confirm:
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
@@ -303,7 +326,7 @@ Every one of these came up the first time a platform engineer walked this module
 
 *We already have a hand-built multi-skill image. How do we adopt this?* The way this platform did: split each skill into its own artifact, generate the lockfile pinning them, recompose the big image from the pieces, and let an equivalence gate prove the rebuilt image is file-for-file identical to the hand-built one before anything ships. From that day the order reverses permanently: artifact first, image derived.
 
-*Didn't installing a skill used to need a SkillBinding?* It did — and the resource still exists for the cases that want it. Under the current discovery model, the namespace is the grant: every Skill resource in a namespace is rendered into every agent in that namespace, and the *runtime* selects at run time — it scans each skill's frontmatter and loads the full body only when a task triggers it. In a seat namespace with one assistant, a binding would be ceremony. A SkillBinding still earns its place when one namespace hosts many agents with different duties, when an agent must pin a specific skill version, or for per-agent overrides.
+*Didn't installing a skill used to need a SkillBinding?* It still does, and now you never write one: the agent's `skillRefs` is the grant, and the operator maintains one `SkillBinding` per entry that names a `Skill` in the namespace — look at `oc get skillbindings -n {user}-agent-workspace`. Under the earlier discovery model the namespace itself was the grant, which meant every agent in it knew every skill in it, whatever it was hired with. An agent's know-how is its own declaration now.
 
 *How is this different from an editor plugin (a Claude Code plugin, say)?* A plugin is a per-workstation bundle for one runtime — skills, commands, hooks, and MCP config shipped together as a git repo you trust as a whole and install on each laptop. Here the unit is one skill, immutable by digest, delivered by the platform to every agent that should have it — and the executable parts are deliberately *not* bundled alongside: tools are governed separately behind the MCP gateway, which is the trust boundary this whole lab is about. Plugins optimize convenience on a laptop; this model optimizes provenance on a platform.
 
