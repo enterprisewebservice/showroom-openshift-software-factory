@@ -360,6 +360,15 @@ oc get mcpserverregistration {user}-order-metrics -n {user}-agent-workspace \
 +
 Within about 30 seconds: `Ready: server added successfully. Total tools added 2. Total prompts added 0` — the gateway walked your route, spoke MCP to the service the factory built, and found `metrics_stuck_orders` and `metrics_weekly_summary`.
 
+. Hand the new tools to your assistant. A running agent lists its governed tools when its MCP runtime connects to the gateway, so a server registered after that connection is not in its list yet -- the gateway announced the change, the runtime picks it up on its next connection. Tell it to reconnect:
++
+[source,bash,role="execute",subs="+attributes"]
+----
+oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw -- openclaw mcp reload
+----
++
+`Disposed cached MCP runtimes. Active agents use new MCP config on their next runtime build.` -- the next message rebuilds the connection and re-lists the tools. Without this, the assistant keeps yesterday's list and reaches for the nearest look-alike (another seat's `orders_*` tools, which the gateway now refuses it).
+
 . Confirm the tools are visible to your assistant. Open link:{mattermost_url}[Mattermost^], go to the `{user}-assistant` channel, and send:
 +
 [source,text,subs="+attributes"]
@@ -426,10 +435,12 @@ The `{user}_orders_*` tool call appears in the ledger alongside the `governed__g
 QUAY=quay-quay-quay-test.apps.salamander.aimlworkbench.com
 AUTH=$(python3 -c "import json;a=json.load(open('/tmp/quay.json'))['auths'];print(next(iter(a.values()))['auth'])")
 T=$(curl -sk "https://$QUAY/v2/auth?service=$QUAY&scope=repository:deanpeterson/{user}-order-metrics:pull" -H "Authorization: Basic $AUTH" | python3 -c "import sys,json;print(json.load(sys.stdin)['token'])")
-DIGEST=$(curl -sk "https://$QUAY/v2/deanpeterson/{user}-order-metrics/manifests/main" \
-  -H "Authorization: Bearer $T" -H "Accept: application/vnd.oci.image.index.v1+json" \
-  | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['manifests'][0]['digest'] if 'manifests' in d else '')")
-echo "deployed image manifest: $DIGEST"
+DIGEST=$(oc get pods -n {user}-agent-workspace -l app.kubernetes.io/name=order-metrics \
+  -o jsonpath='{.items[0].status.containerStatuses[0].imageID}' | sed 's/.*@//')
+echo "running image digest:  $DIGEST"
+curl -sk -I "https://$QUAY/v2/deanpeterson/{user}-order-metrics/manifests/main" -H "Authorization: Bearer $T" \
+  -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json" \
+  | grep -i docker-content-digest | sed 's/.*: */tag main resolves to: /'
 ----
 
 . Tekton Chains signed exactly that digest the moment the build finished. The signature and attestation live in the registry as artifacts named by the digest — confirm both exist, then read the provenance itself:
