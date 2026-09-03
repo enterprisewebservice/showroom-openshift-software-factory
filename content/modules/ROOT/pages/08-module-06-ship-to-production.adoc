@@ -360,14 +360,14 @@ oc get mcpserverregistration {user}-order-metrics -n {user}-agent-workspace \
 +
 Within about 30 seconds: `Ready: server added successfully. Total tools added 2. Total prompts added 0` — the gateway walked your route, spoke MCP to the service the factory built, and found `metrics_stuck_orders` and `metrics_weekly_summary`.
 
-. Hand the new tools to your assistant. A running agent lists its governed tools when its MCP runtime connects to the gateway, so a server registered after that connection is not in its list yet -- the gateway announced the change, the runtime picks it up on its next connection. Tell it to reconnect:
+. Watch the platform hand the new tools to your assistant. A running agent lists its governed tools when its MCP runtime connects to the gateway, so a server registered afterwards is not in its list until it reconnects -- and it does not have to know that: within a minute of the registration going Ready, the chat bridge reloads your agents' runtimes and posts in the channel:
 +
-[source,bash,role="execute",subs="+attributes"]
+[source,text]
 ----
-oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw -- openclaw mcp reload
+🔧 Governed tools changed — added {user}-order-metrics (2 tools). Reconnecting your assistant to the gateway; the new tools are in its list from its next message.
 ----
 +
-`Disposed cached MCP runtimes. Active agents use new MCP config on their next runtime build.` -- the next message rebuilds the connection and re-lists the tools. Without this, the assistant keeps yesterday's list and reaches for the nearest look-alike (another seat's `orders_*` tools, which the gateway now refuses it).
+Nothing for you to run. The runtime rebuilds its gateway connection on the assistant's next message and re-lists the tools.
 
 . Confirm the tools are visible to your assistant. Open link:{mattermost_url}[Mattermost^], go to the `{user}-assistant` channel, and send:
 +
