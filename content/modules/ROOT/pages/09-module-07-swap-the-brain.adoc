@@ -52,18 +52,27 @@ oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
   -o jsonpath='{.spec.model}'; echo
 ----
 +
-The `connectionRef` names a *ModelConnection* — a cluster-scoped resource the platform administrator published. The connection carries the endpoint and the credential reference; the agent carries only the connection's name and a model id. List the connections the platform publishes, with the groups each one admits:
+The `connectionRef` names a *ModelConnection* — a cluster-scoped resource the platform administrator published. The connection carries the endpoint and the credential reference; the agent carries only the connection's name and a model id. Your workspace does not read that cluster-scoped list. Instead the operator projects into it, as *ModelConnectionOffers*, exactly the connections whose access list admits you — the same rule the Developer Hub applied to your hiring menu in Module 1. List your offers:
 +
-// VERIFIED LIVE 2026-09-03: the seat's service account lists every published
-// connection (four rows on this cluster, the administrator's personal lanes
-// included); spec.access.groups is what the hiring menu filters on.
+// VERIFIED LIVE 2026-09-03 (operator v1.7.71): a seat workspace carries the
+// operator's tenant annotations (agentoffice.ai/user, agentoffice.ai/groups);
+// the offers projected there are the attendee rows only. The cluster-scoped
+// ModelConnection list is Forbidden to the seat's service account.
++
+[source,bash,role="execute",subs="+attributes"]
+----
+oc get modelconnectionoffers -n {user}-agent-workspace \
+  -o custom-columns=NAME:.metadata.name,KIND:.spec.kind,MODELS:.spec.models[*].id,OFFERED-TO:.spec.offeredTo
+----
++
+Two rows: the frontier connection you hired on (the frontier lane on the Red Hat work subscription) and `{model_swap_connection}` (open models — {model_swap_family} — served by Red Hat's AI Services team). OFFERED-TO names the access-list entry that admitted you. The administrator's personal lanes exist on this cluster and are not in your workspace: the platform's full list is an administrator's view —
 +
 [source,bash,role="execute"]
 ----
-oc get modelconnections -o custom-columns=NAME:.metadata.name,GROUPS:.spec.access.groups
+oc get modelconnections
 ----
 +
-Each row is a published brain, and its GROUPS column is the access list. The Module 1 hiring menu offered you exactly the rows whose access list names your group: the frontier connection you hired on (the frontier lane on the Red Hat work subscription) and `{model_swap_connection}` (open models — {model_swap_family} — served by Red Hat's AI Services team). The administrator's personal lanes are on the same list, declared for other groups: you can read that they exist, and you cannot hire on them. Access is data, in git, like everything else here.
+— is refused for your workbench. The offer is not a courtesy listing, either. The operator renders a brain into your gateway only if your workspace was offered it: a manifest naming a connection you were not offered gets no provider block and no projected key, and the AgentWorkstation reports `ModelConnectionOffered: False` with the reason. Access is data, in git, like everything else here; what you can see, what you can hire on, and what the operator will run are one declaration.
 
 . Open the agent's repository — use the Source link in the Developer Hub catalog entry for `{user}-assistant`, as you did in Module 2. Navigate to `base/agentworkstation.yaml` and find the `model:` block.
 +
@@ -72,7 +81,7 @@ NOTE: The brain reference here and the gateway reference in Module 3 follow the 
 === Verify
 
 * `oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.spec.model}'` returns a value with a `connectionRef`
-* `oc get modelconnections` lists the published brains with their access groups, including the one you hired on and `{model_swap_connection}`
+* `oc get modelconnectionoffers -n {user}-agent-workspace` lists the brains offered to your workspace — the one you hired on and `{model_swap_connection}` — and `oc get modelconnections` is refused
 * The `model:` block in `base/agentworkstation.yaml` matches what the cluster reports
 
 == Exercise 2: Swap to the Red Hat-hosted open model
@@ -225,7 +234,7 @@ AgentWorks offers model independence: choose a model from the vendor's approved 
 
 Three things this platform does that a SaaS vendor cannot.
 
-First: *the brains are published, permissioned resources.* A ModelConnection is a cluster resource with an access list — the administrator publishes brains the way a platform team publishes golden paths, and your role determines your menu. Nobody handed you a key; you were granted access to a connection.
+First: *the brains are published, permissioned resources.* A ModelConnection is a cluster resource with an access list — the administrator publishes brains the way a platform team publishes golden paths, and your group determines your menu: the operator projects the brains you were offered into your workspace and renders no other. Nobody handed you a key; you were granted access to a connection.
 
 Second: *the agent held no model credential in either configuration.* The connection's credential lives in the platform's namespace and is projected by the operator onto the gateway. This cluster also runs OpenShift AI Models-as-a-Service (Tech Preview), which governs the same models for direct API consumers — per-user API keys, token budgets per group, and usage metering through one gateway. Model access here is a governed, metered, revocable grant — the same pattern as Module 3's tool credentials.
 
@@ -240,7 +249,7 @@ The AgentWorks model menu has edges. This platform's menu is whatever the admini
 By completing this module, you should now understand:
 
 * ✓ Where the brain reference lives in the AgentWorkstation spec — a ModelConnection name plus a model id — and how to read it back with `oc`
-* ✓ What a ModelConnection is: an administrator-published, permissioned brain, with the credential held platform-side and projected by the operator
+* ✓ What a ModelConnection is: an administrator-published, permissioned brain, offered per workspace by the operator, with the credential held platform-side and projected only where it was offered
 * ✓ How a brain swap is a one-block manifest change, reconciled by OpenShift GitOps, with a brief gateway reload and no credential change in the agent's namespace
 * ✓ How the same governance covers frontier subscriptions and hosted open models — and extends to cluster-served models through OpenShift AI Models-as-a-Service
 
