@@ -110,12 +110,9 @@ endif::[]
 oc whoami
 ----
 +
-ifeval::["{seat_mode}" == "self-service"]
-It prints `system:serviceaccount:showroom-{user}:showroom-{user}` — your workbench's service account, an administrator of your project and nothing else, with a session that never expires.
-endif::[]
-ifeval::["{seat_mode}" != "self-service"]
-It prints `{user}`; if it does not, complete the login steps from the lab details page before continuing.
-endif::[]
+// VERIFIED LIVE 2026-09-03 on self-service (test2) and fixed (user2, user3, user4)
+// seats alike: the workbench terminal runs as the seat's service account.
+It prints `system:serviceaccount:showroom-{user}:showroom-{user}` — your workbench's service account, an administrator of your project and nothing else, with a session that never expires. Every `oc` command in this lab runs as it; your own login (`{user}`) is for the web consoles.
 
 . Watch the agent pod start:
 +

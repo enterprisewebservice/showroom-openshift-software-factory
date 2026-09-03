@@ -34,14 +34,9 @@ The AgentWorkstation resource declares everything the agent runs with: system pr
 oc whoami
 ----
 +
-// VERIFIED LIVE 2026-09-03 (self-service seat test2): the workbench terminal
-// runs as the seat's service account, never as the attendee's login.
-ifeval::["{seat_mode}" == "self-service"]
-It prints `system:serviceaccount:showroom-{user}:showroom-{user}` — your workbench's service account, an administrator of your project and nothing else. Every `oc` command in this module runs as it.
-endif::[]
-ifeval::["{seat_mode}" != "self-service"]
-It prints `{user}`; if it does not, complete the login steps from the lab details page before continuing.
-endif::[]
+// VERIFIED LIVE 2026-09-03 on self-service (test2) and fixed (user2) seats alike:
+// the workbench terminal runs as the seat's service account, never as the login.
+It prints `system:serviceaccount:showroom-{user}:showroom-{user}` — your workbench's service account, an administrator of your project and nothing else, exactly as in Module 1. Every `oc` command in this module runs as it.
 
 . Read the brain reference the agent is currently running with:
 +
