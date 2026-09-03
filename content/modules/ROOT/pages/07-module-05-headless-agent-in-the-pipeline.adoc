@@ -215,7 +215,17 @@ oc get pipelinerun ${PIPELINE_RUN} -n {user}-agent-workspace \
 +
 The `agent-reply` entry's value is the line the agent produced — `STUCK=<number>`, straight from a governed tool call it made inside the pipeline. In a longer pipeline, `$(tasks.ask-agent.results.reply)` feeds the next task: a gate that blocks promotion when the number is too high, a notification, a ticket.
 
-. See the same run in the link:{openshift_console_url}[OpenShift Console^]: *Pipelines* → *PipelineRuns* in your `{user}-agent-workspace` project shows the run, its task, and the result.
+. See the same run in the link:{openshift_console_url}[OpenShift Console^]. Signing in lands you in whichever perspective you used last -- often *Fleet Management*, which has no Pipelines menu. If you see it, open the perspective switcher at the top of the left menu and choose *Core platform*:
++
+image::module-05-console-fleet.png[The OpenShift Console opened in the Fleet Management perspective, with the perspective switcher at the top of the left menu highlighted,link=self,window=blank,width=520]
++
+image::module-05-console-core.png[The perspective switcher now reading Core platform,link=self,window=blank,width=520]
++
+In the *Core platform* perspective, expand *Pipelines* in the left menu and click *Pipelines*, open the *PipelineRuns* tab, and make sure the project selector at the top reads `{user}-agent-workspace`. Your run is in the list with its status and task bar:
++
+image::module-05-console-pipelineruns.png[The console's Pipelines page on the PipelineRuns tab with the project set to the agent workspace, showing the headless-agent-run entries,link=self,window=blank,width=700]
++
+Open the run: the task graph, its log, and the `agent-reply` result are all there.
 
 . Close the loop on governance — the headless turn crossed the same gateway as every chat turn, so the agent's own ledger recorded the governed call. As `admin-{user}` (Module 3's operator persona) you could read that ledger right now; the audit trail does not know or care that no human was in the loop.
 
@@ -264,5 +274,8 @@ of exercise 1 exercises the same machinery module 2 verified.
 
 Assets needed (capture during a live walkthrough):
 . module-05-pipelinerun-logs.png — terminal with the run log showing "agent said: STUCK=..."
+. module-05-console-fleet.png — Console opened in the Fleet Management perspective, perspective switcher highlighted
+. module-05-console-core.png — perspective switcher set to Core platform
+. module-05-console-pipelineruns.png — Pipelines → Pipelines, PipelineRuns tab, project selector on the agent workspace (numbered callouts)
 . module-05-pipelinerun-result.png — Console PipelineRun Results tab with agent-reply
 ////
