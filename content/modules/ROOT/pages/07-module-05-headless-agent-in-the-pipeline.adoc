@@ -65,6 +65,19 @@ oc get deploy {user}-assistant-gateway -n {user}-agent-workspace \
 +
 Declared in git, rendered by the operator, rolled by a content hash. Nobody ran a restart command.
 
+. Before you call it, wait for the rollout to finish and prove the new face answers. A pipeline that fires while the pod is still rolling is refused -- the Service has no ready endpoint yet:
++
+[source,bash,role="execute",subs="+attributes"]
+----
+oc rollout status deployment/{user}-assistant-gateway -n {user}-agent-workspace --timeout=180s
+oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw -- \
+  curl -s -o /dev/null -w 'HTTP %{http_code}\n' \
+  -H "Authorization: Bearer $(oc get secret {user}-assistant-gateway-token -n {user}-agent-workspace -o jsonpath='{.data.OPENCLAW_GATEWAY_TOKEN}' | base64 -d)" \
+  http://localhost:18789/v1/models
+----
++
+`successfully rolled out`, then `HTTP 200`: the OpenAI-compatible surface is up and the gateway token opens it. Anything else -- wait a few seconds and run it again; do not start Exercise 2 until it answers.
+
 . One more thing before you call it: who can actually *use* this new surface? The endpoint authenticates with the gateway token — the `OPENCLAW_GATEWAY_TOKEN` you met in Module 3's credential hunt. That token lives in a Secret in this namespace, and reading it requires this namespace's RBAC:
 +
 [source,bash,role="execute",subs="+attributes"]
@@ -122,7 +135,7 @@ spec:
                       key: OPENCLAW_GATEWAY_TOKEN
               script: |
                 #!/usr/bin/env python3
-                import json, os, sys, urllib.request
+                import json, os, sys, time, urllib.error, urllib.request
                 url = "http://{user}-assistant-gateway.{user}-agent-workspace.svc.cluster.local:18789/v1/chat/completions"
                 body = {
                     "model": "openclaw/{user}-assistant",
@@ -134,8 +147,19 @@ spec:
                 req = urllib.request.Request(url, data=json.dumps(body).encode(),
                     headers={"Authorization": "Bearer " + os.environ["GATEWAY_TOKEN"],
                              "Content-Type": "application/json"})
-                with urllib.request.urlopen(req, timeout=300) as res:
-                    reply = json.load(res)["choices"][0]["message"]["content"].strip()
+                # A gateway that is mid-rollout (Exercise 1 just changed its
+                # rendered config) refuses connections for a few seconds; a
+                # pipeline task waits for the service, it does not fail on it.
+                for attempt in range(1, 13):
+                    try:
+                        with urllib.request.urlopen(req, timeout=300) as res:
+                            reply = json.load(res)["choices"][0]["message"]["content"].strip()
+                        break
+                    except urllib.error.URLError as err:
+                        print(f"gateway not ready ({err.reason}); retry {attempt}/12 in 10s", flush=True)
+                        time.sleep(10)
+                else:
+                    sys.exit("ERROR: gateway did not accept the request after 2 minutes")
                 if not reply:
                     sys.exit("ERROR: gateway returned an empty reply")
                 print("agent said:", reply)
