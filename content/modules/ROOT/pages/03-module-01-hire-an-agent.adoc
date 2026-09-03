@@ -110,9 +110,17 @@ endif::[]
 oc whoami
 ----
 +
-// VERIFIED LIVE 2026-09-03 on self-service (test2) and fixed (user2, user3, user4)
-// seats alike: the workbench terminal runs as the seat's service account.
+// Self-service seats: the terminal IS the seat's service account (admin of the
+// workspace, never expires). Fixed seats: the terminal starts as its pod's
+// service account, which holds nothing in the workspace — the attendee signs
+// in as {user} with the oc login step on the lab details page, and every
+// module assumes that login. Verified live 2026-09-03 on both seat types.
+ifeval::["{seat_mode}" == "self-service"]
 It prints `system:serviceaccount:showroom-{user}:showroom-{user}` — your workbench's service account, an administrator of your project and nothing else, with a session that never expires. Every `oc` command in this lab runs as it; your own login (`{user}`) is for the web consoles.
+endif::[]
+ifeval::["{seat_mode}" != "self-service"]
+It prints `{user}`. If it prints a `system:serviceaccount:...` name instead, you have not signed in yet: run the `oc login` command from the lab details page before continuing — the service account the terminal starts with holds no rights in your workspace.
+endif::[]
 
 . Watch the agent pod start:
 +
