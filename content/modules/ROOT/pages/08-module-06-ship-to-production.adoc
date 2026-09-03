@@ -212,10 +212,10 @@ oc get pipelinerun -n {user}-agent-workspace -w
 Press `Ctrl+C` at `Succeeded` (about 3 minutes).
 
 . Watch the same run as a picture. Open the link:{openshift_console_url}[OpenShift Console^] in the *Core platform* perspective (Module 5 showed the switcher if you land in *Fleet Management*), switch to your `{user}-agent-workspace` project, and go to *Pipelines* → *Pipelines* → the *PipelineRuns* tab. Open the active `order-metrics-on-push-` run and watch the task graph light up left to right: `init`, `clone-repository`, `prefetch-dependencies`, `build-container`, `build-image-index`, `apply-tags`, `push-dockerfile` — the same in-cluster Konflux `docker-build` pipeline the platform builds its own components with. The *Logs* tab follows any task live.
-// PENDING-IMAGE +
-// PENDING-IMAGE image::module-06-pipeline-graph.png[The PipelineRun task graph: init, clone-repository, prefetch-dependencies and build-container in sequence, then build-image-index fanning out into the scan and check tasks,link=self,window=blank,width=700]
-// PENDING-IMAGE +
-// PENDING-IMAGE That is the shape to expect: four tasks in sequence, then `build-image-index` fanning out into a dozen scans and checks. In this capture `build-container` had failed -- the red node; a healthy run shows it green and the fan-out lights up after it.
++
+image::module-06-pipeline-graph.png[The PipelineRun task graph: init, clone-repository, prefetch-dependencies and build-container in sequence, then build-image-index fanning out into the scan and check tasks,link=self,window=blank,width=700]
++
+That is the shape to expect: four tasks in sequence, then `build-image-index` fanning out into a dozen scans and checks. In this capture `build-container` had failed -- the red node; a healthy run shows it green and the fan-out lights up after it.
 +
 // TODO screenshot (capture during the live walkthrough, then restore):
 // image::module-06-pipeline-taskgraph.png[OpenShift Console PipelineRun detail showing the seven-task docker-build graph with all tasks Succeeded,link=self,window=blank,width=700]
