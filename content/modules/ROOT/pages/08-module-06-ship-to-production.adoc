@@ -422,14 +422,14 @@ It's Monday. Using your new {user}_orders_metrics_stuck_orders and {user}_orders
 ----
 oc exec $(oc get pods -n {user}-agent-workspace -o name | grep {user}-assistant | head -1) \
   -n {user}-agent-workspace -c openclaw -- \
-  sh -c 'grep -ho "\"toolName\":\"[a-z_]*\"" \
+  sh -c 'grep -ho "\"toolName\":\"[a-z0-9_]*\"" \
     /home/node/.openclaw/agents/{user}-assistant/sessions/*.jsonl \
     | sort | uniq -c | sort -rn | head -20'
 ----
 +
 // AUTHOR NOTE (verify live): confirm the session JSONL path inside the assistant container. This mirrors the audit command from Module 3 — if that path changed, update both modules.
 +
-The `{user}_orders_*` tool call appears in the ledger alongside the `governed__gitea_*` calls you saw in Module 3 — the factory's newest tool, already leaving the same class of record as its oldest. The ledger entry is your tenant-side receipt. Its platform-side twin — the gateway's access-log line for this call — lives in the shared stream you proved in Module 3 you cannot open, shown on the shared screen during the session, on the same cluster, under the same retention policy as every other audit artifact ACME governs.
+The `governed__{user}_orders_*` tool calls appear in the ledger alongside the `governed__gitea_*` calls you saw in Module 3 — the factory's newest tool, already leaving the same class of record as its oldest. The ledger entry is your tenant-side receipt. Its platform-side twin — the gateway's access-log line for this call — lives in the shared stream you proved in Module 3 you cannot open, shown on the shared screen during the session, on the same cluster, under the same retention policy as every other audit artifact ACME governs.
 +
 // AUTHOR NOTE (verify live): confirm the orders tool entries appear namespaced in the ledger (expected shape: a prefixed toolName matching the MCPServerRegistration prefix) and name the exact string here and in the Verify bullet.
 
@@ -487,7 +487,7 @@ NOTE: The platform's signing key pair lives in the cluster (`openshift-pipelines
 === Verify
 
 * The assistant agent replied in Mattermost with the stuck count and weekly summary from order-metrics
-* The tenant-side tool-call ledger shows a `{user}_orders_*` entry marked as a governed call
+* The tenant-side tool-call ledger shows `governed__{user}_orders_*` entries — the seat prefix from your MCPServerRegistration, behind the agent's gateway connection name
 * The image attestation command returns annotation data, confirming the pipeline's signing step produced a traceable artifact
 
 == What just happened
