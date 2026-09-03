@@ -120,6 +120,29 @@ Two thousand orders, five statuses, five regions — and a raw list of everythin
 
 Now commission the fix. You will open the dev agent's Mattermost channel and describe the service you want built. The agent will use its governed Gitea tools to scaffold the service, commit the files to your org, and open a pull request.
 
+. Wire the supply chain *before* you commission the service, so a listener exists before anything can be merged. The `Repository` below names a repository that does not exist yet -- that is fine, Pipelines-as-Code simply waits for events on it. The platform side is already standing — an org-level webhook on your Gitea org feeds the cluster's Pipelines-as-Code controller — so your half is one resource: a `Repository` that tells Pipelines-as-Code this repo's runs belong in your namespace, authenticated by your own seat credentials:
++
+[source,bash,role="execute",subs="+attributes"]
+----
+cat <<EOF | oc apply -n {user}-agent-workspace -f -
+apiVersion: pipelinesascode.tekton.dev/v1alpha1
+kind: Repository
+metadata:
+  name: order-metrics
+spec:
+  url: {gitea_url}/{user}-agents/order-metrics
+  git_provider:
+    type: gitea
+    url: {gitea_url}
+    secret:
+      name: {user}-gitea-token
+      key: GITEA_TOKEN
+    webhook_secret:
+      name: pac-gitea-webhook
+      key: secret
+EOF
+----
+
 ifeval::["{seat_mode}" == "self-service"]
 . Open link:{mattermost_url}[Mattermost^] — the link signs you in with the account you registered.
 endif::[]
@@ -168,28 +191,14 @@ Please build a service called order-metrics. It reads the existing orders API at
 
 The dev agent opened the pull request. You own the merge decision — the same pattern you practiced in Module 2: the diff is readable, the source is the agent's tool calls, and the merge is the moment of record. The scaffold conforms to the platform's *golden-path service contract* — a versioned skill every agent on your seat carries (Module 4's delivery mechanism, working for Module 6): Dockerfile at the root, port 8080, the deployment manifest shape, and the supply-chain pipeline definition already included under `.tekton/`.
 
-. Wire your repository into the supply chain *before* merging, so the merge event lands on a listening pipeline. The platform side is already standing — an org-level webhook on your Gitea org feeds the cluster's Pipelines-as-Code controller — so your half is one resource: a `Repository` that tells Pipelines-as-Code this repo's runs belong in your namespace, authenticated by your own seat credentials:
+. Confirm the listener is in place -- the `Repository` you applied in Exercise 2:
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
-cat <<EOF | oc apply -n {user}-agent-workspace -f -
-apiVersion: pipelinesascode.tekton.dev/v1alpha1
-kind: Repository
-metadata:
-  name: order-metrics
-spec:
-  url: {gitea_url}/{user}-agents/order-metrics
-  git_provider:
-    type: gitea
-    url: {gitea_url}
-    secret:
-      name: {user}-gitea-token
-      key: GITEA_TOKEN
-    webhook_secret:
-      name: pac-gitea-webhook
-      key: secret
-EOF
+oc get repository order-metrics -n {user}-agent-workspace
 ----
++
+NOTE: Merged before the `Repository` existed? Then the merge event was dropped: the controller logged `cannot find a repository match`, and Pipelines-as-Code never replays on its own. Redeliver it -- in Gitea open your `{user}-agents` organization, *Settings* → *Webhooks* → the pipelines-as-code hook → *Recent Deliveries* → *Redeliver* on the latest `push`. Any new commit to `main` works too.
 
 . Open the pull request in Gitea and review the diff. The service skeleton is real engineering: source, tests, a root `Dockerfile`, a deployment manifest with probes, limits, and a hardened security context, and `.tekton/on-push.yaml` — the pipeline, reviewed and versioned like any other code. If anything strays from the golden-path contract, say so in the agent's channel and it will push the fix; when you are satisfied, **merge** — the merge is the push event that fires the build.
 
@@ -203,6 +212,10 @@ oc get pipelinerun -n {user}-agent-workspace -w
 Press `Ctrl+C` at `Succeeded` (about 3 minutes).
 
 . Watch the same run as a picture. Open the link:{openshift_console_url}[OpenShift Console^] in the *Core platform* perspective (Module 5 showed the switcher if you land in *Fleet Management*), switch to your `{user}-agent-workspace` project, and go to *Pipelines* → *Pipelines* → the *PipelineRuns* tab. Open the active `order-metrics-on-push-` run and watch the task graph light up left to right: `init`, `clone-repository`, `prefetch-dependencies`, `build-container`, `build-image-index`, `apply-tags`, `push-dockerfile` — the same in-cluster Konflux `docker-build` pipeline the platform builds its own components with. The *Logs* tab follows any task live.
+// PENDING-IMAGE +
+// PENDING-IMAGE image::module-06-pipeline-graph.png[The PipelineRun task graph: init, clone-repository, prefetch-dependencies and build-container in sequence, then build-image-index fanning out into the scan and check tasks,link=self,window=blank,width=700]
+// PENDING-IMAGE +
+// PENDING-IMAGE That is the shape to expect: four tasks in sequence, then `build-image-index` fanning out into a dozen scans and checks. In this capture `build-container` had failed -- the red node; a healthy run shows it green and the fan-out lights up after it.
 +
 // TODO screenshot (capture during the live walkthrough, then restore):
 // image::module-06-pipeline-taskgraph.png[OpenShift Console PipelineRun detail showing the seven-task docker-build graph with all tasks Succeeded,link=self,window=blank,width=700]
@@ -495,6 +508,7 @@ Assets needed (capture against the live environment):
 . content/modules/ROOT/assets/images/module-06-dev-agent-compose.png — Developer Hub Suggest output for the dev brief: scaffold skill and Gitea integration in the composed kit, visibly distinct from the assistant's investigation kit
 . content/modules/ROOT/assets/images/module-06-dev-agent-reply.png — Mattermost channel for {user}-dev showing the agent's description of the Gitea tool calls it made and a link to the pull request it opened
 . content/modules/ROOT/assets/images/module-06-gitea-pr-diff.png — Gitea pull request diff showing the golden-path template files committed by the dev agent (Dockerfile, pipeline binding, service manifest, source skeleton)
+. content/modules/ROOT/assets/images/module-06-pipeline-graph.png — OpenShift Console PipelineRun task graph for order-metrics-on-push (sequence, then the fan-out)
 . content/modules/ROOT/assets/images/module-06-pipeline-stages.png — OpenShift Console PipelineRun task graph showing build, sign (cosign/SLSA), and scan tasks in Succeeded status
 . content/modules/ROOT/assets/images/module-06-service-running.png — Terminal showing order-metrics pod in Running status and curl to /healthz returning ok
 . content/modules/ROOT/assets/images/module-06-mcp-registration.png — Terminal showing MCPServerRegistration in Ready status; Mattermost reply from {user}-assistant confirming the orders tools are visible
