@@ -409,7 +409,7 @@ It's Monday. Using your new {user}_orders_metrics_stuck_orders and {user}_orders
 +
 // AUTHOR NOTE (verify live): replace "order-metrics tool" in the prompt with the exact tool name verified in Exercise 4 step 3. The assistant recognizes the name more reliably when the prompt matches the gateway-exposed name precisely.
 
-. Read the agent's reply. It reports the stuck count and the weekly summary — Morgan's Monday answers, produced by governed calls to the service the factory shipped this session. No exports, no VLOOKUPs, and an audit entry where the spreadsheet used to be.
+. Read the agent's reply. It reports the stuck count and the weekly summary — Morgan's Monday answers, produced by governed calls to the service the factory shipped this session. The numbers match the platform's own `metrics_*` tools exactly, and the assistant may say so: the service serves the fixed export dataset from Exercise 2 (`as_of` 2026-07-01), not a live feed -- same data, now behind a tool *your* factory built, registered, and governs. No exports, no VLOOKUPs, and an audit entry where the spreadsheet used to be.
 
 . Read your tenant-side tool-call ledger to confirm the governed call was made:
 +
