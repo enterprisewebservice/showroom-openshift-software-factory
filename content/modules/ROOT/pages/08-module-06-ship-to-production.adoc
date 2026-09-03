@@ -360,14 +360,19 @@ oc get mcpserverregistration {user}-order-metrics -n {user}-agent-workspace \
 +
 Within about 30 seconds: `Ready: server added successfully. Total tools added 2. Total prompts added 0` — the gateway walked your route, spoke MCP to the service the factory built, and found `metrics_stuck_orders` and `metrics_weekly_summary`.
 
-. Watch the platform hand the new tools to your assistant. A running agent lists its governed tools when its MCP runtime connects to the gateway, so a server registered afterwards is not in its list until it reconnects -- and it does not have to know that: within a minute of the registration going Ready, the chat bridge reloads your agents' runtimes and posts in the channel:
+. Watch the platform hand the new tools to your assistant. A running agent lists its governed tools when its MCP runtime connects to the gateway, so a server registered afterwards is not in its list until it reconnects -- and it does not have to know that. The operator watches your namespace's registrations: the moment the set changes it reloads your gateway's cached runtimes, records the set on the workstation, and posts in the channel:
 +
-[source,text]
+[source,text,subs="+attributes"]
 ----
-🔧 Governed tools changed — added {user}-order-metrics (2 tools). Reconnecting your assistant to the gateway; the new tools are in its list from its next message.
+🔧 Governed tools changed — added {user}-order-metrics (2 tools). Reconnecting {user}-assistant to the gateway; the new tools are in its list from its next message.
 ----
 +
-Nothing for you to run. The runtime rebuilds its gateway connection on the assistant's next message and re-lists the tools.
+Nothing for you to run. Read the same fact on the resource -- the operator's record of what your agent's gateway offers:
++
+[source,bash,role="execute",subs="+attributes"]
+----
+oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.status.gatewayRegistrations}'; echo
+----
 
 . Confirm the tools are visible to your assistant. Open link:{mattermost_url}[Mattermost^], go to the `{user}-assistant` channel, and send:
 +
