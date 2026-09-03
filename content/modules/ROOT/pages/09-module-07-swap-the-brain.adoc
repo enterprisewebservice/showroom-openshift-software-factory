@@ -27,19 +27,21 @@ By the end of this module, you'll be able to:
 
 The AgentWorkstation resource declares everything the agent runs with: system prompt, skill artifacts, tools, gateway, and brain. You have read the first four in earlier modules. The brain is the same kind of thing — fields in `spec.model`, declared in `base/agentworkstation.yaml`, enforced by the operator.
 
-. Confirm you are signed in as your lab user:
+. Confirm who `oc` is working as — the same identity Module 1 introduced:
 +
 [source,bash,role="execute"]
 ----
 oc whoami
 ----
 +
-Expected output:
-+
-[subs="+attributes"]
-----
-{user}
-----
+// VERIFIED LIVE 2026-09-03 (self-service seat test2): the workbench terminal
+// runs as the seat's service account, never as the attendee's login.
+ifeval::["{seat_mode}" == "self-service"]
+It prints `system:serviceaccount:showroom-{user}:showroom-{user}` — your workbench's service account, an administrator of your project and nothing else. Every `oc` command in this module runs as it.
+endif::[]
+ifeval::["{seat_mode}" != "self-service"]
+It prints `{user}`; if it does not, complete the login steps from the lab details page before continuing.
+endif::[]
 
 . Read the brain reference the agent is currently running with:
 +
@@ -55,14 +57,18 @@ oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
   -o jsonpath='{.spec.model}'; echo
 ----
 +
-The `connectionRef` names a *ModelConnection* — a cluster-scoped resource the platform administrator published. The connection carries the endpoint and the credential reference; the agent carries only the connection's name and a model id. List the connections the platform publishes:
+The `connectionRef` names a *ModelConnection* — a cluster-scoped resource the platform administrator published. The connection carries the endpoint and the credential reference; the agent carries only the connection's name and a model id. List the connections the platform publishes, with the groups each one admits:
++
+// VERIFIED LIVE 2026-09-03: the seat's service account lists every published
+// connection (four rows on this cluster, the administrator's personal lanes
+// included); spec.access.groups is what the hiring menu filters on.
 +
 [source,bash,role="execute"]
 ----
-oc get modelconnections
+oc get modelconnections -o custom-columns=NAME:.metadata.name,GROUPS:.spec.access.groups
 ----
 +
-Each row is a brain on the hiring menu, and each declares which groups may pick it. Your seat sees the frontier connection you hired on (the frontier lane on the Red Hat work subscription) and the LiteMaaS connection (open models — {model_swap_family} — served by Red Hat's AI Services team). The administrator's personal lanes exist on the same cluster; your role simply cannot see them. Access is data, in git, like everything else here.
+Each row is a published brain, and its GROUPS column is the access list. The Module 1 hiring menu offered you exactly the rows whose access list names your group: the frontier connection you hired on (the frontier lane on the Red Hat work subscription) and `{model_swap_connection}` (open models — {model_swap_family} — served by Red Hat's AI Services team). The administrator's personal lanes are on the same list, declared for other groups: you can read that they exist, and you cannot hire on them. Access is data, in git, like everything else here.
 
 . Open the agent's repository — use the Source link in the Developer Hub catalog entry for `{user}-assistant`, as you did in Module 2. Navigate to `base/agentworkstation.yaml` and find the `model:` block.
 +
@@ -71,7 +77,7 @@ NOTE: The brain reference here and the gateway reference in Module 3 follow the 
 === Verify
 
 * `oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.spec.model}'` returns a value with a `connectionRef`
-* `oc get modelconnections` lists the published brains, including the one you hired on and `{model_swap_connection}`
+* `oc get modelconnections` lists the published brains with their access groups, including the one you hired on and `{model_swap_connection}`
 * The `model:` block in `base/agentworkstation.yaml` matches what the cluster reports
 
 == Exercise 2: Swap to the Red Hat-hosted open model
@@ -107,7 +113,7 @@ Leave every other field in the manifest exactly as it is.
 
 . Open link:{gitops_url}[OpenShift GitOps^] and sign in
 ifeval::["{seat_mode}" == "self-service"]
-with the account you registered.
+with the account you registered — *Log in via OpenShift*, then the *factory-sso* provider, as in Module 1.
 endif::[]
 ifeval::["{seat_mode}" != "self-service"]
 with `{user}` / `{password}`.
@@ -116,12 +122,7 @@ Find the Application named `{user}-agents-{user}-assistant-agent`.
 +
 The sync completes within seconds — by the time you switch tabs it may already show *Synced*. The evidence is in the Application's *History* tab: the revision listed there must match the commit you just merged.
 
-. The operator now re-renders the gateway's model configuration: the `{model_swap_connection}` connection becomes a provider block on the gateway, with its key projected by the operator — never written into your namespace's manifests. A brain change restarts the gateway pod briefly so the new configuration loads. Watch it settle, then read the brain back:
-+
-[source,bash,role="execute",subs="+attributes"]
-----
-oc get pods -n {user}-agent-workspace
-----
+. Read the brain back from the cluster — it changes the moment OpenShift GitOps syncs your merge:
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
@@ -131,7 +132,21 @@ oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
 +
 The output now names the `{model_swap_connection}` connection and the {model_swap_family} model.
 
-. Test the agent with a task that requires governed tools. Open link:{mattermost_url}[Mattermost^], sign in as `{user}`, and find the `{user}-assistant` channel. Send `new session` first to start a clean session — a thread that replied from the frontier model carries history momentum for a turn or two, and the reset is deterministic (no slash: Mattermost swallows `/`-prefixed messages as its own commands):
+. The operator re-renders the gateway's model configuration: the `{model_swap_connection}` connection becomes a provider block on the gateway, with its key projected by the operator — never written into your namespace's manifests. A brain change restarts the gateway pod briefly so the new configuration loads. Confirm the restart has settled:
++
+// VERIFIED LIVE 2026-09-03: the gateway is the Deployment {user}-assistant-gateway
+// in the seat workspace (the namespace also holds order-metrics and pipeline pods
+// by this point, so gate on the deployment, not on the pod list).
++
+[source,bash,role="execute",subs="+attributes"]
+----
+oc rollout status deployment/{user}-assistant-gateway \
+  -n {user}-agent-workspace --timeout=180s
+----
++
+`successfully rolled out` means the new gateway pod is serving. If it returns instantly, run `oc get pods -n {user}-agent-workspace | grep {user}-assistant-gateway` — a pod whose AGE is under a minute is the restart.
+
+. Test the agent with a task that requires governed tools. Open link:{mattermost_url}[Mattermost^] (you signed in during Module 1) and find the `{user}-assistant` channel. Send `new session` first to start a clean session — a thread that replied from the frontier model carries history momentum for a turn or two, and the reset is deterministic. Type it without a slash: Mattermost treats a leading `/` as one of its own commands and never posts it.
 +
 [source,text]
 ----
@@ -160,7 +175,7 @@ The reply arrives from {model_swap_family}. The agent calls the same `gitea_*` t
 * The Application `{user}-agents-{user}-assistant-agent` shows *Synced* and *Healthy* in OpenShift GitOps
 * The Application's *History* tab shows the latest revision matches the merge commit from this exercise
 * `oc get agentworkstation {user}-assistant -n {user}-agent-workspace -o jsonpath='{.spec.model}'` returns `connectionRef: {model_swap_connection}` and `modelName: {model_swap_model}`
-* The gateway pod in `{user}-agent-workspace` is `Running` (it restarted once to load the new brain)
+* `oc rollout status deployment/{user}-assistant-gateway -n {user}-agent-workspace` reports `successfully rolled out` (the gateway restarted once to load the new brain)
 * After the session reset, the agent answers the commit-message task correctly, and its answer is the commit you merged in this exercise
 
 == Exercise 3: Swap back
@@ -169,23 +184,9 @@ A brain revert is a git revert. The same reconciliation loop that applied the sw
 
 . In the repository web UI, open the commit history for the main branch and find the merge commit from Exercise 2.
 
-. Use the repository's revert button to create a revert commit on the main branch and merge it.
+. Open that commit and use the *Operations* menu at the top right of the commit page — choose *Revert*. Gitea creates the revert commit for you: commit it to the main branch directly, or on a branch with a pull request you then merge, exactly as in Exercise 2.
 +
-If you prefer the command line:
-+
-[source,text]
-----
-# Replace <repo-url> with the repository URL from the Developer Hub catalog entry.
-git clone <repo-url>
-cd <repo-directory>
-
-# Find the merge commit hash.
-git log --oneline -5
-
-# Revert it. Replace <commit-hash> with the Exercise 2 merge commit hash.
-git revert <commit-hash> --no-edit
-git push origin main
-----
+NOTE: The revert stays in the browser on purpose. Your workbench terminal holds no git credential — it works as the seat's service account against the cluster, not against the repository — so every repository change in this lab goes through the web UI, where you are signed in as yourself.
 
 . Open link:{gitops_url}[OpenShift GitOps^] and confirm the Application syncs against the revert commit. Check *History* — the latest revision should be the revert.
 
