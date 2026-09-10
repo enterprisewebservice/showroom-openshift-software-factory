@@ -21,11 +21,14 @@ xref:index.adoc[Start the course →]
 [#get-a-seat]
 == Get a seat
 
-Seats are live environments, so they are provisioned per person while self-service is being built. Ask for one and you will get a URL and a login:
-
-mailto:peterson.dean@gmail.com?subject=Hands-On%20Mode%20seat[Request a seat by email →]
+Seats are live environments and they are yours on sign-in: go to https://handsonmode.ai[handsonmode.ai], pick the workshop, and sign in (GitHub is the easy path). The platform builds your environment while you read the overview.
 
 Each seat is yours for the duration: your own agent workspace, your own git org, your own namespace — isolated from every other seat on the cluster.
+
+[#help]
+== Stuck? Say so.
+
+A person reads mailto:help@handsonmode.ai?subject=Hands-On%20Mode%20help[help@handsonmode.ai]. The *Help* tab at the top of every seat opens https://handsonmode.ai/help[the same page], which says what to include so it gets fixed fast: the module and exercise, your sign-in name, what you ran and what came back.
 
 == Why this exists
 

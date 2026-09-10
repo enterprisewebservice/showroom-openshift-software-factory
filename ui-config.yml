@@ -28,3 +28,7 @@ tabs:
   - name: Mattermost
     url: 'https://mattermost-mattermost.apps.salamander.aimlworkbench.com'
     external: true
+  # Stuck? A person reads help@handsonmode.ai — the page says what to include.
+  - name: Help
+    url: 'https://handsonmode.ai/help'
+    external: true
