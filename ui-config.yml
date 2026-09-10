@@ -28,7 +28,8 @@ tabs:
   - name: Mattermost
     url: 'https://mattermost-mattermost.apps.salamander.aimlworkbench.com'
     external: true
-  # Stuck? A person reads help@handsonmode.ai — the page says what to include.
+  # Stuck? The help desk agent (hired the way this workshop teaches) looks at
+  # YOUR seat and answers; a person reads every transcript.
   - name: Help
     url: 'https://handsonmode.ai/help'
     external: true

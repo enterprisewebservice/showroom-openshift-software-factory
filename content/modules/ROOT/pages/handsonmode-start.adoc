@@ -28,11 +28,7 @@ Each seat is yours for the duration: your own agent workspace, your own git org,
 [#help]
 == Stuck? Say so.
 
-A person reads mailto:help@handsonmode.ai?subject=Hands-On%20Mode%20help[help@handsonmode.ai]. The *Help* tab at the top of every seat opens https://handsonmode.ai/help[the same page], which says what to include so it gets fixed fast: the module and exercise, your sign-in name, what you ran and what came back.
-
-== Why this exists
-
-Demo videos end and nothing changes. A seat is different: twenty minutes in, you have hired an agent, read its employment contract in git, and watched the platform enforce it. That experience does not survive compression into video — it has to be had.
+The *Help* tab at the top of every seat opens the help desk: an agent hired with the same Developer Hub template this workshop teaches, living in git, its tools behind the same governed gateway. It can see your own seat (and only yours), so it looks before it asks: which module you are on, what your seat shows, what to do next. A person reads every transcript.
 
 endif::edition-self[]
 
