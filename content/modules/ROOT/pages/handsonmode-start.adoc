@@ -30,6 +30,8 @@ Each seat is yours for the duration: your own agent workspace, your own git org,
 
 The *Help* tab at the top of every seat opens the help desk: an agent hired with the same Developer Hub template this workshop teaches, living in git, its tools behind the same governed gateway. It can see your own seat (and only yours), so it looks before it asks: which module you are on, what your seat shows, what to do next. A person reads every transcript.
 
+Prefer to watch first? The whole course is walked through on video, module by module: https://youtu.be/YY8gBiedkdU?si=FTjU_27zW_AKBeah[Agents as Staff on YouTube^] (57 minutes).
+
 endif::edition-self[]
 
 ifndef::edition-self[]

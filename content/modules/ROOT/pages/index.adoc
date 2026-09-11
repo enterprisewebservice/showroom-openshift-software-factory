@@ -2,6 +2,10 @@
 
 Welcome to the OpenShift Software Factory workshop.
 
+image::https://img.youtube.com/vi/YY8gBiedkdU/maxresdefault.jpg[Video walk-through of the whole workshop on YouTube,link=https://youtu.be/YY8gBiedkdU?si=FTjU_27zW_AKBeah,window=_blank,width=480]
+
+*Extra help, any time.* Every module of this workshop is walked through in this video (57 minutes). If you get stuck, https://youtu.be/YY8gBiedkdU?si=FTjU_27zW_AKBeah[open it in another tab^] and follow along with the module you are on.
+
 ACME Financial wants what AgentWorks sells (AgentWorks is fictional: a composite of the commercial AI-development-agent platforms): AI development agents that plan, code, and ship real work. The platform team wants it too, right up to the fine print. A vendor control plane would hold the organization's credentials. Agent activity would be audited in someone else's system. Code would ship through a supply chain the team does not own. For a regulated financial company, that is 3 non-starters in a single purchase order.
 
 This workshop takes the other path. You build the equivalent capability on the OpenShift platform ACME already governs, then you put it to work. You hire agents through Red Hat Developer Hub, govern every tool call at a Model Context Protocol (MCP) gateway, deliver know-how as versioned packs, run headless agents inside pipelines, and finish by shipping a microservice to production, with an agent doing the work.
