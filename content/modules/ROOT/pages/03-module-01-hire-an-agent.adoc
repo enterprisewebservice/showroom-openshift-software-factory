@@ -122,7 +122,7 @@ ifeval::["{seat_mode}" != "self-service"]
 It prints `{user}`. If it prints a `system:serviceaccount:...` name instead, you have not signed in yet: run the `oc login` command from the lab details page before continuing — the service account the terminal starts with holds no rights in your workspace.
 endif::[]
 
-. Watch the agent pod start:
+. Watch the AgentGateway pod start:
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
@@ -150,7 +150,7 @@ The pod is named after the agent's gateway — the runtime your agent lives in. 
 
 * The Application for `{user}-assistant` reports *Synced* and *Healthy*
 * The AgentWorkstation resource appears in the Application's resource tree
-* `oc get pods -n {user}-agent-workspace` shows the agent pod with STATUS `Running`
+* `oc get pods -n {user}-agent-workspace` shows the AgentGateway pod with STATUS `Running`
 
 == Exercise 3: Read the wiring and make first contact
 

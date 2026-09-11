@@ -118,7 +118,7 @@ Environment access, URLs, and credentials are on the next page.
 An agent here is a workload, not a SaaS seat. 4 flows carry the whole architecture:
 
 . **Hire**: a sentence typed into Red Hat Developer Hub renders a git repo and a set of custom resources; an operator turns them into a running agent with a persistent workspace.
-. **Work**: the agent does its work in its own workstation pod, using know-how installed from versioned skill artifacts.
+. **Work**: the agent does its work inside its AgentGateway pod, using know-how installed from versioned skill artifacts.
 . **Tool call**: every tool call passes through the MCP gateway: authorize the call, inject the credential, write the audit line. The agent never sees a key.
 . **Ship**: the agent's commits ride the supply chain: build, sign, scan, and promote through OpenShift GitOps. The agent's own definition changes through the same gates.
 

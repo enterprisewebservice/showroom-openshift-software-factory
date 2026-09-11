@@ -78,7 +78,7 @@ ifeval::["{seat_mode}" != "self-service"]
 endif::[]
 Find the Application for `{user}-dev` and watch it reach *Synced* and *Healthy*.
 
-. In the terminal, confirm the dev agent pod is running:
+. In the terminal, confirm the dev agent's AgentGateway pod is running:
 +
 [source,bash,role="execute",subs="+attributes"]
 ----

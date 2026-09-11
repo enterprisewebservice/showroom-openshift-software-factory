@@ -171,7 +171,7 @@ Everything in the component table is running before you arrive. You never instal
 
 Everything you create during the lab belongs to you and runs under your identity:
 
-* *Module 1:* an agent hired from the Developer Hub template, with its git repo, GitOps application, catalog entry, and running workstation pod
+* *Module 1:* an agent hired from the Developer Hub template, with its git repo, GitOps application, catalog entry, and running AgentGateway pod
 * *Module 2:* pull requests against your agent's repo, and a rollback
 * *Module 3:* governed tool calls, and the audit lines they leave behind
 * *Module 4:* a versioned skill pack installed on your agent
@@ -184,7 +184,7 @@ Everything you create during the lab belongs to you and runs under your identity
 
 * You sign in as {user}, a personal Keycloak identity honored by every console in the environment.
 * Your work lands in your own projects. RBAC keeps other attendees' projects out of your view, and yours out of theirs.
-* The agents you hire are yours: their repos, namespaces, workstation pods, and chat channels exist per attendee. Nobody else's prompts reach your agent.
+* The agents you hire are yours: their repos, namespaces, AgentGateway pods, and chat channels exist per attendee. Nobody else's prompts reach your agent.
 * Shared services stay accountable. The MCP gateway records every tool call with the calling agent's identity, so shared never means anonymous.
 
 == Timing and schedule

@@ -9,7 +9,7 @@ include::partial$_attributes.adoc[]
 
 The AgentWorks question for this module: connectors and MCP integrations, but with enterprise trust. On a vendor AI platform, the agent process holds the integration credentials. Here, every tool call routes through an MCP (Model Context Protocol) gateway that authorizes the call, injects the credential on the call path, and writes the audit line. The agent never sees the secret.
 
-Plan on 30 minutes: trigger a tool call and read the result, inspect the agent pod to confirm it holds no downstream credential, examine the declared exception pattern for direct integrations, then read the gateway's access log and watch a live call appear.
+Plan on 30 minutes: trigger a tool call and read the result, inspect the AgentGateway pod to confirm it holds no downstream credential, examine the declared exception pattern for direct integrations, then read the gateway's access log and watch a live call appear.
 
 == Learning objectives
 
@@ -135,7 +135,7 @@ ifeval::["{seat_mode}" != "self-service"]
 oc get pods -n {user}-agent-workspace -w
 ----
 +
-When the refresher runs — every thirty minutes, or on demand during the session — your gateway pod is *not* replaced: same pod name, `RESTARTS` still `0`, its age climbing straight through the boundary. Ask your agent for `gitea_get_me` on either side of a refresh and it answers as {user} both times, on two different tokens, without the runtime under it ever moving. The old workshop compromise — accept a token with no clock of its own, because self-expiring credentials meant restarting a seat twice an hour — is gone: churn-free delivery buys the stronger credential at no cost to the running agent.
+When the refresher runs — every thirty minutes, or on demand during the session — your AgentGateway pod is *not* replaced: same pod name, `RESTARTS` still `0`, its age climbing straight through the boundary. Ask your agent for `gitea_get_me` on either side of a refresh and it answers as {user} both times, on two different tokens, without the runtime under it ever moving. The old workshop compromise — accept a token with no clock of its own, because self-expiring credentials meant restarting a seat twice an hour — is gone: churn-free delivery buys the stronger credential at no cost to the running agent.
 endif::[]
 
 // TODO screenshot (capture during the live walkthrough, then restore):
@@ -311,7 +311,7 @@ That list, plus anything registered in your own namespace, is everything your ag
 
 *Why does my badge pass straight through to Gitea, when GitHub agents never hold a GitHub token?* Two credential models, same gateway. Gitea is multi-tenant here: every seat has its own Gitea user and org, so the proxy in front of the Gitea MCP server forwards your badge and the call runs as you, inside what you own. GitHub is a single platform identity: the proxy in front of the GitHub MCP server swaps the caller's header for the platform's GitHub credential, synced from Vault, and only the platform's own agents are on that server's allow-list. Your badge cannot reach it at all.
 
-*Can my agent read its own badge?* Yes. The runtime runs openclaw's coding profile, so a skill can run a script and read the pod's environment, as `find-token` did above. That is the design, not a gap: your namespace holds your badge, your gateway's control token and a model-lane key, and nothing that mints badges, nothing platform-wide, and no other seat's identity. Scope, rotation and audit are the boundary. It also tells you where the real line is: personas that share a gateway pod share its identity, which is why the developer agent you hire in Module 6 gets a gateway of its own.
+*Can my agent read its own badge?* Yes. The runtime runs openclaw's coding profile, so a skill can run a script and read the AgentGateway pod's environment, as `find-token` did above. That is the design, not a gap: your namespace holds your badge, your gateway's control token and a model-lane key, and nothing that mints badges, nothing platform-wide, and no other seat's identity. Scope, rotation and audit are the boundary. It also tells you where the real line is: personas that share an AgentGateway pod share its identity, which is why the developer agent you hire in Module 6 gets a gateway of its own.
 
 *How do tools relate to skills?* A tool is something the agent can call through the gateway. A skill is something it knows how to do, delivered into its workspace by the Skill object you meet in Module 4. A skill can declare that it needs a tool, under `spec.dependencies` with kind `mcpServer`, and the operator checks the registration exists. Skills depend on tools; tools never depend on skills.
 
@@ -332,7 +332,7 @@ The AgentWorks question for this module was "connectors and MCP integrations, bu
 By completing this module, you should now understand:
 
 * ✓ How to trigger a governed tool call from Mattermost and identify the tool's contribution to the agent's reply
-* ✓ Why the agent's workstation pod holds nothing but its own delegated badge, and where every other credential actually lives
+* ✓ Why the AgentGateway pod holds nothing but the seat's own delegated badge, and where every other credential actually lives
 * ✓ When the declared exception pattern applies and how it preserves the same reviewability guarantee as the governed gateway
 * ✓ How to read the MCP gateway's access log and match a live call to its audit entry
 
@@ -346,7 +346,7 @@ Module 4 turns to skills. An agent's capabilities come from skills declared in g
 Assets needed (capture against the live environment):
 
 . content/modules/ROOT/assets/images/module-03-tool-reply.png - Mattermost channel showing the agent's reply to the web search prompt, citing an external URL, version number, or release date that confirms the tool was used
-. content/modules/ROOT/assets/images/module-03-env-grep.png - Terminal output of the env grep command from inside the agent's workstation pod, showing no downstream-system credential (search API key, git token, or similar)
+. content/modules/ROOT/assets/images/module-03-env-grep.png - Terminal output of the env grep command from inside the AgentGateway pod, showing no downstream-system credential (search API key, git token, or similar)
 . content/modules/ROOT/assets/images/module-03-agentworkstation-yaml.png - oc get agentworkstation YAML output showing spec.gatewayRef with no inline credential fields alongside it
 . content/modules/ROOT/assets/images/module-03-gateway-log.png - Terminal output of oc logs deploy/mcp-gateway with POST /mcp lines visible and a 200 status on each entry
 ////

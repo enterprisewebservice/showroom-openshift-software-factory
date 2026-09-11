@@ -92,7 +92,7 @@ That is the trust boundary, stated plainly: the token is operator-grade — a ca
 
 * `spec.http` on the AgentGateway reads `{"chatCompletions":true}`
 * The rendered config's `gateway.http` block shows the endpoint enabled
-* The gateway pod rolled without any imperative command
+* The AgentGateway pod rolled without any imperative command
 * The token Secret `{user}-assistant-gateway-token` exists in your namespace
 
 == Exercise 2: Trigger a headless PipelineRun

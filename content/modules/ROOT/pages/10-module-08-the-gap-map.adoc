@@ -31,7 +31,7 @@ Across 7 modules, each row ties a capability to the evidence you personally prod
 |2
 |OpenShift GitOps converged on the PR merge; rollback reverted the behavior by reverting the commit — no imperative command required
 
-|Govern every tool call through an MCP gateway, with no downstream credential in the agent pod
+|Govern every tool call through an MCP gateway, with no downstream credential in the AgentGateway pod
 |3
 |`env grep` returned exactly two platform-placed tokens and nothing for gateway-injected tools; `oc logs deploy/mcp-gateway-data-science-gateway-class -n agent-office` returned `Forbidden`; tool-call ledger showed `governed__gitea_*` entries alongside ungoverned built-ins
 

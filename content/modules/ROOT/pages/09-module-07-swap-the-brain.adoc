@@ -160,7 +160,7 @@ oc rollout status deployment/{user}-assistant-gateway -n {user}-agent-workspace 
 echo "brain landed: $BRAIN"
 ----
 +
-Two or three minutes is normal. `successfully rolled out` after the loop means the gateway pod that serves your agent was started with the new brain.
+Two or three minutes is normal. `successfully rolled out` after the loop means the AgentGateway pod that serves your agent was started with the new brain.
 
 . Test the agent with a task that requires governed tools. Open link:{mattermost_url}[Mattermost^] (you signed in during Module 1) and find the `{user}-assistant` channel. Send `new session` first to start a clean session — a thread that replied from the frontier model carries history momentum for a turn or two, and the reset is deterministic. Type it without a slash: Mattermost treats a leading `/` as one of its own commands and never posts it.
 +
