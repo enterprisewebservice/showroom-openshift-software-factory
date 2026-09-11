@@ -283,6 +283,38 @@ ifeval::["{seat_mode}" != "self-service"]
 * You are signed back in as `{user}`
 endif::[]
 
+== Questions this module raises
+
+These come up every time this module is taught. Each answer is something you can check from your seat.
+
+*Does the MCPServerRegistration run the tool?* No. It is the phone-book entry, not the phone. The tool is an MCP server: an ordinary Deployment, Service and HTTPRoute that the platform runs like any other workload. Gitea's is the vendor's `gitea-mcp-server` image; the triage tools are an image built by a Tekton pipeline; the metrics tool you meet in Module 6 is a service an agent wrote. The registration (Red Hat Connectivity Link's `MCPServerRegistration`) points the MCP gateway at that route and gives the tools a prefix and a discovery credential. When one appears in your namespace, the operator reloads your agent's MCP client config, which is why new tools show up without a restart.
+
+*If the model only writes text, how does the badge get onto the call?* The agent is two things: the model and the openclaw runtime that hosts it. The model emits a tool name and arguments. The runtime looks up the server entry the operator rendered from your workstation's `tools.mcpServers`, attaches the `Authorization` header from your badge, sends the JSON-RPC call to the gateway, and drops the result back into the model's context. Read your own entry:
+
+[source,bash,subs="attributes"]
+----
+oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
+  -o jsonpath='{.spec.tools}' | python3 -m json.tool
+----
+
+You will see `Authorization: Bearer ${GITEA_TOKEN}` and `envFromSecret: {user}-gitea-token`: a reference, rendered by the operator, never a value in git.
+
+*Gitea authenticates the token anyway. What is Authorino for?* Two different questions get answered on every call. Authorino, in front of the gateway, answers "which agent is this, and may it reach this server?" It matches your bearer to your badge's Secret and reads the allow-list stamped on it. Read yours:
+
+[source,bash,subs="attributes"]
+----
+oc get secret {user}-gitea-token -n {user}-agent-workspace \
+  -o jsonpath='{.metadata.annotations}' | python3 -m json.tool
+----
+
+That list, plus anything registered in your own namespace, is everything your agent can reach; ask for anything else and the gateway answers 403 and writes an audit line, which is the log you read in Exercise 3. Gitea then answers the second question, "is this credential valid and what may it do?", with its own permission model, as {user}.
+
+*Why does my badge pass straight through to Gitea, when GitHub agents never hold a GitHub token?* Two credential models, same gateway. Gitea is multi-tenant here: every seat has its own Gitea user and org, so the proxy in front of the Gitea MCP server forwards your badge and the call runs as you, inside what you own. GitHub is a single platform identity: the proxy in front of the GitHub MCP server swaps the caller's header for the platform's GitHub credential, synced from Vault, and only the platform's own agents are on that server's allow-list. Your badge cannot reach it at all.
+
+*Can my agent read its own badge?* Yes. The runtime runs openclaw's coding profile, so a skill can run a script and read the pod's environment, as `find-token` did above. That is the design, not a gap: your namespace holds your badge, your gateway's control token and a model-lane key, and nothing that mints badges, nothing platform-wide, and no other seat's identity. Scope, rotation and audit are the boundary. It also tells you where the real line is: personas that share a gateway pod share its identity, which is why the developer agent you hire in Module 6 gets a gateway of its own.
+
+*How do tools relate to skills?* A tool is something the agent can call through the gateway. A skill is something it knows how to do, delivered into its workspace by the Skill object you meet in Module 4. A skill can declare that it needs a tool, under `spec.dependencies` with kind `mcpServer`, and the operator checks the registration exists. Skills depend on tools; tools never depend on skills.
+
 == What just happened
 
 On a vendor AI platform, the agent holds integration credentials the vendor minted, on the vendor's lifecycle, and the audit trail — if one exists — lives in the vendor's system under the vendor's retention policy.
@@ -300,13 +332,13 @@ The AgentWorks question for this module was "connectors and MCP integrations, bu
 By completing this module, you should now understand:
 
 * ✓ How to trigger a governed tool call from Mattermost and identify the tool's contribution to the agent's reply
-* ✓ Why the agent's workstation pod holds no downstream-system credential, and where the credential actually lives
+* ✓ Why the agent's workstation pod holds nothing but its own delegated badge, and where every other credential actually lives
 * ✓ When the declared exception pattern applies and how it preserves the same reviewability guarantee as the governed gateway
 * ✓ How to read the MCP gateway's access log and match a live call to its audit entry
 
 == Module summary
 
-Tool calls route through the MCP gateway. The gateway authorizes, injects, and audits: the agent never sees the secret. When a direct integration is genuinely needed, it is a declared line in git reviewed in a pull request. Every call produces an audit line on your cluster.
+Tool calls route through the MCP gateway. The gateway authorizes, forwards or injects, and audits: the runtime carries the seat's own badge, and no other credential enters the seat. When a direct integration is genuinely needed, it is a declared line in git reviewed in a pull request. Every call produces an audit line on your cluster.
 
 Module 4 turns to skills. An agent's capabilities come from skills declared in git, published as OCI artifacts, and versioned with the same controls as any other software. In Module 4, you will add a skill to your agent and trace it from the skill catalog to a live behavior change.
 
