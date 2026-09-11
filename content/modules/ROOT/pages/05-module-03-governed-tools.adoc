@@ -297,7 +297,7 @@ oc get agentworkstation {user}-assistant -n {user}-agent-workspace \
   -o jsonpath='{.spec.tools}' | python3 -m json.tool
 ----
 
-You will see `Authorization: Bearer ${GITEA_TOKEN}` and `envFromSecret: {user}-gitea-token`: a reference, rendered by the operator, never a value in git.
+You will see `Authorization: Bearer $\{GITEA_TOKEN}` and `envFromSecret: {user}-gitea-token`: a reference, rendered by the operator, never a value in git.
 
 *Gitea authenticates the token anyway. What is Authorino for?* Two different questions get answered on every call. Authorino, in front of the gateway, answers "which agent is this, and may it reach this server?" It matches your bearer to your badge's Secret and reads the allow-list stamped on it. Read yours:
 
