@@ -158,7 +158,7 @@ endif::[]
 +
 [source,text,subs="+attributes"]
 ----
-Please build a service called order-metrics. It reads the existing orders API at http://orders-api.agent-office.svc.cluster.local:8080 (GET /orders with status/region/date filters, GET /meta) and turns Morgan's weekly ops questions into MCP tools served on an HTTP /mcp endpoint: metrics_stuck_orders(threshold_days=7) returns the count and list of orders in processing longer than the threshold, and metrics_weekly_summary() returns order counts by status for the last 7 days. "Stuck" means more than 7 days in processing. Also expose GET /healthz returning {"ok": true}. Listen on port 8080, and put the Dockerfile at the repository root. The platform will publish your container image at quay-quay-quay-test.apps.salamander.aimlworkbench.com/deanpeterson/{user}-order-metrics:main — reference exactly that image in deploy/deployment.yaml, with imagePullSecrets naming quay-pull-secret. Use the golden-path template and open a pull request to my Gitea org for review.
+Please build a service called order-metrics. It reads the existing orders API at http://orders-api.agent-office.svc.cluster.local:8080 (GET /orders with status/region/date filters, GET /meta) and turns Morgan's weekly ops questions into MCP tools served on an HTTP /mcp endpoint: metrics_stuck_orders(threshold_days=7) returns the count and list of orders in processing longer than the threshold, and metrics_weekly_summary() returns order counts by status for the last 7 days. "Stuck" means more than 7 days in processing. Also expose GET /healthz returning {"ok": true}. Listen on port 8080, and put the Dockerfile at the repository root. The platform will publish your container image at {artifact_registry}/{registry_org}/{user}-order-metrics:main — reference exactly that image in deploy/deployment.yaml, with imagePullSecrets naming quay-pull-secret. Use the golden-path template and open a pull request to my Gitea org for review.
 ----
 +
 // AUTHOR NOTE (verify live): confirm this level of prompt specificity is sufficient for the dev agent to invoke the scaffold skill and the gitea_* tools without asking for clarification. If the agent requests additional detail, note what it needed and revise the intent text here.
@@ -224,11 +224,11 @@ That is the shape to expect: four tasks in sequence, then `build-image-index` fa
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
-QUAY=quay-quay-quay-test.apps.salamander.aimlworkbench.com
+QUAY={artifact_registry}
 oc extract secret/quay-pull-secret -n {user}-agent-workspace --keys=.dockerconfigjson --to=- > /tmp/quay.json 2>/dev/null
 AUTH=$(python3 -c "import json;a=json.load(open('/tmp/quay.json'))['auths'];print(next(iter(a.values()))['auth'])")
-T=$(curl -sk "https://$QUAY/v2/auth?service=$QUAY&scope=repository:deanpeterson/{user}-order-metrics:pull" -H "Authorization: Basic $AUTH" | python3 -c "import sys,json;print(json.load(sys.stdin)['token'])")
-curl -sk "https://$QUAY/v2/deanpeterson/{user}-order-metrics/tags/list" -H "Authorization: Bearer $T" | python3 -m json.tool
+T=$(curl -sk "https://$QUAY/v2/auth?service=$QUAY&scope=repository:{registry_org}/{user}-order-metrics:pull" -H "Authorization: Basic $AUTH" | python3 -c "import sys,json;print(json.load(sys.stdin)['token'])")
+curl -sk "https://$QUAY/v2/{registry_org}/{user}-order-metrics/tags/list" -H "Authorization: Bearer $T" | python3 -m json.tool
 ----
 +
 Beside `main` sit the supply-chain artifacts, each pinned to the image digest: an SBOM (`.sbom`), the exact Dockerfile that built it (`.dockerfile`), a cryptographic signature (`.sig`), and an in-toto provenance attestation (`.att`) — the signature and attestation written by Tekton Chains the moment the run finished, keyed by the platform. Exercise 5 verifies them. One honest parameter while you are here: your pipeline file sets `skip-checks: "true"`, which skips the deep vulnerability-scan tasks the bundle also carries — flip it to `"false"` and the same pipeline gates on scan results, at the cost of several extra minutes per build. The gate is a parameter in a file you own, not a vendor tier.
@@ -437,13 +437,13 @@ The `governed__{user}_orders_*` tool calls appear in the ledger alongside the `g
 +
 [source,bash,role="execute",subs="+attributes"]
 ----
-QUAY=quay-quay-quay-test.apps.salamander.aimlworkbench.com
+QUAY={artifact_registry}
 AUTH=$(python3 -c "import json;a=json.load(open('/tmp/quay.json'))['auths'];print(next(iter(a.values()))['auth'])")
-T=$(curl -sk "https://$QUAY/v2/auth?service=$QUAY&scope=repository:deanpeterson/{user}-order-metrics:pull" -H "Authorization: Basic $AUTH" | python3 -c "import sys,json;print(json.load(sys.stdin)['token'])")
+T=$(curl -sk "https://$QUAY/v2/auth?service=$QUAY&scope=repository:{registry_org}/{user}-order-metrics:pull" -H "Authorization: Basic $AUTH" | python3 -c "import sys,json;print(json.load(sys.stdin)['token'])")
 DIGEST=$(oc get pods -n {user}-agent-workspace -l app.kubernetes.io/name=order-metrics \
   -o jsonpath='{.items[0].status.containerStatuses[0].imageID}' | sed 's/.*@//')
 echo "running image digest:  $DIGEST"
-curl -sk -I "https://$QUAY/v2/deanpeterson/{user}-order-metrics/manifests/main" -H "Authorization: Bearer $T" \
+curl -sk -I "https://$QUAY/v2/{registry_org}/{user}-order-metrics/manifests/main" -H "Authorization: Bearer $T" \
   -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json" \
   | grep -i docker-content-digest | sed 's/.*: */tag main resolves to: /'
 ----
@@ -453,12 +453,12 @@ curl -sk -I "https://$QUAY/v2/deanpeterson/{user}-order-metrics/manifests/main" 
 [source,bash,role="execute",subs="+attributes"]
 ----
 SAFE=$(echo "$DIGEST" | sed 's/:/-/')
-curl -sk "https://$QUAY/v2/deanpeterson/{user}-order-metrics/tags/list" -H "Authorization: Bearer $T" \
+curl -sk "https://$QUAY/v2/{registry_org}/{user}-order-metrics/tags/list" -H "Authorization: Bearer $T" \
   | python3 -c "import sys,json; tags=json.load(sys.stdin)['tags']; import os; s=os.environ.get('SAFE','$SAFE'); print('signature:  ', s+'.sig' in tags); print('attestation:', s+'.att' in tags)"
-ATTL=$(curl -sk "https://$QUAY/v2/deanpeterson/{user}-order-metrics/manifests/$SAFE.att" \
+ATTL=$(curl -sk "https://$QUAY/v2/{registry_org}/{user}-order-metrics/manifests/$SAFE.att" \
   -H "Authorization: Bearer $T" -H "Accept: application/vnd.oci.image.manifest.v1+json" \
   | python3 -c "import sys,json;print(json.load(sys.stdin)['layers'][0]['digest'])")
-curl -skL "https://$QUAY/v2/deanpeterson/{user}-order-metrics/blobs/$ATTL" -H "Authorization: Bearer $T" \
+curl -skL "https://$QUAY/v2/{registry_org}/{user}-order-metrics/blobs/$ATTL" -H "Authorization: Bearer $T" \
   | python3 -c "
 import sys, json, base64
 d = json.load(sys.stdin)

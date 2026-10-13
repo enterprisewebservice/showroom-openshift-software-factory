@@ -84,14 +84,14 @@ The pack you are about to install exists as a published OCI artifact in the plat
 QUAY={artifact_registry}
 oc extract secret/quay-pull-secret -n {user}-agent-workspace --keys=.dockerconfigjson --to=- > /tmp/quay.json
 AUTH=$(python3 -c "import json;a=json.load(open('/tmp/quay.json'))['auths'];print(next(iter(a.values()))['auth'])")
-tok() { curl -sk "https://$QUAY/v2/auth?service=$QUAY&scope=repository:deanpeterson/$1:pull" -H "Authorization: Basic $AUTH" | python3 -c "import sys,json;print(json.load(sys.stdin)['token'])"; }
+tok() { curl -sk "https://$QUAY/v2/auth?service=$QUAY&scope=repository:{registry_org}/$1:pull" -H "Authorization: Basic $AUTH" | python3 -c "import sys,json;print(json.load(sys.stdin)['token'])"; }
 ----
 
 . Read the artifact's OCI manifest:
 +
-[source,bash,role="execute"]
+[source,bash,role="execute",subs="+attributes"]
 ----
-REPO=deanpeterson/agent-office-skill-platform-incident-triage
+REPO={registry_org}/agent-office-skill-platform-incident-triage
 T=$(tok agent-office-skill-platform-incident-triage)
 curl -sk "https://$QUAY/v2/$REPO/manifests/1.1.1" \
   -H "Authorization: Bearer $T" \
@@ -131,9 +131,9 @@ curl -sk "https://$QUAY/v2/$REPO/tags/list" -H "Authorization: Bearer $T" | pyth
 
 . The registry holds more than skills. A *pack* bundles a capability — and it is not a description pointing at names, it is an OCI image index whose members are pinned by digest. Read one:
 +
-[source,bash,role="execute"]
+[source,bash,role="execute",subs="+attributes"]
 ----
-curl -sk "https://$QUAY/v2/deanpeterson/agent-office-pack-supply-chain-ops/manifests/0.1.0" \
+curl -sk "https://$QUAY/v2/{registry_org}/agent-office-pack-supply-chain-ops/manifests/0.1.0" \
   -H "Authorization: Bearer $(tok agent-office-pack-supply-chain-ops)" \
   -H "Accept: application/vnd.oci.image.index.v1+json" | python3 -m json.tool
 ----
@@ -165,7 +165,7 @@ metadata:
     app.kubernetes.io/managed-by: agent-office
     agentoffice.ai/skill-tier: registry
   annotations:
-    agentoffice.ai/registry: quay-quay-quay-test.apps.salamander.aimlworkbench.com
+    agentoffice.ai/registry: {artifact_registry}
     agentoffice.ai/pack-ref: agent-office/platform-incident-triage:1.1.1
 spec:
   displayName: "Platform Incident Triage"
@@ -176,7 +176,7 @@ spec:
       name: ops-metrics
   source:
     packageRef:
-      ref: oci://quay-quay-quay-test.apps.salamander.aimlworkbench.com/deanpeterson/agent-office-skill-platform-incident-triage:1.1.1
+      ref: oci://{artifact_registry}/{registry_org}/agent-office-skill-platform-incident-triage:1.1.1
       digest: 43a5c4aa250d78538e27f5bbba72b46e36c8a5742a108352d6a8a75a119d59a7
       pullSecretName: quay-pull-secret
       insecureSkipTLSVerify: true

@@ -11,6 +11,9 @@
 // Pages use ifeval on it so a reader only ever sees instructions for their own seat.
 :seat_mode: seat
 :artifact_registry: quay-quay-quay-test.apps.salamander.aimlworkbench.com
+:registry_org: deanpeterson
+// ^ the registry namespace (organization) holding the skill artifacts and the seats' images.
+//   RHDP orders: the deployer sets both from the cluster's own Quay (artifact_registry, registry_org).
 // ^ the cluster's own container registry serving skill artifacts; when the
 //   workshop moves clusters, the deployer mirrors the artifact repos there
 //   (skopeo copy, digests preserved) and this is the only line that changes.
