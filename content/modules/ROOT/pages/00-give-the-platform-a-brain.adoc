@@ -1,17 +1,36 @@
 = Give the platform a brain
 include::partial$_attributes.adoc[]
 
-Every module in this lab runs an agent, and an agent needs a model it can think with. On this platform a model is published once, by the person running the workshop, as a *model connection*: a governed route with an endpoint, a credential the platform holds, and an access list. Attendees never type a model key; they pick the published connection from a menu in Module 1 and swap it in Module 7.
+Every module in this lab runs an agent, and an agent needs a model it can think with. On this platform a model is published as a *model connection*: a governed route with an endpoint, a credential the platform holds, and an access list. Attendees never type a model key; they pick the published connection from a menu in Module 1 and swap it in Module 7.
 
-This page is for the facilitator. Do it once, before attendees arrive. It takes about five minutes plus one sync of the environment.
+This page is for the person who orders and runs the workshop. Nothing on it is typed into a cluster: the brain is chosen on the order form, and the automation publishes it.
 
-== What the environment already has
+== Choose the brain when you order
 
-The ordered environment publishes one connection on its own: the model endpoint the lab platform issued with the order (`rhdp-litemaas`). It answers plain questions but it does not call tools reliably, and Modules 3 to 7 depend on tool calls. It stays as a fallback; the workshop runs on the connection you publish here.
+The order form offers a *Models-as-a-Service* model (LiteMaaS). Pick a Claude model. The small open models in that list answer questions but do not call tools reliably, and Modules 3 to 7 are built on tool calls.
 
-== Step 1: Provide the Claude credential
+The platform issues a key for the chosen model with the order. The automation turns it into the connection `rhdp-litemaas`, fronts it with OpenShift AI's Models-as-a-Service gateway, offers it to the `attendees` group, and marks it the *default brain*: every attendee's hiring form opens on it.
 
-The lab's brain is Claude on Google Vertex AI through the Red Hat work subscription. The platform's proxy (`model-desk`) reaches it with a Google application-default credential file, the `adc.json` a `gcloud auth application-default login` produces for the work project. Put that file into the one Secret the automation looks for:
+== Check it where attendees will see it
+
+. Open the link:{openshift_console_url}[OpenShift console^], expand *Agent Office* in the left navigation and click *Model Connections*. The card for the order's model lists the endpoint, the model and *visible to: group: attendees*. The *Edit* button is the same form the platform uses to publish any connection: kind of route, endpoint, models, access list and key, nothing to guess.
+. In the terminal, confirm a seat was offered the connection:
++
+[source,bash,subs="+attributes"]
+----
+oc get modelconnectionoffers -n user1-agent-workspace
+----
++
+The operator projects an offer into a seat only when the connection's access list admits that attendee; an offer is what the hiring menu and the gateways read.
+
+=== Verify
+
+* The console's Model Connections page shows the order's model with the default-brain mark
+* `oc get modelconnectionoffers -n user1-agent-workspace` lists it
+
+== Optional: bring a second brain
+
+A facilitator with a Claude credential of their own (the Red Hat work subscription on Google Vertex AI) can add it as a second connection, which also gives Module 7 a second model to swap to. Put the Google application-default credential file into the one Secret the automation looks for, then sync the environment's `field-content` application in OpenShift GitOps:
 
 [source,bash,subs="+attributes"]
 ----
@@ -20,35 +39,4 @@ oc create secret generic model-desk-gcp-adc -n model-desk \
   --from-file=adc.json=/path/to/your/adc.json
 ----
 
-That Secret is the only manual input. It never appears in git, in a guide, or on an attendee's screen.
-
-== Step 2: Let the automation publish the connection
-
-Sync the environment's `field-content` application in OpenShift GitOps (or wait for the next scheduled sync). The `model_desk` stage then:
-
-* deploys the proxy in front of Claude on Vertex AI and generates its admin key,
-* proves one Claude turn goes through,
-* publishes the model connection `claude-work`, offered to the `attendees` group, with Claude Opus 5 first and Claude Sonnet 5, Opus 4.8 and Opus 4.6 behind it,
-* marks it the *default brain*, so every attendee's hiring form opens on it, and takes the default off the fallback connection.
-
-== Step 3: Check it where attendees will see it
-
-. Open the link:{openshift_console_url}[OpenShift console^], expand *Agent Office* in the left navigation and click *Model Connections*. The card *Claude (Red Hat work subscription)* lists the endpoint, the models and *visible to: group: attendees*. The *Edit* button is the same form the platform uses to publish any connection: kind of route, endpoint, models, access list and key, nothing to guess. Use it to add a model, narrow the audience, or publish a second brain for Module 7.
-. In the terminal, confirm a seat was offered the connection:
-+
-[source,bash,subs="+attributes"]
-----
-oc get modelconnectionoffers -n user1-agent-workspace
-----
-+
-`claude-work` and `rhdp-litemaas` both appear. The operator projects an offer into a seat only when the connection's access list admits that attendee; an offer is what the hiring menu and the gateways read.
-
-=== Verify
-
-* Secret `model-desk-gcp-adc` exists in namespace `model-desk`
-* The console's Model Connections page shows *Claude (Red Hat work subscription)* with the default-brain mark
-* `oc get modelconnectionoffers -n user1-agent-workspace` lists `claude-work`
-
-== If the credential is missing or expired
-
-Without the Secret the stage reports it in the Job log and the environment stays on the fallback connection. An expired credential shows up as a failed "one Claude turn through the proxy" task: replace the Secret's `adc.json` and sync again. Attendees' agents keep their connection reference; the next turn after the fix simply works.
+The automation deploys a proxy in front of Claude on Vertex AI, proves one Claude turn goes through, and publishes the connection `claude-work` with Claude Opus 5 first. An expired credential shows up as a failed "one Claude turn through the proxy" task in the Job log: replace the Secret's `adc.json` and sync again.
