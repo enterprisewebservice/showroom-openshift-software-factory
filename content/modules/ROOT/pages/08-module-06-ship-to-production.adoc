@@ -44,7 +44,7 @@ endif::[]
 
 . Find the *OpenClaw Agent* template and click *Choose*.
 +
-// AUTHOR NOTE (verify live): confirm the template is still named "OpenClaw Agent" and not a version-stamped variant (e.g., "OpenClaw Agent v2"). Update the name in this step if it has changed.
+// VERIFIED LIVE 2026-10-13 (RHDP order, seat user1): the template is "OpenClaw Agent" (id openclaw-agent-genesis).
 
 . For *What will your agent be doing?*, write:
 +
@@ -68,7 +68,7 @@ The composed plan is a *draft, not a verdict* — that is why the review step ex
 +
 The run creates a git repository for the dev agent, registers it in the catalog, and hands the rollout to OpenShift GitOps.
 +
-// AUTHOR NOTE (verify live): confirm the exact git repository name produced for a dev agent hire. The expected pattern is `{user}-dev-agent-gitops` or similar. Update any reference to that name in the rest of this module.
+// VERIFIED LIVE 2026-10-13: the hire publishes `{user}-agents/{user}-dev-agent-gitops` and the Application is `{user}-agents-{user}-dev-agent`.
 
 ifeval::["{seat_mode}" == "self-service"]
 . Open link:{gitops_url}[OpenShift GitOps^] and sign in with the account you registered.
@@ -85,7 +85,7 @@ Find the Application for `{user}-dev` and watch it reach *Synced* and *Healthy*.
 oc get pods -n {user}-agent-workspace
 ----
 +
-// AUTHOR NOTE (verify live): confirm whether both agents (assistant and dev) run in the same {user}-agent-workspace namespace, or whether each agent hire produces its own namespace. Update the namespace in this command and in all subsequent steps if the platform places them differently.
+// VERIFIED LIVE 2026-10-13: both agents run in {user}-agent-workspace (pods {user}-assistant-gateway-… and {user}-dev-gateway-…); the dev gateway was Running about a minute after Create.
 +
 Expected: both `{user}-assistant` and `{user}-dev` pods appear with `Running` status. Allow up to 2 minutes for the first image pull — and then give the *chat side* another two to three minutes before messaging the new agent: the channel bridge adopts a fresh hire on its next roster scan, and the gateway performs one configuration restart on first boot. A message sent during that settle window sits until adoption; the typing indicator appears once the agent's first turn actually starts.
 
@@ -152,7 +152,7 @@ endif::[]
 
 . Find the channel for `{user}-dev`. The hire template created it at the same time it created the channel for `{user}-assistant` in Module 1.
 +
-// AUTHOR NOTE (verify live): confirm the dev agent channel naming convention. Expected: a channel named `{user}-dev` or the agent's derived name from the brief. If the convention differs, note the actual channel name here.
+// VERIFIED LIVE 2026-10-13: the channel is `{user}-dev` (display name "User 1 Dev"), created with the hire and adopted by the bridge within a minute.
 
 . Send the intent:
 +
@@ -161,19 +161,19 @@ endif::[]
 Please build a service called order-metrics. It reads the existing orders API at http://orders-api.agent-office.svc.cluster.local:8080 (GET /orders with status/region/date filters, GET /meta) and turns Morgan's weekly ops questions into MCP tools served on an HTTP /mcp endpoint: metrics_stuck_orders(threshold_days=7) returns the count and list of orders in processing longer than the threshold, and metrics_weekly_summary() returns order counts by status for the last 7 days. "Stuck" means more than 7 days in processing. Also expose GET /healthz returning {"ok": true}. Listen on port 8080, and put the Dockerfile at the repository root. The platform will publish your container image at {artifact_registry}/{registry_org}/{user}-order-metrics:main — reference exactly that image in deploy/deployment.yaml, with imagePullSecrets naming quay-pull-secret. Use the golden-path template and open a pull request to my Gitea org for review.
 ----
 +
-// AUTHOR NOTE (verify live): confirm this level of prompt specificity is sufficient for the dev agent to invoke the scaffold skill and the gitea_* tools without asking for clarification. If the agent requests additional detail, note what it needed and revise the intent text here.
+// VERIFIED LIVE 2026-10-13: this intent was sufficient; the agent asked nothing, probed the orders API, ran the service and ten unit tests in its workspace, and opened the pull request seven minutes after the message (Claude Opus 5 via the model-desk connection).
 
 . Watch the agent's reply. It should describe the steps it is taking: calling the scaffold skill, creating the repository, writing the files, and opening the pull request. Each `gitea_*` call carries your seat credential and leaves an audit entry — the same credential lifecycle you traced in Module 3.
 +
-// AUTHOR NOTE (verify live): note which gitea_* tools appear in the agent's reply or in the tool-call ledger. Expected: gitea_create_repo, gitea_create_file (or batch equivalent), gitea_create_pull_request. If the scaffold skill itself wraps the Gitea calls, note whether the individual tool names are surfaced in the reply.
+// VERIFIED LIVE 2026-10-13: ledger shows governed__gitea_get_me, gitea_get_user_orgs, gitea_create_repo, gitea_create_branch, gitea_create_or_update_file (24 calls) and gitea_pull_request_write; the reply names the PR URL rather than the tool names.
 
 . Open your Gitea org at the URL the agent posts in its reply. Find the new `order-metrics` repository in the `{user}-agents` org.
 +
-// AUTHOR NOTE (verify live): confirm the Gitea org URL and that the repository appears under `{user}-agents` after the agent's tool calls complete. If the org name differs, update all subsequent references.
+// VERIFIED LIVE 2026-10-13: the repository appears under `{user}-agents/order-metrics` (default branch main, feature branch feat/order-metrics-mcp).
 
 . Open the pull request the agent created. Read the diff: the golden-path template files are there — a service skeleton with the build configuration the supply-chain pipeline expects.
 +
-// AUTHOR NOTE (verify live): note the exact file set the scaffold skill produces. Expected: Dockerfile, Tekton pipeline binding or event listener configuration, Kubernetes Service and Deployment manifests, application source skeleton. List the verified file set here and update the bullet in Exercise 3 step 3.
+// VERIFIED LIVE 2026-10-13: 12 files — .gitignore, .tekton/on-push.yaml, Dockerfile, README.md, app/__init__.py, app/metrics.py, app/orders_client.py, app/server.py, deploy/deployment.yaml, requirements.txt, tests/test_metrics.py, tests/test_server.py.
 
 // TODO screenshot (capture during the live walkthrough, then restore):
 // image::module-06-dev-agent-reply.png[Mattermost reply from {user}-dev describing the Gitea tool calls it made and linking to the pull request it opened,link=self,window=blank,width=700]
@@ -286,6 +286,12 @@ oc exec deploy/{user}-assistant-gateway -n {user}-agent-workspace -c openclaw --
 +
 `{"ok":true}`, then `serverInfo: order-metrics` — the service Morgan asked for, built by an agent, shipped by the supply chain, running in your namespace.
 
+// VERIFIED LIVE 2026-10-13 (RHDP order 9cwxl, OpenShift 4.22, seat user1, cluster registry
+// quay-quay-registry.<domain>/workshop): merge 00:18:46Z -> PipelineRun created in 10 s -> Completed
+// 00:24:25Z (5m36s; the pipeline's taskRunSpecs sizing block made build-container schedulable on a
+// 7.5-CPU worker) -> main + .sig/.att/.sbom/.dockerfile -> seat-services Application Healthy 78 s
+// later -> /healthz and the MCP initialize answered. cosign verify and verify-attestation against
+// the seat's chains-public-key both passed (cosign 3 needs --insecure-ignore-tlog=true: no Rekor).
 // VERIFIED LIVE 2026-08-27 (first walk, seat user1): webhook->PaC gitea provider->PipelineRun
 // in-namespace in ~20s; build Succeeded in 160s (task names above are the live set); SBOM +
 // dockerfile artifacts pushed; after Chains was keyed, .sig/.att appeared and cosign verify +
@@ -412,7 +418,7 @@ This is the beat that makes it Morgan's Monday. Morgan had a request. The factor
 It's Monday. Using your new {user}_orders_metrics_stuck_orders and {user}_orders_metrics_weekly_summary tools: how many orders are stuck in processing (stuck = more than 7 days), and what does the weekly summary look like? Post the numbers here.
 ----
 +
-// AUTHOR NOTE (verify live): replace "order-metrics tool" in the prompt with the exact tool name verified in Exercise 4 step 3. The assistant recognizes the name more reliably when the prompt matches the gateway-exposed name precisely.
+// VERIFIED LIVE 2026-10-13: with the two tool names in the prompt the assistant answered in 30 s: 75 stuck orders (oldest 178.92 days), weekly summary 156 orders (processing 68, shipped 53, delivered 33, cancelled 2), flagging the dataset's as_of date.
 
 . Read the agent's reply. It reports the stuck count and the weekly summary — Morgan's Monday answers, produced by governed calls to the service the factory shipped this session. The numbers match the platform's own `metrics_*` tools exactly, and the assistant may say so: the service serves the fixed export dataset from Exercise 2 (`as_of` 2026-07-01), not a live feed -- same data, now behind a tool *your* factory built, registered, and governs. No exports, no VLOOKUPs, and an audit entry where the spreadsheet used to be.
 
@@ -427,11 +433,11 @@ oc exec $(oc get pods -n {user}-agent-workspace -o name | grep {user}-assistant 
     | sort | uniq -c | sort -rn | head -20'
 ----
 +
-// AUTHOR NOTE (verify live): confirm the session JSONL path inside the assistant container. This mirrors the audit command from Module 3 — if that path changed, update both modules.
+// VERIFIED LIVE 2026-10-13: path unchanged; the ledger listed governed__{user}_orders_metrics_stuck_orders and governed__{user}_orders_metrics_weekly_summary beside the governed__gitea_* calls.
 +
 The `governed__{user}_orders_*` tool calls appear in the ledger alongside the `governed__gitea_*` calls you saw in Module 3 — the factory's newest tool, already leaving the same class of record as its oldest. The ledger entry is your tenant-side receipt. Its platform-side twin — the gateway's access-log line for this call — lives in the shared stream you proved in Module 3 you cannot open, shown on the shared screen during the session, on the same cluster, under the same retention policy as every other audit artifact ACME governs.
 +
-// AUTHOR NOTE (verify live): confirm the orders tool entries appear namespaced in the ledger (expected shape: a prefixed toolName matching the MCPServerRegistration prefix) and name the exact string here and in the Verify bullet.
+// VERIFIED LIVE 2026-10-13: exact strings governed__user1_orders_metrics_stuck_orders and governed__user1_orders_metrics_weekly_summary for seat user1.
 
 . Verify the supply chain on the running image — with nothing but the registry API. First, resolve which digest your deployment actually runs:
 +
