@@ -9,4 +9,4 @@
 * xref:07-module-05-headless-agent-in-the-pipeline.adoc[Module 5: Headless agent in the pipeline]
 * xref:08-module-06-ship-to-production.adoc[Module 6: Ship to production]
 * xref:09-module-07-swap-the-brain.adoc[Module 7: Swap the brain]
-* xref:10-module-08-the-gap-map.adoc[Module 8: The gap map]
+* xref:10-module-08-sandbox-the-agent.adoc[Module 8: Sandbox the agent]

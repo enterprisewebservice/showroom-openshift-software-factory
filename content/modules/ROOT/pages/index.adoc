@@ -59,7 +59,7 @@ The workshop runs as 8 modules, each anchored to something you do in the environ
 |Change the agent's model reference from a frontier endpoint to a sovereign in-cluster vLLM. Re-run Module 4's task. Nothing else changed.
 |~20 min
 
-|8. The gap map
+|8. Sandbox the agent
 |Compare the result with AgentWorks, feature by feature. Identify which gaps remain, and why none of them are trust, governance, or deployment reach.
 |~15 min
 |===

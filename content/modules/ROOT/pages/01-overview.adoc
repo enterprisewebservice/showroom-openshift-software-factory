@@ -162,7 +162,7 @@ The hands-on core runs about 3.5 hours. The estimates below include reading and 
 |Point the agent at an in-cluster vLLM endpoint instead of a frontier model. Re-run module 4's task. Nothing else changes.
 |~20 min
 
-|8. The gap map
+|8. Sandbox the agent
 |Put the honest AgentWorks comparison on the table: where this stack is ahead, where theirs is, and what closes the gaps.
 |~15 min
 |===
@@ -182,7 +182,7 @@ None of it required a second platform. The pattern is made of OpenShift, so it g
 == Common questions
 
 **"Is this lab bashing the commercial agent vendors?"**
-→ No. They proved enterprises will delegate real work to agents, and module 8 credits what their product does better today, the review surface among them. The comparison is about where governance lives; judge that yourself in module 6.
+→ No. They proved enterprises will delegate real work to agents, and the closing section of module 8 credits what their product does better today, the review surface among them. The comparison is about where governance lives; judge that yourself in module 6.
 
 **"I have never run an AI model. Am I in the right room?"**
 → Yes. The environment provides the model endpoints. In module 7 you change which brain the agent uses by editing 1 field; you never operate the model server itself.
@@ -191,4 +191,4 @@ None of it required a second platform. The pattern is made of OpenShift, so it g
 → Yes, through the same gates a human commit rides: build, sign, scan, and promote. Module 6 ends with you loading the live route and walking the audit trail behind it.
 
 **"How much of this is supported product versus reference build?"**
-→ The governance surfaces (Red Hat Developer Hub, OpenShift Pipelines, OpenShift GitOps, Red Hat Connectivity Link) are supported products. The agent operator and the platform's skill registry are reference builds running in your environment. Module 8's gap map labels every component, so you leave knowing which is which.
+→ The governance surfaces (Red Hat Developer Hub, OpenShift Pipelines, OpenShift GitOps, Red Hat Connectivity Link) are supported products. The agent operator and the platform's skill registry are reference builds running in your environment. Module 8's closing gap list labels every component, so you leave knowing which is which.

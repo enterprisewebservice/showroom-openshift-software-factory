@@ -283,7 +283,7 @@ By completing this module, you should now understand:
 
 The agent's brain is a reference. You changed it with a pull request and changed it back with a revert. Skill artifacts, governed tools, git identity, and the Mattermost channel were never part of the change.
 
-Module 8 closes the lab with the honest gap map: where this platform-built factory still falls short of AgentWorks' surface area, and why none of the gaps are in trust, governance, or deployment reach.
+Module 8 closes the lab where the agent's commands actually run: you test the egress cage around your seat with a prompt-injection exfiltration, then move your agent's gateway into a lightweight VM with one line of git, and finish with the honest gap list against AgentWorks' surface area, none of which is in trust, governance, or deployment reach.
 
 ////
 Assets needed (capture against the live environment):
